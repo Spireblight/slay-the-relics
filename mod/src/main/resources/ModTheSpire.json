@@ -1,10 +1,10 @@
 {
   "modid": "SlayTheRelicsExporter",
-  "name": "Slay The Relics Exporter",
+  "name": "SlayTheRelics Exporter",
   "author_list": ["LordAddy"],
-  "description": "A mod that exports current relic information from Slay The Spire",
+  "description": "A mod, that exports player's picked up relics information and sends it to a twitch extension called SlayTheRelics",
   "version": "0.1",
-  "sts_version": "03-29-2018",
-  "mts_version": "2.6.0",
+  "sts_version": "01-27-2020",
+  "mts_version": "5.18.0",
   "dependencies": ["basemod"]
 }
