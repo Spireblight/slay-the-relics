@@ -1,0 +1,10 @@
+{
+  "modid": "SlayTheRelicsExporter",
+  "name": "Slay The Relics Exporter",
+  "author_list": ["LordAddy"],
+  "description": "A mod that exports current relic information from Slay The Spire",
+  "version": "0.1",
+  "sts_version": "03-29-2018",
+  "mts_version": "2.6.0",
+  "dependencies": ["basemod"]
+}
