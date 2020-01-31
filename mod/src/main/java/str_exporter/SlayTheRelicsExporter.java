@@ -1,27 +1,24 @@
 package str_exporter;
 
-//import basemod.*;
 import basemod.BaseMod;
-import basemod.ModButton;
 import basemod.ModPanel;
 import basemod.interfaces.*;
-import com.badlogic.gdx.Gdx;
-import com.evacipated.cardcrawl.modthespire.lib.SpireConfig;
 import com.evacipated.cardcrawl.modthespire.lib.SpireInitializer;
 import com.megacrit.cardcrawl.characters.AbstractPlayer;
 import com.megacrit.cardcrawl.core.CardCrawlGame;
-import com.megacrit.cardcrawl.core.Settings;
-import com.megacrit.cardcrawl.helpers.FontHelper;
 import com.megacrit.cardcrawl.helpers.ImageMaster;
-import com.megacrit.cardcrawl.helpers.input.InputHelper;
 import com.megacrit.cardcrawl.relics.AbstractRelic;
-import com.sun.org.apache.xpath.internal.operations.Mod;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Properties;
 
 @SpireInitializer
 public class SlayTheRelicsExporter implements
@@ -32,12 +29,15 @@ public class SlayTheRelicsExporter implements
         PostUpdateSubscriber
 {
 
-    private static final String CONF_LOGIN = "Streamer Login";
-    private static final String CONF_SECRET = "Streamer Secret (generated on twitch.tv on the StR config page)";
-
     public static final Logger logger = LogManager.getLogger(SlayTheRelicsExporter.class.getName());
 
-    private static SpireConfig modConfig = null;
+    private static String login = "";
+    private static String secret = "";
+
+    private static final String EBS_URL = "https://localhost:8080";
+
+    private long lastBroadcast;
+    private static final long MIN_BROADCAST_PERIOD_MILLIS = 30 * 1000;
 
     public SlayTheRelicsExporter()
     {
@@ -52,10 +52,15 @@ public class SlayTheRelicsExporter implements
         new SlayTheRelicsExporter();
 
         try {
-            Properties defaults = new Properties();
-            defaults.put(CONF_LOGIN, "");
-            defaults.put(CONF_SECRET, "");
-            modConfig = new SpireConfig("SlayTheRelicsExporter", "Config", defaults);
+
+            String data = new String(Files.readAllBytes(Paths.get("slaytherelics_config.txt")));
+
+            String[] lines = data.split("\r\n");
+
+            login = lines[0].split(":")[1];
+            secret = lines[1].split(":")[1];
+
+            logger.info("loaded login " + login + " and secret " + secret);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -80,27 +85,67 @@ public class SlayTheRelicsExporter implements
 
     private void check() {
         checkIfRunInProgress();
-        checkRelics();
-        logger.info("login: " + modConfig.getString(CONF_LOGIN));
-        logger.info("secret: " + modConfig.getString(CONF_SECRET));
+        broadcastRelics();
+        logger.info("login " + login);
+        logger.info("secret " + secret);
     }
 
-    private void checkRelics() {
+    private void broadcastRelics() {
+        logger.info("broadcasting relics");
 
-        if (CardCrawlGame.dungeon == null) {
-            logger.info("dungeon == null");
-            return;
+        ArrayList<AbstractRelic> relics = new ArrayList<>();
+
+        if (CardCrawlGame.isInARun() && CardCrawlGame.dungeon != null && CardCrawlGame.dungeon.player != null) {
+            relics = CardCrawlGame.dungeon.player.relics;
         }
 
-        if (CardCrawlGame.dungeon.player == null) {
-            logger.info("dungeon.player == null");
-            return;
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
+        sb.append("\"msg_type\": \"set_relics\", ");
+        sb.append("\"streamer\": {\"login\": \"" + login + "\", \"secret\": \"" + secret + "\"}, ");
+        sb.append("\"relics\": [");
+
+        for (int i = 0; i < relics.size(); i++) {
+            AbstractRelic relic = relics.get(i);
+            sb.append("{\"name\": \"" + relic.name + "\", \"description\": \"" + relic.description + "\"}");
+
+            if (i < relics.size() - 1)
+                sb.append(", ");
         }
+        sb.append("]}");
 
-        ArrayList<AbstractRelic> relics = CardCrawlGame.dungeon.player.relics;
+        logger.info(sb.toString());
+        broadcastJson(sb.toString());
+    }
 
-        for (AbstractRelic relic : relics) {
-            logger.info(relic.name + ": " + relic.description);
+
+    private void broadcastJson(String json) {
+
+        lastBroadcast = System.currentTimeMillis();
+
+        try {
+
+            URL url = new URL(EBS_URL);
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("POST");
+            con.setRequestProperty("Content-Type", "application/json");  //; utf-8
+            con.setRequestProperty("Accept", "application/json");
+            con.setDoOutput(true);
+
+            OutputStream os = con.getOutputStream();
+            byte[] input = json.getBytes("utf-8");
+            os.write(input, 0, input.length);
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(), "utf-8"));
+            StringBuilder response = new StringBuilder();
+            String responseLine = null;
+            while ((responseLine = br.readLine()) != null) {
+                response.append(responseLine.trim());
+            }
+            logger.info("response: " + response.toString());
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -112,158 +157,19 @@ public class SlayTheRelicsExporter implements
         }
     }
 
-    private static String getLogin() {
-        if (modConfig == null) {
-            return "";
-        }
-
-        return modConfig.getString(CONF_LOGIN);
-    }
-
-    private static String getSecret() {
-        if (modConfig == null) {
-            return "";
-        }
-
-        return modConfig.getString(CONF_SECRET);
-    }
-
-    private ModTextPanel loginText;
-
     @Override
     public void receivePostInitialize() {
         logger.info("Minty Spire is active.");
 
-//        UIStrings UIStrings = CardCrawlGame.languagePack.getUIString("SlayTheRelicsExporter: OptionsMenu");
-//        String[] TEXT = UIStrings.TEXT;
-        String[] TEXT = {"text1", "hello", "there", "how", "are", "you", "doing"};
-
-        int xPos = 350, yPos = 700;
         ModPanel settingsPanel = new ModPanel();
-        loginText = new ModTextPanel();
-
-        ModButton setLoginBtn = new ModButton(xPos, yPos, settingsPanel, button -> {
-            if (modConfig != null) {
-                loginText.show(
-                        settingsPanel,
-                        modConfig.getString(CONF_LOGIN),
-                        "",
-                        "Enter your twitch login (that's the one found in the URL of your stream twitch.tv/yourlogin)",
-                        textPanel -> {},
-                        textPanel -> {
-                            Gdx.input.getInputProcessor();
-                            modConfig.setString(CONF_LOGIN, ModTextPanel.textField);
-                            logger.info("Input text field: " + ModTextPanel.textField);
-//                            textPanel.confirm();
-                        });
-            }
-        });
-        settingsPanel.addUIElement(setLoginBtn);
-
-//        settingsPanel.addUIElement();
-
-//
-//        ModLabeledToggleButton HHBtn = new ModLabeledToggleButton(TEXT[0], xPos, yPos, Settings.CREAM_COLOR, FontHelper.charDescFont, true, settingsPanel, l -> {
-//        },
-//                button ->
-//                {
-//                    if (modConfig != null) {
-//                        modConfig.setBool("ShowHalfHealth", button.enabled);
-//                        try {
-//                            modConfig.save();
-//                        } catch (IOException e) {
-//                            e.printStackTrace();
-//                        }
-//                    }
-//                });
-//        settingsPanel.addUIElement(HHBtn);
-//        yPos -= 50;
-//
-//        ModLabeledToggleButton BNBtn = new ModLabeledToggleButton(TEXT[1], xPos, yPos, Settings.CREAM_COLOR, FontHelper.charDescFont, true, settingsPanel, l -> {
-//        },
-//                button ->
-//                {
-//                    if (modConfig != null) {
-//                        modConfig.setBool("ShowBossName", button.enabled);
-//                        try {
-//                            modConfig.save();
-//                        } catch (IOException e) {
-//                            e.printStackTrace();
-//                        }
-//                    }
-//                });
-//        settingsPanel.addUIElement(BNBtn);
-//        yPos -= 50;
-//
-//        if (Settings.language == Settings.GameLanguage.ENG) {
-//            ModLabeledToggleButton ICBtn = new ModLabeledToggleButton(TEXT[2], xPos, yPos, Settings.CREAM_COLOR, FontHelper.charDescFont, true, settingsPanel, l -> {
-//            },
-//                    button ->
-//                    {
-//                        if (modConfig != null) {
-//                            modConfig.setBool("Ironchad", button.enabled);
-//                            try {
-//                                modConfig.save();
-//                            } catch (IOException e) {
-//                                e.printStackTrace();
-//                            }
-//                        }
-//                    });
-//            settingsPanel.addUIElement(ICBtn);
-//            yPos -= 50;
-//        }
-//
-//        ModLabeledToggleButton SBBtn = new ModLabeledToggleButton(TEXT[3], xPos, yPos, Settings.CREAM_COLOR, FontHelper.charDescFont, true, settingsPanel, l -> {
-//        },
-//                button ->
-//                {
-//                    if (modConfig != null) {
-//                        modConfig.setBool("SummedDamage", button.enabled);
-//                        try {
-//                            modConfig.save();
-//                        } catch (IOException e) {
-//                            e.printStackTrace();
-//                        }
-//                    }
-//                });
-//        settingsPanel.addUIElement(SBBtn);
-//        yPos -= 50;
-//
-//        ModLabeledToggleButton TIDBtn = new ModLabeledToggleButton(TEXT[4], xPos, yPos, Settings.CREAM_COLOR, FontHelper.charDescFont, true, settingsPanel, l -> {
-//        },
-//                button ->
-//                {
-//                    if (modConfig != null) {
-//                        modConfig.setBool("TotalIncomingDamage", button.enabled);
-//                        try {
-//                            modConfig.save();
-//                        } catch (IOException e) {
-//                            e.printStackTrace();
-//                        }
-//                    }
-//                });
-//        settingsPanel.addUIElement(TIDBtn);
-//        yPos -= 50;
 
         BaseMod.registerModBadge(ImageMaster.loadImage("SlayTheRelicsExporterResources/img/modBadgeSmall.png"), "SlayTheRelics", "LordAddy", "TODO", settingsPanel);
     }
 
     @Override
     public void receivePostUpdate() {
-//        if(Gdx.input.isButtonPressed(0)) {
-//            logger.info("button 0");
-//        }
-//
-//        if(Gdx.input.isButtonPressed(1)) {
-//            logger.info("button 1");
-//        }
-
-        if(InputHelper.justClickedLeft) {
-            logger.info("just clicked left");
-        }
-
-        if(loginText != null && loginText.yesHb != null && loginText.yesHb.hovered) {
-            logger.info("yes hovered");
+        if (System.currentTimeMillis() - lastBroadcast > MIN_BROADCAST_PERIOD_MILLIS) {
+            broadcastRelics();
         }
     }
 }
