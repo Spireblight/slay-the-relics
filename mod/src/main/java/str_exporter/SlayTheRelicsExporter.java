@@ -13,6 +13,7 @@ import com.megacrit.cardcrawl.relics.Akabeko;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.smartcardio.Card;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -43,6 +44,7 @@ public class SlayTheRelicsExporter implements
 
     private long lastBroadcast;
     private static final long MIN_BROADCAST_PERIOD_MILLIS = 30 * 1000;
+    public static SlayTheRelicsExporter instance = null;
 
     public SlayTheRelicsExporter()
     {
@@ -53,7 +55,7 @@ public class SlayTheRelicsExporter implements
     public static void initialize()
     {
         logger.info("initialize() called!");
-        new SlayTheRelicsExporter();
+        instance = new SlayTheRelicsExporter();
 
         try {
 
@@ -68,6 +70,17 @@ public class SlayTheRelicsExporter implements
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void relicPageChanged() {
+        logger.info("Relic Page Changed");
+        check();
+    }
+
+
+    public void receiveGameExitting() {
+        logger.info("Game is Exitting");
+        check();
     }
 
     @Override
@@ -92,16 +105,17 @@ public class SlayTheRelicsExporter implements
     }
 
     private void check(AbstractRelic receivedRelic) {
-        checkIfRunInProgress();
+//        checkIfRunInProgress();
         broadcastRelics(receivedRelic);
         logger.info("login " + login);
         logger.info("secret " + secret);
     }
 
     private void broadcastRelics(AbstractRelic receivedRelic) {
-        logger.info("broadcasting relics");
+        logger.info("broadcasting relics and pageId");
 
-        ArrayList<AbstractRelic> relics = new ArrayList<>();
+        int pageId = AbstractRelic.relicPage; // send over relic page ID
+        ArrayList<AbstractRelic> relics = new ArrayList<>(); // send over relics
 
         if (CardCrawlGame.isInARun() && CardCrawlGame.dungeon != null && CardCrawlGame.dungeon.player != null) {
             relics = (ArrayList<AbstractRelic>) CardCrawlGame.dungeon.player.relics.clone();
@@ -123,7 +137,9 @@ public class SlayTheRelicsExporter implements
             if (i < relics.size() - 1)
                 sb.append(", ");
         }
-        sb.append("]}");
+        sb.append("], ");
+        sb.append("\"relics_page_id\": " + pageId);
+        sb.append("}");
 
         logger.info(sb.toString());
         broadcastJson(sb.toString());
