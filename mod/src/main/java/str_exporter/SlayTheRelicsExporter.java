@@ -7,13 +7,10 @@ import com.evacipated.cardcrawl.modthespire.lib.SpireInitializer;
 import com.megacrit.cardcrawl.characters.AbstractPlayer;
 import com.megacrit.cardcrawl.core.CardCrawlGame;
 import com.megacrit.cardcrawl.helpers.ImageMaster;
-import com.megacrit.cardcrawl.relics.Abacus;
 import com.megacrit.cardcrawl.relics.AbstractRelic;
-import com.megacrit.cardcrawl.relics.Akabeko;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javax.smartcardio.Card;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -40,10 +37,12 @@ public class SlayTheRelicsExporter implements
 
 //    private static final String EBS_URL = "https://localhost:8080";
     private static final String EBS_URL = "https://slaytherelics.xyz:8080";
-//    private static final String EBS_URL = "https://178.79.153.56:8080/extension";
+    private static final int MAX_RELICS = 25;
 
-    private long lastBroadcast;
-    private static final long MIN_BROADCAST_PERIOD_MILLIS = 30 * 1000;
+    private long lastBroadcast = System.currentTimeMillis();
+    private String lastBroadcastJson = "";
+    private static final long MIN_SAME_BROADCAST_PERIOD_MILLIS = 10 * 1000;
+    private static final long MAX_BROADCAST_PERIOD_MILLIS = 30 * 1000;
     public static SlayTheRelicsExporter instance = null;
 
     public SlayTheRelicsExporter()
@@ -107,12 +106,12 @@ public class SlayTheRelicsExporter implements
     private void check(AbstractRelic receivedRelic) {
 //        checkIfRunInProgress();
         broadcastRelics(receivedRelic);
-        logger.info("login " + login);
-        logger.info("secret " + secret);
+//        logger.info("login " + login);
+//        logger.info("secret " + secret);
     }
 
     private void broadcastRelics(AbstractRelic receivedRelic) {
-        logger.info("broadcasting relics and pageId");
+        logger.info("broadcasting relics");
 
         int pageId = AbstractRelic.relicPage; // send over relic page ID
         ArrayList<AbstractRelic> relics = new ArrayList<>(); // send over relics
@@ -130,15 +129,18 @@ public class SlayTheRelicsExporter implements
         sb.append("\"streamer\": {\"login\": \"" + login + "\", \"secret\": \"" + secret + "\"}, ");
         sb.append("\"relics\": [");
 
-        for (int i = 0; i < relics.size(); i++) {
+        int first_index = pageId * MAX_RELICS;
+        int last_index = Math.min((pageId + 1) * MAX_RELICS, relics.size());
+
+        for (int i = first_index; i < last_index; i++) {
             AbstractRelic relic = relics.get(i);
             sb.append("{\"name\": \"" + relic.name + "\", \"description\": \"" + relic.description + "\"}");
 
-            if (i < relics.size() - 1)
+            if (i < last_index - 1)
                 sb.append(", ");
         }
         sb.append("], ");
-        sb.append("\"relics_page_id\": " + pageId);
+        sb.append("\"is_relics_multipage\": \"" + (relics.size() > MAX_RELICS) + "\"");
         sb.append("}");
 
         logger.info(sb.toString());
@@ -148,7 +150,13 @@ public class SlayTheRelicsExporter implements
 
     private void broadcastJson(String json) {
 
+        // prevent rapid repeated broadcasts
+        if (System.currentTimeMillis() - lastBroadcast < MIN_SAME_BROADCAST_PERIOD_MILLIS && json.equals(lastBroadcastJson)) {
+            return;
+        }
+
         lastBroadcast = System.currentTimeMillis();
+        lastBroadcastJson = json;
 
         (new Thread(() -> {
             try {
@@ -197,7 +205,7 @@ public class SlayTheRelicsExporter implements
 
     @Override
     public void receivePostUpdate() {
-        if (System.currentTimeMillis() - lastBroadcast > MIN_BROADCAST_PERIOD_MILLIS) {
+        if (System.currentTimeMillis() - lastBroadcast > MAX_BROADCAST_PERIOD_MILLIS) {
             check();
         }
     }
