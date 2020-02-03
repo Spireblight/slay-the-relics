@@ -5,6 +5,6 @@
   "description": "A mod, that exports player's picked up relics information and sends it to a twitch extension called SlayTheRelics",
   "version": "0.1",
   "sts_version": "01-27-2020",
-  "mts_version": "5.18.0",
+  "mts_version": "3.15.0",
   "dependencies": ["basemod"]
 }

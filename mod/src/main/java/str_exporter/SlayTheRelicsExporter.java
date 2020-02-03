@@ -7,7 +7,9 @@ import com.evacipated.cardcrawl.modthespire.lib.SpireInitializer;
 import com.megacrit.cardcrawl.characters.AbstractPlayer;
 import com.megacrit.cardcrawl.core.CardCrawlGame;
 import com.megacrit.cardcrawl.helpers.ImageMaster;
+import com.megacrit.cardcrawl.relics.Abacus;
 import com.megacrit.cardcrawl.relics.AbstractRelic;
+import com.megacrit.cardcrawl.relics.Akabeko;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -16,6 +18,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -34,7 +37,9 @@ public class SlayTheRelicsExporter implements
     private static String login = "";
     private static String secret = "";
 
-    private static final String EBS_URL = "https://localhost:8080";
+//    private static final String EBS_URL = "https://localhost:8080";
+    private static final String EBS_URL = "https://slaytherelics.xyz:8080";
+//    private static final String EBS_URL = "https://178.79.153.56:8080/extension";
 
     private long lastBroadcast;
     private static final long MIN_BROADCAST_PERIOD_MILLIS = 30 * 1000;
@@ -43,7 +48,6 @@ public class SlayTheRelicsExporter implements
     {
         logger.info("Slay The Relics Exporter initialized!");
         BaseMod.subscribe(this);
-        // TODO: make an awesome mod!
     }
 
     public static void initialize()
@@ -69,7 +73,7 @@ public class SlayTheRelicsExporter implements
     @Override
     public void receiveRelicGet(AbstractRelic abstractRelic) {
         logger.info("Relic Acquired");
-        check();
+        check(abstractRelic);
     }
 
     @Override
@@ -84,19 +88,26 @@ public class SlayTheRelicsExporter implements
     }
 
     private void check() {
+        check(null);
+    }
+
+    private void check(AbstractRelic receivedRelic) {
         checkIfRunInProgress();
-        broadcastRelics();
+        broadcastRelics(receivedRelic);
         logger.info("login " + login);
         logger.info("secret " + secret);
     }
 
-    private void broadcastRelics() {
+    private void broadcastRelics(AbstractRelic receivedRelic) {
         logger.info("broadcasting relics");
 
         ArrayList<AbstractRelic> relics = new ArrayList<>();
 
         if (CardCrawlGame.isInARun() && CardCrawlGame.dungeon != null && CardCrawlGame.dungeon.player != null) {
-            relics = CardCrawlGame.dungeon.player.relics;
+            relics = (ArrayList<AbstractRelic>) CardCrawlGame.dungeon.player.relics.clone();
+            if (receivedRelic != null) {
+                relics.add(receivedRelic);
+            }
         }
 
         StringBuilder sb = new StringBuilder();
@@ -123,30 +134,32 @@ public class SlayTheRelicsExporter implements
 
         lastBroadcast = System.currentTimeMillis();
 
-        try {
+        (new Thread(() -> {
+            try {
 
-            URL url = new URL(EBS_URL);
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("POST");
-            con.setRequestProperty("Content-Type", "application/json");  //; utf-8
-            con.setRequestProperty("Accept", "application/json");
-            con.setDoOutput(true);
+                URL url = new URL(EBS_URL);
+                HttpURLConnection con = (HttpURLConnection) url.openConnection();
+                con.setRequestMethod("POST");
+                con.setRequestProperty("Content-Type", "application/json");  //; utf-8
+                con.setRequestProperty("Accept", "application/json");
+                con.setDoOutput(true);
 
-            OutputStream os = con.getOutputStream();
-            byte[] input = json.getBytes("utf-8");
-            os.write(input, 0, input.length);
+                OutputStream os = con.getOutputStream();
+                byte[] input = json.getBytes(StandardCharsets.UTF_8);
+                os.write(input, 0, input.length);
 
-            BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(), "utf-8"));
-            StringBuilder response = new StringBuilder();
-            String responseLine = null;
-            while ((responseLine = br.readLine()) != null) {
-                response.append(responseLine.trim());
+                BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8));
+                StringBuilder response = new StringBuilder();
+                String responseLine;
+                while ((responseLine = br.readLine()) != null) {
+                    response.append(responseLine.trim());
+                }
+                logger.info("response: " + response.toString());
+
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            logger.info("response: " + response.toString());
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        })).start();
     }
 
     private void checkIfRunInProgress() {
@@ -169,7 +182,7 @@ public class SlayTheRelicsExporter implements
     @Override
     public void receivePostUpdate() {
         if (System.currentTimeMillis() - lastBroadcast > MIN_BROADCAST_PERIOD_MILLIS) {
-            broadcastRelics();
+            check();
         }
     }
 }
