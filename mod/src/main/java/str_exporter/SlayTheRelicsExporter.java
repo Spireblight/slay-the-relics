@@ -109,17 +109,21 @@ public class SlayTheRelicsExporter implements
         int pageId = AbstractRelic.relicPage; // send over relic page ID
         ArrayList<AbstractRelic> relics = new ArrayList<>(); // send over relics
 
+        String character = "";
+
         if (CardCrawlGame.isInARun() && CardCrawlGame.dungeon != null && CardCrawlGame.dungeon.player != null) {
             relics = (ArrayList<AbstractRelic>) CardCrawlGame.dungeon.player.relics.clone();
             if (receivedRelic != null) {
                 relics.add(receivedRelic);
             }
+            character = CardCrawlGame.dungeon.player.getClass().getSimpleName();
         }
 
         StringBuilder sb = new StringBuilder();
         sb.append("{");
         sb.append("\"msg_type\": \"set_relics\", ");
         sb.append("\"streamer\": {\"login\": \"" + login + "\", \"secret\": \"" + secret + "\"}, ");
+        sb.append("\"message\": {");
         sb.append("\"relics\": [");
 
         int first_index = pageId * MAX_RELICS;
@@ -133,8 +137,9 @@ public class SlayTheRelicsExporter implements
                 sb.append(", ");
         }
         sb.append("], ");
-        sb.append("\"is_relics_multipage\": \"" + (relics.size() > MAX_RELICS) + "\"");
-        sb.append("}");
+        sb.append("\"is_relics_multipage\": \"" + (relics.size() > MAX_RELICS) + "\", ");
+        sb.append("\"character\": \"" + character + "\"");
+        sb.append("}}");
 
         logger.info(sb.toString());
         broadcastJson(sb.toString());
@@ -145,6 +150,7 @@ public class SlayTheRelicsExporter implements
 
         // prevent rapid repeated broadcasts
         if (System.currentTimeMillis() - lastBroadcast < MIN_SAME_BROADCAST_PERIOD_MILLIS && json.equals(lastBroadcastJson)) {
+            logger.info("Aborting rapidly repeated broadcast");
             return;
         }
 
