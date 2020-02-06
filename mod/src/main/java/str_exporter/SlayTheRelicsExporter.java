@@ -76,12 +76,6 @@ public class SlayTheRelicsExporter implements
         check();
     }
 
-
-    public void receiveGameExitting() {
-        logger.info("Game is Exitting");
-        check();
-    }
-
     @Override
     public void receiveRelicGet(AbstractRelic abstractRelic) {
         logger.info("Relic Acquired");
@@ -104,7 +98,6 @@ public class SlayTheRelicsExporter implements
     }
 
     private void check(AbstractRelic receivedRelic) {
-//        checkIfRunInProgress();
         broadcastRelics(receivedRelic);
 //        logger.info("login " + login);
 //        logger.info("secret " + secret);
@@ -186,21 +179,18 @@ public class SlayTheRelicsExporter implements
         })).start();
     }
 
-    private void checkIfRunInProgress() {
-        if (CardCrawlGame.isInARun()) {
-            logger.info("Run in progress");
-        } else {
-            logger.info("Run not in progress");
-        }
-    }
-
     @Override
     public void receivePostInitialize() {
         logger.info("Minty Spire is active.");
 
         ModPanel settingsPanel = new ModPanel();
 
-        BaseMod.registerModBadge(ImageMaster.loadImage("SlayTheRelicsExporterResources/img/modBadgeSmall.png"), "SlayTheRelics", "LordAddy", "TODO", settingsPanel);
+        BaseMod.registerModBadge(ImageMaster.loadImage(
+                "SlayTheRelicsExporterResources/img/ink_bottle.png"),
+                "Slay the Relics Exporter",
+                "LordAddy",
+                "This mod exports data to Slay the Relics Twitch extension. See the extension config on Twitch for setup instructions.",
+                settingsPanel);
     }
 
     @Override
