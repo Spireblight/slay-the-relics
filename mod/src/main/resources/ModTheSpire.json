@@ -3,7 +3,7 @@
   "name": "Slay the Relics Exporter",
   "author_list": ["LordAddy"],
   "description": "This mod exports data to Slay the Relics Twitch extension. See the extension config on Twitch for setup instructions.",
-  "version": "1.0",
+  "version": "1.0.0",
   "sts_version": "01-27-2020",
   "mts_version": "3.15.0",
   "dependencies": ["basemod"]
