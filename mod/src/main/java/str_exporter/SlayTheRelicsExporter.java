@@ -35,8 +35,8 @@ public class SlayTheRelicsExporter implements
     public static final Logger logger = LogManager.getLogger(SlayTheRelicsExporter.class.getName());
     public static final String MODID = "SlayTheRelicsExporter";
 
-    private static String login = "";
-    private static String secret = "";
+    private static String login = null;
+    private static String secret = null;
     private static String version = "";
 
 //    private static final String EBS_URL = "https://localhost:8080";
@@ -53,6 +53,10 @@ public class SlayTheRelicsExporter implements
     {
         logger.info("Slay The Relics Exporter initialized!");
         BaseMod.subscribe(this);
+    }
+
+    private static boolean areCredentialsValid() {
+        return login != null && secret != null;
     }
 
     public static String getVersion() {
@@ -84,28 +88,36 @@ public class SlayTheRelicsExporter implements
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        if (!areCredentialsValid()) {
+            logger.info("slaytherelics_config.txt wasn't loaded, check if it exists.");
+        }
     }
 
     public void relicPageChanged() {
         logger.info("Relic Page Changed");
-        check();
+        if (areCredentialsValid())
+            check();
     }
 
     @Override
     public void receiveRelicGet(AbstractRelic abstractRelic) {
         logger.info("Relic Acquired");
-        check(abstractRelic);
+        if (areCredentialsValid())
+            check(abstractRelic);
     }
 
     @Override
     public void receiveStartGame() {
         logger.info("Start Game received");
-        check();
+        if (areCredentialsValid())
+            check();
     }
 
     @Override
     public void receivePostCreateStartingRelics(AbstractPlayer.PlayerClass playerClass, ArrayList<String> arrayList) {
-        check();
+        if (areCredentialsValid())
+            check();
     }
 
     private void check() {
@@ -113,7 +125,11 @@ public class SlayTheRelicsExporter implements
     }
 
     private void check(AbstractRelic receivedRelic) {
-        broadcastRelics(receivedRelic);
+        if (areCredentialsValid()) {
+            broadcastRelics(receivedRelic);
+        } else {
+            logger.info("Either your secret or your login are null. The config file has probably not loaded properly");
+        }
     }
 
     private static String sanitize(String str) {
@@ -210,8 +226,6 @@ public class SlayTheRelicsExporter implements
 
     @Override
     public void receivePostInitialize() {
-        logger.info("Minty Spire is active.");
-
         ModPanel settingsPanel = new ModPanel();
 
         BaseMod.registerModBadge(ImageMaster.loadImage(
@@ -225,7 +239,8 @@ public class SlayTheRelicsExporter implements
     @Override
     public void receivePostUpdate() {
         if (System.currentTimeMillis() - lastBroadcast > MAX_BROADCAST_PERIOD_MILLIS) {
-            check();
+            if (areCredentialsValid())
+                check();
         }
     }
 }
