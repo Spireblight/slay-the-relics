@@ -3,6 +3,8 @@ package str_exporter;
 import basemod.BaseMod;
 import basemod.ModPanel;
 import basemod.interfaces.*;
+import com.evacipated.cardcrawl.modthespire.Loader;
+import com.evacipated.cardcrawl.modthespire.ModInfo;
 import com.evacipated.cardcrawl.modthespire.lib.SpireInitializer;
 import com.megacrit.cardcrawl.characters.AbstractPlayer;
 import com.megacrit.cardcrawl.core.CardCrawlGame;
@@ -31,9 +33,11 @@ public class SlayTheRelicsExporter implements
 {
 
     public static final Logger logger = LogManager.getLogger(SlayTheRelicsExporter.class.getName());
+    public static final String MODID = "SlayTheRelicsExporter";
 
     private static String login = "";
     private static String secret = "";
+    private static String version = "";
 
 //    private static final String EBS_URL = "https://localhost:8080";
     private static final String EBS_URL = "https://slaytherelics.xyz:8080";
@@ -41,8 +45,8 @@ public class SlayTheRelicsExporter implements
 
     private long lastBroadcast = System.currentTimeMillis();
     private String lastBroadcastJson = "";
-    private static final long MIN_SAME_BROADCAST_PERIOD_MILLIS = 10 * 1000;
-    private static final long MAX_BROADCAST_PERIOD_MILLIS = 30 * 1000;
+    private static final long MIN_SAME_BROADCAST_PERIOD_MILLIS = 5 * 1000;
+    private static final long MAX_BROADCAST_PERIOD_MILLIS = 20 * 1000;
     public static SlayTheRelicsExporter instance = null;
 
     public SlayTheRelicsExporter()
@@ -51,9 +55,20 @@ public class SlayTheRelicsExporter implements
         BaseMod.subscribe(this);
     }
 
+    public static String getVersion() {
+        for (ModInfo info : Loader.MODINFOS) {
+            if (info.ID.equals(MODID)) {
+                return info.ModVersion.toString();
+            }
+        }
+
+        return "unkwnown";
+    }
+
     public static void initialize()
     {
         logger.info("initialize() called!");
+        version = getVersion();
         instance = new SlayTheRelicsExporter();
 
         try {
@@ -99,8 +114,15 @@ public class SlayTheRelicsExporter implements
 
     private void check(AbstractRelic receivedRelic) {
         broadcastRelics(receivedRelic);
-//        logger.info("login " + login);
-//        logger.info("secret " + secret);
+    }
+
+    private static String sanitize(String str) {
+        return str.replace("\"", "\\\"");
+    }
+
+    private static String removeSecret(String str) {
+        String pattern = "\"secret\": \"[a-z0-9]*\"";
+        return str.replaceAll(pattern, "\"secret\": \"********************\"");
     }
 
     private void broadcastRelics(AbstractRelic receivedRelic) {
@@ -123,6 +145,7 @@ public class SlayTheRelicsExporter implements
         sb.append("{");
         sb.append("\"msg_type\": \"set_relics\", ");
         sb.append("\"streamer\": {\"login\": \"" + login + "\", \"secret\": \"" + secret + "\"}, ");
+        sb.append("\"meta\": {\"version\": \"" + version + "\"}, ");
         sb.append("\"message\": {");
         sb.append("\"relics\": [");
 
@@ -131,7 +154,7 @@ public class SlayTheRelicsExporter implements
 
         for (int i = first_index; i < last_index; i++) {
             AbstractRelic relic = relics.get(i);
-            sb.append("{\"name\": \"" + relic.name + "\", \"description\": \"" + relic.description + "\"}");
+            sb.append("{\"name\": \"" + sanitize(relic.name) + "\", \"description\": \"" + sanitize(relic.description) + "\"}");
 
             if (i < last_index - 1)
                 sb.append(", ");
@@ -141,7 +164,7 @@ public class SlayTheRelicsExporter implements
         sb.append("\"character\": \"" + character + "\"");
         sb.append("}}");
 
-        logger.info(sb.toString());
+        logger.info(removeSecret(sb.toString()));
         broadcastJson(sb.toString());
     }
 
