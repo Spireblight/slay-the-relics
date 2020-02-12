@@ -133,7 +133,14 @@ public class SlayTheRelicsExporter implements
     }
 
     private static String sanitize(String str) {
-        return str.replace("\"", "\\\"");
+        str = str.replace("\"", "\\\"");
+        str = str.replace("[R]", "[E]");
+        str = str.replace("[G]", "[E]");
+        str = str.replace("[B]", "[E]");
+        str = str.replace("[W]", "[E]");
+        str = str.replace("NL", "<br>");
+
+        return str;
     }
 
     private static String removeSecret(String str) {
@@ -170,7 +177,9 @@ public class SlayTheRelicsExporter implements
 
         for (int i = first_index; i < last_index; i++) {
             AbstractRelic relic = relics.get(i);
-            sb.append("{\"name\": \"" + sanitize(relic.name) + "\", \"description\": \"" + sanitize(relic.description) + "\"}");
+            String header = relic.tips.get(0).header;
+            String body = relic.tips.get(0).body;
+            sb.append("{\"name\": \"" + sanitize(header) + "\", \"description\": \"" + sanitize(body) + "\"}");
 
             if (i < last_index - 1)
                 sb.append(", ");
