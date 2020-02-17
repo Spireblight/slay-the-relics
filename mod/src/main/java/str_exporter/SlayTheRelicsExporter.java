@@ -7,9 +7,11 @@ import com.evacipated.cardcrawl.modthespire.Loader;
 import com.evacipated.cardcrawl.modthespire.ModInfo;
 import com.evacipated.cardcrawl.modthespire.lib.SpireInitializer;
 import com.megacrit.cardcrawl.characters.AbstractPlayer;
+import com.megacrit.cardcrawl.core.AbstractCreature;
 import com.megacrit.cardcrawl.core.CardCrawlGame;
 import com.megacrit.cardcrawl.helpers.ImageMaster;
 import com.megacrit.cardcrawl.potions.AbstractPotion;
+import com.megacrit.cardcrawl.powers.AbstractPower;
 import com.megacrit.cardcrawl.relics.AbstractRelic;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,7 +33,9 @@ public class SlayTheRelicsExporter implements
         StartGameSubscriber,
         PostCreateStartingRelicsSubscriber,
         PostInitializeSubscriber,
-        PostUpdateSubscriber
+        PostUpdateSubscriber,
+        OnPowersModifiedSubscriber,
+        PostPowerApplySubscriber
 {
 
     public static final Logger logger = LogManager.getLogger(SlayTheRelicsExporter.class.getName());
@@ -46,12 +50,13 @@ public class SlayTheRelicsExporter implements
     private static final int MAX_RELICS = 25;
 
     private long lastBroadcast = System.currentTimeMillis();
+    private long lastCheck = System.currentTimeMillis();
     private String lastBroadcastJson = "";
     private boolean checkNextUpdate = false;
     private JSONMessageBuilder json_builder;
 
-    private static final long MIN_SAME_BROADCAST_PERIOD_MILLIS = 5 * 1000;
     private static final long MAX_BROADCAST_PERIOD_MILLIS = 20 * 1000;
+    private static final long MAX_CHECK_PERIOD_MILLIS = 250;
     public static SlayTheRelicsExporter instance = null;
 
     public SlayTheRelicsExporter()
@@ -113,27 +118,24 @@ public class SlayTheRelicsExporter implements
     }
 
     private void broadcast() {
-        logger.info("broadcasting relics");
-
         long start = System.nanoTime();
         String json = json_builder.buildJson();
         long end = System.nanoTime();
-        logger.info("json builder took " + (end - start) / 1e6 + " milliseconds");
 
-        logger.info(removeSecret(json));
-        broadcastJson(json);
+        if (System.currentTimeMillis() - lastBroadcast > MAX_BROADCAST_PERIOD_MILLIS || !json.equals(lastBroadcastJson)) {
+            lastBroadcast = System.currentTimeMillis();
+            lastBroadcastJson = json;
+
+            logger.info("broadcasting relics");
+            logger.info("json builder took " + (end - start) / 1e6 + " milliseconds");
+            logger.info(removeSecret(json));
+            asyncBroadcastToBackend(json);
+        } else {
+//            logger.info("Aborting rapidly repeated broadcast");
+        }
     }
 
-    private void broadcastJson(String json) {
-
-        // prevent rapid repeated broadcasts
-        if (System.currentTimeMillis() - lastBroadcast < MIN_SAME_BROADCAST_PERIOD_MILLIS && json.equals(lastBroadcastJson)) {
-            logger.info("Aborting rapidly repeated broadcast");
-            return;
-        }
-
-        lastBroadcast = System.currentTimeMillis();
-        lastBroadcastJson = json;
+    private void asyncBroadcastToBackend(String json) {
 
         (new Thread(() -> {
             try {
@@ -161,6 +163,7 @@ public class SlayTheRelicsExporter implements
                 e.printStackTrace();
             }
         })).start();
+
     }
 
     @Override
@@ -176,10 +179,11 @@ public class SlayTheRelicsExporter implements
     }
 
     @Override
-    public void receivePostUpdate() {
-        if (checkNextUpdate || System.currentTimeMillis() - lastBroadcast > MAX_BROADCAST_PERIOD_MILLIS) {
-            if (areCredentialsValid())
-                check();
+    public void receivePostUpdate() { //System.currentTimeMillis() - lastBroadcast > MAX_BROADCAST_PERIOD_MILLIS
+        if (checkNextUpdate || System.currentTimeMillis() - lastCheck > MAX_CHECK_PERIOD_MILLIS) {
+
+            lastCheck = System.currentTimeMillis();
+            check();
 
             checkNextUpdate = false;
         }
@@ -204,13 +208,25 @@ public class SlayTheRelicsExporter implements
 
     @Override
     public void receiveStartGame() {
-        logger.info("Start Game received");
+        logger.info("StartGame received");
         queue_check();
     }
 
     @Override
     public void receivePostCreateStartingRelics(AbstractPlayer.PlayerClass playerClass, ArrayList<String> arrayList) {
         logger.info("PostCreateStartingRelics received");
+        queue_check();
+    }
+
+    @Override
+    public void receivePowersModified() {
+        logger.info("Powers modified");
+        queue_check();
+    }
+
+    @Override
+    public void receivePostPowerApplySubscriber(AbstractPower abstractPower, AbstractCreature abstractCreature, AbstractCreature abstractCreature1) {
+        logger.info("PostPowerApply received");
         queue_check();
     }
 

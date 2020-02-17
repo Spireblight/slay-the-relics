@@ -1,11 +1,18 @@
 package str_exporter;
 
+import com.megacrit.cardcrawl.characters.AbstractPlayer;
 import com.megacrit.cardcrawl.core.CardCrawlGame;
+import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
 import com.megacrit.cardcrawl.helpers.PowerTip;
+import com.megacrit.cardcrawl.monsters.AbstractMonster;
 import com.megacrit.cardcrawl.potions.AbstractPotion;
+import com.megacrit.cardcrawl.powers.AbstractPower;
 import com.megacrit.cardcrawl.relics.AbstractRelic;
+import com.megacrit.cardcrawl.rooms.MonsterRoom;
 
+import javax.smartcardio.Card;
 import java.util.ArrayList;
+import java.util.Locale;
 
 public class JSONMessageBuilder {
 
@@ -38,6 +45,10 @@ public class JSONMessageBuilder {
 
         sb.append("\"character\": \"" + character + "\", ");
 
+        sb.append("\"characters\": ");
+        buildCharacters(sb);
+        sb.append(", ");
+
         sb.append("\"potions\": ");
         buildPotions(sb);
         sb.append(", ");
@@ -52,6 +63,93 @@ public class JSONMessageBuilder {
         sb.append("}}");
 
         return sb.toString();
+    }
+
+    private void buildCharacters(StringBuilder sb) {
+        sb.append('[');
+        if (CardCrawlGame.isInARun() && CardCrawlGame.dungeon != null && CardCrawlGame.dungeon.player != null &&
+                CardCrawlGame.dungeon.currMapNode.room instanceof MonsterRoom) {
+
+            ArrayList<AbstractMonster> monsters = getMonsters();
+
+            buildPlayer(sb);
+
+            if (monsters.size() > 0)
+                sb.append(", ");
+
+            buildMonsters(sb, monsters);
+        }
+        sb.append(']');
+    }
+
+    private void buildPlayer(StringBuilder sb) {
+
+        AbstractPlayer player = CardCrawlGame.dungeon.player;
+
+        float x = player.hb.x / 19.20f;
+        float y = player.hb.y / 10.80f;
+        float w = player.hb.width / 19.20f;
+        float h = (player.hb.height + player.healthHb.height) / 10.80f;
+        sb.append(String.format(Locale.US, "{\"hitbox\": {\"x\": %f, \"y\": %f, \"w\": %f, \"h\": %f}, ", x, y, w, h));
+
+        sb.append("\"power_tips\": ");
+        ArrayList<PowerTip> tipsPrefix = new ArrayList<>();
+        if (!player.stance.ID.equals("Neutral")) {
+            tipsPrefix.add(new PowerTip(player.stance.name, player.stance.description));
+        }
+        buildPowers(sb, player.powers, tipsPrefix);
+        sb.append('}');
+    }
+
+    private ArrayList<AbstractMonster> getMonsters() {
+        ArrayList<AbstractMonster> monsters =  AbstractDungeon.getMonsters().monsters;
+        monsters.removeIf(q -> q.isDying || q.isDeadOrEscaped());
+        return monsters;
+    }
+
+    private void buildMonsters(StringBuilder sb, ArrayList<AbstractMonster> monsters) {
+
+        for (int i = 0; i < monsters.size(); i++) {
+            AbstractMonster monster = monsters.get(i);
+
+            float x = monster.hb.x / 19.20f;
+            float y = monster.hb.y / 10.80f;
+            float w = monster.hb.width / 19.20f;
+            float h = (monster.hb.height + monster.healthHb.height) / 10.80f;
+            sb.append(String.format(Locale.US, "{\"hitbox\": {\"x\": %f, \"y\": %f, \"w\": %f, \"h\": %f}, ", x, y, w, h));
+
+            sb.append("\"power_tips\": ");
+            buildPowers(sb, monster.powers);
+            sb.append('}');
+
+            if (i < monsters.size() - 1)
+                sb.append(", ");
+        }
+    }
+
+    private void buildPowers(StringBuilder sb, ArrayList<AbstractPower> powers) {
+        buildPowers(sb, powers, new ArrayList<>());
+    }
+
+    private void buildPowers(StringBuilder sb, ArrayList<AbstractPower> powers, ArrayList<PowerTip> tipsPrefix) {
+        ArrayList<PowerTip> tips = (ArrayList<PowerTip>) tipsPrefix.clone();
+        for (AbstractPower p: powers) {
+            if (p.region48 != null) {
+                tips.add(new PowerTip(p.name, p.description, p.region48));
+            } else {
+                tips.add(new PowerTip(p.name, p.description));
+            }
+        }
+
+        sb.append('[');
+        for (int i = 0; i < tips.size(); i++) {
+            PowerTip tip = tips.get(i);
+            sb.append(getPowerTipIndex(tip));
+
+            if (i < tips.size() - 1)
+                sb.append(", ");
+        }
+        sb.append(']');
     }
 
     private void buildPotions(StringBuilder sb) {
@@ -124,9 +222,7 @@ public class JSONMessageBuilder {
     private void buildPowerTips(StringBuilder sb) {
         sb.append('[');
         for (int i = 0; i < powerTips.size(); i++) {
-            sb.append('"');
             sb.append(powerTips.get(i));
-            sb.append('"');
 
             if (i < powerTips.size() - 1)
                 sb.append(", ");
