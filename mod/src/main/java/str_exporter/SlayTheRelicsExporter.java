@@ -9,6 +9,7 @@ import com.evacipated.cardcrawl.modthespire.lib.SpireInitializer;
 import com.megacrit.cardcrawl.characters.AbstractPlayer;
 import com.megacrit.cardcrawl.core.CardCrawlGame;
 import com.megacrit.cardcrawl.helpers.ImageMaster;
+import com.megacrit.cardcrawl.potions.AbstractPotion;
 import com.megacrit.cardcrawl.relics.AbstractRelic;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 @SpireInitializer
 public class SlayTheRelicsExporter implements
         RelicGetSubscriber,
+        PotionGetSubscriber,
         StartGameSubscriber,
         PostCreateStartingRelicsSubscriber,
         PostInitializeSubscriber,
@@ -45,12 +47,16 @@ public class SlayTheRelicsExporter implements
 
     private long lastBroadcast = System.currentTimeMillis();
     private String lastBroadcastJson = "";
+    private boolean checkNextUpdate = false;
+    private JSONMessageBuilder json_builder;
+
     private static final long MIN_SAME_BROADCAST_PERIOD_MILLIS = 5 * 1000;
     private static final long MAX_BROADCAST_PERIOD_MILLIS = 20 * 1000;
     public static SlayTheRelicsExporter instance = null;
 
     public SlayTheRelicsExporter()
     {
+        json_builder = new JSONMessageBuilder(login, secret, version);
         logger.info("Slay The Relics Exporter initialized!");
         BaseMod.subscribe(this);
     }
@@ -73,8 +79,6 @@ public class SlayTheRelicsExporter implements
     {
         logger.info("initialize() called!");
         version = getVersion();
-        instance = new SlayTheRelicsExporter();
-
         try {
 
             String data = new String(Files.readAllBytes(Paths.get("slaytherelics_config.txt")));
@@ -92,107 +96,33 @@ public class SlayTheRelicsExporter implements
         if (!areCredentialsValid()) {
             logger.info("slaytherelics_config.txt wasn't loaded, check if it exists.");
         }
+
+        instance = new SlayTheRelicsExporter();
     }
 
-    public void relicPageChanged() {
-        logger.info("Relic Page Changed");
-        if (areCredentialsValid())
-            check();
-    }
-
-    @Override
-    public void receiveRelicGet(AbstractRelic abstractRelic) {
-        logger.info("Relic Acquired");
-        if (areCredentialsValid())
-            check(abstractRelic);
-    }
-
-    @Override
-    public void receiveStartGame() {
-        logger.info("Start Game received");
-        if (areCredentialsValid())
-            check();
-    }
-
-    @Override
-    public void receivePostCreateStartingRelics(AbstractPlayer.PlayerClass playerClass, ArrayList<String> arrayList) {
-        if (areCredentialsValid())
-            check();
+    private void queue_check() {
+        checkNextUpdate = true;
     }
 
     private void check() {
-        check(null);
-    }
-
-    private void check(AbstractRelic receivedRelic) {
         if (areCredentialsValid()) {
-            broadcastRelics(receivedRelic);
+            broadcast();
         } else {
             logger.info("Either your secret or your login are null. The config file has probably not loaded properly");
         }
     }
 
-    private static String sanitize(String str) {
-        str = str.replace("\"", "\\\"");
-        str = str.replace("[R]", "[E]");
-        str = str.replace("[G]", "[E]");
-        str = str.replace("[B]", "[E]");
-        str = str.replace("[W]", "[E]");
-        str = str.replace("NL", "<br>");
-
-        return str;
-    }
-
-    private static String removeSecret(String str) {
-        String pattern = "\"secret\": \"[a-z0-9]*\"";
-        return str.replaceAll(pattern, "\"secret\": \"********************\"");
-    }
-
-    private void broadcastRelics(AbstractRelic receivedRelic) {
+    private void broadcast() {
         logger.info("broadcasting relics");
 
-        int pageId = AbstractRelic.relicPage; // send over relic page ID
-        ArrayList<AbstractRelic> relics = new ArrayList<>(); // send over relics
+        long start = System.nanoTime();
+        String json = json_builder.buildJson();
+        long end = System.nanoTime();
+        logger.info("json builder took " + (end - start) / 1e6 + " milliseconds");
 
-        String character = "";
-
-        if (CardCrawlGame.isInARun() && CardCrawlGame.dungeon != null && CardCrawlGame.dungeon.player != null) {
-            relics = (ArrayList<AbstractRelic>) CardCrawlGame.dungeon.player.relics.clone();
-            if (receivedRelic != null) {
-                relics.add(receivedRelic);
-            }
-            character = CardCrawlGame.dungeon.player.getClass().getSimpleName();
-        }
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("{");
-        sb.append("\"msg_type\": \"set_relics\", ");
-        sb.append("\"streamer\": {\"login\": \"" + login + "\", \"secret\": \"" + secret + "\"}, ");
-        sb.append("\"meta\": {\"version\": \"" + version + "\"}, ");
-        sb.append("\"message\": {");
-        sb.append("\"relics\": [");
-
-        int first_index = pageId * MAX_RELICS;
-        int last_index = Math.min((pageId + 1) * MAX_RELICS, relics.size());
-
-        for (int i = first_index; i < last_index; i++) {
-            AbstractRelic relic = relics.get(i);
-            String header = relic.tips.get(0).header;
-            String body = relic.tips.get(0).body;
-            sb.append("{\"name\": \"" + sanitize(header) + "\", \"description\": \"" + sanitize(body) + "\"}");
-
-            if (i < last_index - 1)
-                sb.append(", ");
-        }
-        sb.append("], ");
-        sb.append("\"is_relics_multipage\": \"" + (relics.size() > MAX_RELICS) + "\", ");
-        sb.append("\"character\": \"" + character + "\"");
-        sb.append("}}");
-
-        logger.info(removeSecret(sb.toString()));
-        broadcastJson(sb.toString());
+        logger.info(removeSecret(json));
+        broadcastJson(json);
     }
-
 
     private void broadcastJson(String json) {
 
@@ -247,9 +177,45 @@ public class SlayTheRelicsExporter implements
 
     @Override
     public void receivePostUpdate() {
-        if (System.currentTimeMillis() - lastBroadcast > MAX_BROADCAST_PERIOD_MILLIS) {
+        if (checkNextUpdate || System.currentTimeMillis() - lastBroadcast > MAX_BROADCAST_PERIOD_MILLIS) {
             if (areCredentialsValid())
                 check();
+
+            checkNextUpdate = false;
         }
+    }
+
+    public void relicPageChanged() {
+        logger.info("Relic Page Changed");
+        queue_check();
+    }
+
+    @Override
+    public void receiveRelicGet(AbstractRelic abstractRelic) {
+        logger.info("Relic Acquired");
+        queue_check();
+    }
+
+    @Override
+    public void receivePotionGet(AbstractPotion abstractPotion) {
+        logger.info("Potion Acquired");
+        queue_check();
+    }
+
+    @Override
+    public void receiveStartGame() {
+        logger.info("Start Game received");
+        queue_check();
+    }
+
+    @Override
+    public void receivePostCreateStartingRelics(AbstractPlayer.PlayerClass playerClass, ArrayList<String> arrayList) {
+        logger.info("PostCreateStartingRelics received");
+        queue_check();
+    }
+
+    private static String removeSecret(String str) {
+        String pattern = "\"secret\": \"[a-z0-9]*\"";
+        return str.replaceAll(pattern, "\"secret\": \"********************\"");
     }
 }
