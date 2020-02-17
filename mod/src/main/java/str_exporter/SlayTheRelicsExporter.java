@@ -40,7 +40,7 @@ public class SlayTheRelicsExporter implements
     private static String version = "";
 
 //    private static final String EBS_URL = "https://localhost:8080";
-    private static final String EBS_URL = "https://slaytherelics.xyz:8080";
+    private static final String EBS_URL = "https://slaytherelics.xyz:8081";
     private static final int MAX_RELICS = 25;
 
     private long lastBroadcast = System.currentTimeMillis();
