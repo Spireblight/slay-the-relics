@@ -1,5 +1,6 @@
 package str_exporter;
 
+import basemod.ReflectionHacks;
 import com.megacrit.cardcrawl.characters.AbstractPlayer;
 import com.megacrit.cardcrawl.core.CardCrawlGame;
 import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
@@ -119,7 +120,12 @@ public class JSONMessageBuilder {
             sb.append(String.format(Locale.US, "{\"hitbox\": {\"x\": %f, \"y\": %f, \"w\": %f, \"h\": %f}, ", x, y, w, h));
 
             sb.append("\"power_tips\": ");
-            buildPowers(sb, monster.powers);
+            ArrayList<PowerTip> tipsPrefix = new ArrayList<>();
+            if (monster.intentAlphaTarget == 1.0F && !AbstractDungeon.player.hasRelic("Runic Dome") && monster.intent != AbstractMonster.Intent.NONE) {
+                PowerTip intentTip = (PowerTip) ReflectionHacks.getPrivate(monster, AbstractMonster.class, "intentTip");
+                tipsPrefix.add(intentTip);
+            }
+            buildPowers(sb, monster.powers, tipsPrefix);
             sb.append('}');
 
             if (i < monsters.size() - 1)
