@@ -3,6 +3,7 @@ package str_exporter;
 import basemod.ReflectionHacks;
 import com.megacrit.cardcrawl.characters.AbstractPlayer;
 import com.megacrit.cardcrawl.core.CardCrawlGame;
+import com.megacrit.cardcrawl.core.Settings;
 import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
 import com.megacrit.cardcrawl.helpers.PowerTip;
 import com.megacrit.cardcrawl.monsters.AbstractMonster;
@@ -10,6 +11,7 @@ import com.megacrit.cardcrawl.potions.AbstractPotion;
 import com.megacrit.cardcrawl.powers.AbstractPower;
 import com.megacrit.cardcrawl.relics.AbstractRelic;
 import com.megacrit.cardcrawl.rooms.MonsterRoom;
+import com.megacrit.cardcrawl.ui.panels.TopPanel;
 
 import javax.smartcardio.Card;
 import java.util.ArrayList;
@@ -46,17 +48,23 @@ public class JSONMessageBuilder {
 
         sb.append("\"character\": \"" + character + "\", ");
 
-        sb.append("\"characters\": ");
-        buildCharacters(sb);
+        sb.append("\"relics\": ");
+        buildRelics(sb);
         sb.append(", ");
 
         sb.append("\"potions\": ");
         buildPotions(sb);
         sb.append(", ");
 
-        sb.append("\"relics\": ");
-        buildRelics(sb);
-        sb.append(", ");
+        if (isInMonsterRoom()) {
+            sb.append("\"player_powers\": ");
+            buildPlayerPowers(sb);
+            sb.append(", ");
+
+            sb.append("\"monster_powers\": ");
+            buildMonsterPowers(sb);
+            sb.append(", ");
+        }
 
         sb.append("\"power_tips\": ");
         buildPowerTips(sb);
@@ -66,24 +74,7 @@ public class JSONMessageBuilder {
         return sb.toString();
     }
 
-    private void buildCharacters(StringBuilder sb) {
-        sb.append('[');
-        if (CardCrawlGame.isInARun() && CardCrawlGame.dungeon != null && CardCrawlGame.dungeon.player != null &&
-                CardCrawlGame.dungeon.currMapNode.room instanceof MonsterRoom) {
-
-            ArrayList<AbstractMonster> monsters = getMonsters();
-
-            buildPlayer(sb);
-
-            if (monsters.size() > 0)
-                sb.append(", ");
-
-            buildMonsters(sb, monsters);
-        }
-        sb.append(']');
-    }
-
-    private void buildPlayer(StringBuilder sb) {
+    private void buildPlayerPowers(StringBuilder sb) {
 
         AbstractPlayer player = CardCrawlGame.dungeon.player;
 
@@ -102,14 +93,10 @@ public class JSONMessageBuilder {
         sb.append('}');
     }
 
-    private ArrayList<AbstractMonster> getMonsters() {
-        ArrayList<AbstractMonster> monsters =  AbstractDungeon.getMonsters().monsters;
-        monsters.removeIf(q -> q.isDying || q.isDeadOrEscaped());
-        return monsters;
-    }
+    private void buildMonsterPowers(StringBuilder sb) {
+        ArrayList<AbstractMonster> monsters = getMonsters();
 
-    private void buildMonsters(StringBuilder sb, ArrayList<AbstractMonster> monsters) {
-
+        sb.append('[');
         for (int i = 0; i < monsters.size(); i++) {
             AbstractMonster monster = monsters.get(i);
 
@@ -131,10 +118,7 @@ public class JSONMessageBuilder {
             if (i < monsters.size() - 1)
                 sb.append(", ");
         }
-    }
-
-    private void buildPowers(StringBuilder sb, ArrayList<AbstractPower> powers) {
-        buildPowers(sb, powers, new ArrayList<>());
+        sb.append(']');
     }
 
     private void buildPowers(StringBuilder sb, ArrayList<AbstractPower> powers, ArrayList<PowerTip> tipsPrefix) {
@@ -160,7 +144,7 @@ public class JSONMessageBuilder {
 
     private void buildPotions(StringBuilder sb) {
 
-        sb.append('[');
+        sb.append("{\"potion_x\": " + (int) (TopPanel.potionX / Settings.scale) + ", \"items\": [");
         if (CardCrawlGame.isInARun() && CardCrawlGame.dungeon != null && CardCrawlGame.dungeon.player != null) {
             ArrayList<AbstractPotion> potions = CardCrawlGame.dungeon.player.potions;
 
@@ -171,7 +155,7 @@ public class JSONMessageBuilder {
                     sb.append(", ");
             }
         }
-        sb.append(']');
+        sb.append("]}");
     }
 
     private void buildPotion(StringBuilder sb, AbstractPotion potion) {
@@ -281,5 +265,14 @@ public class JSONMessageBuilder {
         return str;
     }
 
+    private boolean isInMonsterRoom() {
+        return CardCrawlGame.isInARun() && CardCrawlGame.dungeon != null && CardCrawlGame.dungeon.player != null &&
+                CardCrawlGame.dungeon.currMapNode != null && CardCrawlGame.dungeon.currMapNode.room instanceof MonsterRoom;
+    }
 
+    private ArrayList<AbstractMonster> getMonsters() {
+        ArrayList<AbstractMonster> monsters = (ArrayList<AbstractMonster>) AbstractDungeon.getMonsters().monsters.clone();
+        monsters.removeIf(q -> q.isDying || q.isDeadOrEscaped());
+        return monsters;
+    }
 }
