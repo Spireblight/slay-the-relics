@@ -8,7 +8,6 @@ import com.evacipated.cardcrawl.modthespire.ModInfo;
 import com.evacipated.cardcrawl.modthespire.lib.SpireInitializer;
 import com.megacrit.cardcrawl.characters.AbstractPlayer;
 import com.megacrit.cardcrawl.core.AbstractCreature;
-import com.megacrit.cardcrawl.core.CardCrawlGame;
 import com.megacrit.cardcrawl.helpers.ImageMaster;
 import com.megacrit.cardcrawl.potions.AbstractPotion;
 import com.megacrit.cardcrawl.powers.AbstractPower;
@@ -16,12 +15,6 @@ import com.megacrit.cardcrawl.relics.AbstractRelic;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -45,23 +38,21 @@ public class SlayTheRelicsExporter implements
     private static String secret = null;
     private static String version = "";
 
-//    private static final String EBS_URL = "https://localhost:8080";
-    private static final String EBS_URL = "https://slaytherelics.xyz:8081";
-    private static final int MAX_RELICS = 25;
-
     private long lastBroadcast = System.currentTimeMillis();
     private long lastCheck = System.currentTimeMillis();
     private String lastBroadcastJson = "";
     private boolean checkNextUpdate = false;
     private JSONMessageBuilder json_builder;
 
-    private static final long MAX_BROADCAST_PERIOD_MILLIS = 20 * 1000;
+    private static final long MAX_BROADCAST_PERIOD_MILLIS = 3 * 1000;
     private static final long MAX_CHECK_PERIOD_MILLIS = 250;
     public static SlayTheRelicsExporter instance = null;
 
     public SlayTheRelicsExporter()
     {
         json_builder = new JSONMessageBuilder(login, secret, version);
+        BackendBroadcaster.start();
+
         logger.info("Slay The Relics Exporter initialized!");
         BaseMod.subscribe(this);
     }
@@ -118,52 +109,28 @@ public class SlayTheRelicsExporter implements
     }
 
     private void broadcast() {
+
         long start = System.nanoTime();
         String json = json_builder.buildJson();
         long end = System.nanoTime();
 
+        long start_equals = System.nanoTime();
         if (System.currentTimeMillis() - lastBroadcast > MAX_BROADCAST_PERIOD_MILLIS || !json.equals(lastBroadcastJson)) {
+            long end_equals = System.nanoTime();
             lastBroadcast = System.currentTimeMillis();
             lastBroadcastJson = json;
 
+            long start_broadcast = System.nanoTime();
+            BackendBroadcaster.queueMessage(json);
+            long end_broadcast = System.nanoTime();
             logger.info("broadcasting relics");
             logger.info("json builder took " + (end - start) / 1e6 + " milliseconds");
+            logger.info("json string comparison took " + (end_equals - start_equals) / 1e6 + " milliseconds");
+            logger.info("adding to broadcast queue took " + (end_broadcast - start_broadcast) / 1e6 + " milliseconds");
             logger.info(removeSecret(json));
-            asyncBroadcastToBackend(json);
         } else {
 //            logger.info("Aborting rapidly repeated broadcast");
         }
-    }
-
-    private void asyncBroadcastToBackend(String json) {
-
-        (new Thread(() -> {
-            try {
-
-                URL url = new URL(EBS_URL);
-                HttpURLConnection con = (HttpURLConnection) url.openConnection();
-                con.setRequestMethod("POST");
-                con.setRequestProperty("Content-Type", "application/json");  //; utf-8
-                con.setRequestProperty("Accept", "application/json");
-                con.setDoOutput(true);
-
-                OutputStream os = con.getOutputStream();
-                byte[] input = json.getBytes(StandardCharsets.UTF_8);
-                os.write(input, 0, input.length);
-
-                BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8));
-                StringBuilder response = new StringBuilder();
-                String responseLine;
-                while ((responseLine = br.readLine()) != null) {
-                    response.append(responseLine.trim());
-                }
-                logger.info("response: " + response.toString());
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        })).start();
-
     }
 
     @Override
