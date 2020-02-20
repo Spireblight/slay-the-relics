@@ -16,8 +16,8 @@ public class BackendBroadcaster {
 
     public static final Logger logger = LogManager.getLogger(BackendBroadcaster.class.getName());
 
-    private static final String EBS_URL = "https://localhost:8081";
-//    private static final String EBS_URL = "https://slaytherelics.xyz:8081";
+//    private static final String EBS_URL = "https://localhost:8081";
+    private static final String EBS_URL = "https://slaytherelics.xyz:8081";
 
     private static final long CHECK_QUEUE_PERIOD_MILLIS = 100;
     private static BackendBroadcaster instance = new BackendBroadcaster();
@@ -70,6 +70,12 @@ public class BackendBroadcaster {
             queueLock.unlock();
             if (!msg.isEmpty()) {
                 broadcastMessage(msg);
+
+                try {
+                    Thread.sleep(950);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -94,7 +100,8 @@ public class BackendBroadcaster {
             while ((responseLine = br.readLine()) != null) {
                 response.append(responseLine.trim());
             }
-            logger.info("response: " + response.toString());
+            logger.info(msg);
+            logger.info("broadcasted message, response: " + response.toString());
 
         } catch (Exception e) {
             e.printStackTrace();

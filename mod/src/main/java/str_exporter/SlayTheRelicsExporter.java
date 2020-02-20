@@ -44,7 +44,7 @@ public class SlayTheRelicsExporter implements
     private boolean checkNextUpdate = false;
     private JSONMessageBuilder json_builder;
 
-    private static final long MAX_BROADCAST_PERIOD_MILLIS = 3 * 1000;
+//    private static final long MAX_BROADCAST_PERIOD_MILLIS = 250;
     private static final long MAX_CHECK_PERIOD_MILLIS = 250;
     public static SlayTheRelicsExporter instance = null;
 
@@ -115,22 +115,22 @@ public class SlayTheRelicsExporter implements
         long end = System.nanoTime();
 
         long start_equals = System.nanoTime();
-        if (System.currentTimeMillis() - lastBroadcast > MAX_BROADCAST_PERIOD_MILLIS || !json.equals(lastBroadcastJson)) {
-            long end_equals = System.nanoTime();
-            lastBroadcast = System.currentTimeMillis();
-            lastBroadcastJson = json;
+//        if (System.currentTimeMillis() - lastBroadcast > MAX_BROADCAST_PERIOD_MILLIS || !json.equals(lastBroadcastJson)) {
+        long end_equals = System.nanoTime();
+        lastBroadcast = System.currentTimeMillis();
+        lastBroadcastJson = json;
 
-            long start_broadcast = System.nanoTime();
-            BackendBroadcaster.queueMessage(json);
-            long end_broadcast = System.nanoTime();
-            logger.info("broadcasting relics");
-            logger.info("json builder took " + (end - start) / 1e6 + " milliseconds");
-            logger.info("json string comparison took " + (end_equals - start_equals) / 1e6 + " milliseconds");
-            logger.info("adding to broadcast queue took " + (end_broadcast - start_broadcast) / 1e6 + " milliseconds");
-            logger.info(removeSecret(json));
-        } else {
-//            logger.info("Aborting rapidly repeated broadcast");
-        }
+        long start_broadcast = System.nanoTime();
+        BackendBroadcaster.queueMessage(json);
+        long end_broadcast = System.nanoTime();
+//        logger.info("broadcasting relics");
+        logger.info("json builder took " + (end - start) / 1e6 + " milliseconds");
+        logger.info("json string comparison took " + (end_equals - start_equals) / 1e6 + " milliseconds");
+        logger.info("adding to broadcast queue took " + (end_broadcast - start_broadcast) / 1e6 + " milliseconds");
+        logger.info(removeSecret(json));
+//        } else {
+////            logger.info("Aborting rapidly repeated broadcast");
+//        }
     }
 
     @Override
