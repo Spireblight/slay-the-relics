@@ -125,14 +125,27 @@ public class JSONMessageBuilder {
         sb.append(']');
     }
 
+    private static PowerTip createPowerTip(AbstractPower p) {
+        PowerTip tip;
+        if (p.region48 != null) {
+            tip = new PowerTip(p.name, p.description, p.region48);
+        } else {
+            tip = new PowerTip(p.name, p.description);
+        }
+
+        String modName = WhatMod.findModName(p.getClass());
+
+        if (WhatMod.enabled && modName != null) {
+            tip.body = FontHelper.colorString(modName, "p") + " NL " + tip.body;
+        }
+
+        return tip;
+    }
+
     private void buildPowers(StringBuilder sb, ArrayList<AbstractPower> powers, ArrayList<PowerTip> tipsPrefix) {
         ArrayList<PowerTip> tips = (ArrayList<PowerTip>) tipsPrefix.clone();
         for (AbstractPower p: powers) {
-            if (p.region48 != null) {
-                tips.add(new PowerTip(p.name, p.description, p.region48));
-            } else {
-                tips.add(new PowerTip(p.name, p.description));
-            }
+            tips.add(createPowerTip(p));
         }
 
         sb.append('[');
@@ -226,8 +239,10 @@ public class JSONMessageBuilder {
 
     private int getPowerTipIndex(PowerTip tip) {
         String tipStr = "";
-        if (tip.imgRegion != null) {
-            tipStr = powerTipJson(tip.header, tip.body, tip.imgRegion.name);
+        if (tip.imgRegion != null && tip.imgRegion.name != null) {
+            tipStr = powerTipJson(tip.header, tip.body, "powers/" + tip.imgRegion.name);
+        } else if(tip.img != null) {
+            tipStr = powerTipJson(tip.header, tip.body, getImageCode(tip.img));
         } else {
             tipStr = powerTipJson(tip.header, tip.body);
         }
@@ -239,6 +254,30 @@ public class JSONMessageBuilder {
         }
 
         return index;
+    }
+
+    private static String getImageCode(Texture img) {
+        if (img.equals(ImageMaster.INTENT_ATK_TIP_1)) return "intents/tip/1";
+        if (img.equals(ImageMaster.INTENT_ATK_TIP_2)) return "intents/tip/2";
+        if (img.equals(ImageMaster.INTENT_ATK_TIP_3)) return "intents/tip/3";
+        if (img.equals(ImageMaster.INTENT_ATK_TIP_4)) return "intents/tip/4";
+        if (img.equals(ImageMaster.INTENT_ATK_TIP_5)) return "intents/tip/5";
+        if (img.equals(ImageMaster.INTENT_ATK_TIP_6)) return "intents/tip/6";
+        if (img.equals(ImageMaster.INTENT_ATK_TIP_7)) return "intents/tip/7";
+        if (img.equals(ImageMaster.INTENT_BUFF)) return "intents/buff1";
+        if (img.equals(ImageMaster.INTENT_DEBUFF)) return "intents/debuff1";
+        if (img.equals(ImageMaster.INTENT_DEBUFF2)) return "intents/debuff2";
+        if (img.equals(ImageMaster.INTENT_DEFEND)) return "intents/defend";
+        if (img.equals(ImageMaster.INTENT_DEFEND_BUFF)) return "intents/defendBuff";
+        if (img.equals(ImageMaster.INTENT_ESCAPE)) return "intents/escape";
+        if (img.equals(ImageMaster.INTENT_MAGIC)) return "intents/magic";
+        if (img.equals(ImageMaster.INTENT_SLEEP)) return "intents/sleep";
+        if (img.equals(ImageMaster.INTENT_STUN)) return "intents/stun";
+        if (img.equals(ImageMaster.INTENT_UNKNOWN)) return "intents/unknown";
+        if (img.equals(ImageMaster.INTENT_ATTACK_BUFF)) return "intents/attackBuff";
+        if (img.equals(ImageMaster.INTENT_ATTACK_DEBUFF)) return "intents/attackDebuff";
+        if (img.equals(ImageMaster.INTENT_ATTACK_DEFEND)) return "intents/attackDefend";
+        return "placeholder";
     }
 
     private static String powerTipJson(String header, String body) {
