@@ -60,7 +60,7 @@ public class JSONMessageBuilder {
         buildPotions(sb);
         sb.append(", ");
 
-        if (isInMonsterRoom()) {
+        if (isInCombat()) {
             sb.append("\"player_powers\": ");
             buildPlayerPowers(sb);
             sb.append(", ");
@@ -259,6 +259,9 @@ public class JSONMessageBuilder {
     }
 
     private static String sanitize(String str) {
+        if (str == null)
+            return "";
+
         str = str.replace("\"", "\\\"");
         str = str.replace("[R]", "[E]");
         str = str.replace("[G]", "[E]");
@@ -269,9 +272,10 @@ public class JSONMessageBuilder {
         return str;
     }
 
-    private boolean isInMonsterRoom() {
+    private boolean isInCombat() {
         return CardCrawlGame.isInARun() && CardCrawlGame.dungeon != null && CardCrawlGame.dungeon.player != null &&
-                CardCrawlGame.dungeon.currMapNode != null && CardCrawlGame.dungeon.currMapNode.room instanceof MonsterRoom;
+                CardCrawlGame.dungeon.currMapNode != null &&
+                CardCrawlGame.dungeon.getCurrRoom().phase == AbstractRoom.RoomPhase.COMBAT;
     }
 
     private ArrayList<AbstractMonster> getMonsters() {
