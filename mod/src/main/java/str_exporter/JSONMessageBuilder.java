@@ -1,19 +1,23 @@
 package str_exporter;
 
 import basemod.ReflectionHacks;
+import basemod.patches.whatmod.WhatMod;
+import com.badlogic.gdx.graphics.Texture;
 import com.megacrit.cardcrawl.characters.AbstractPlayer;
 import com.megacrit.cardcrawl.core.CardCrawlGame;
 import com.megacrit.cardcrawl.core.Settings;
 import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
+import com.megacrit.cardcrawl.helpers.FontHelper;
+import com.megacrit.cardcrawl.helpers.ImageMaster;
 import com.megacrit.cardcrawl.helpers.PowerTip;
 import com.megacrit.cardcrawl.monsters.AbstractMonster;
 import com.megacrit.cardcrawl.potions.AbstractPotion;
 import com.megacrit.cardcrawl.powers.AbstractPower;
 import com.megacrit.cardcrawl.relics.AbstractRelic;
+import com.megacrit.cardcrawl.rooms.AbstractRoom;
 import com.megacrit.cardcrawl.rooms.MonsterRoom;
 import com.megacrit.cardcrawl.ui.panels.TopPanel;
 
-import javax.smartcardio.Card;
 import java.util.ArrayList;
 import java.util.Locale;
 
@@ -78,10 +82,10 @@ public class JSONMessageBuilder {
 
         AbstractPlayer player = CardCrawlGame.dungeon.player;
 
-        float x = player.hb.x / 19.20f;
-        float y = player.hb.y / 10.80f;
-        float w = player.hb.width / 19.20f;
-        float h = (player.hb.height + player.healthHb.height) / 10.80f;
+        float x = player.hb.x / Settings.WIDTH * 100f;
+        float y = (Settings.HEIGHT - player.hb.y - player.hb.height)  / Settings.HEIGHT* 100f; // invert the y-coordinate
+        float w = player.hb.width / Settings.WIDTH * 100f;
+        float h = (player.hb.height + player.healthHb.height)  / Settings.HEIGHT * 100f;
         sb.append(String.format(Locale.US, "{\"hitbox\": {\"x\": %f, \"y\": %f, \"w\": %f, \"h\": %f}, ", x, y, w, h));
 
         sb.append("\"power_tips\": ");
@@ -100,10 +104,10 @@ public class JSONMessageBuilder {
         for (int i = 0; i < monsters.size(); i++) {
             AbstractMonster monster = monsters.get(i);
 
-            float x = monster.hb.x / 19.20f;
-            float y = monster.hb.y / 10.80f;
-            float w = monster.hb.width / 19.20f;
-            float h = (monster.hb.height + monster.healthHb.height) / 10.80f;
+            float x = monster.hb.x / Settings.WIDTH * 100f;
+            float y = (Settings.HEIGHT - monster.hb.y - monster.hb.height)  / Settings.HEIGHT* 100f; // invert the y-coordinate
+            float w = monster.hb.width / Settings.WIDTH * 100f;
+            float h = (monster.hb.height + monster.healthHb.height)  / Settings.HEIGHT * 100f;
             sb.append(String.format(Locale.US, "{\"hitbox\": {\"x\": %f, \"y\": %f, \"w\": %f, \"h\": %f}, ", x, y, w, h));
 
             sb.append("\"power_tips\": ");
