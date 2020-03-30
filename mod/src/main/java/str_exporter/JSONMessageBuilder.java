@@ -3,21 +3,28 @@ package str_exporter;
 import basemod.ReflectionHacks;
 import basemod.patches.whatmod.WhatMod;
 import com.badlogic.gdx.graphics.Texture;
+import com.evacipated.cardcrawl.modthespire.Loader;
+import com.evacipated.cardcrawl.modthespire.ModInfo;
 import com.megacrit.cardcrawl.characters.AbstractPlayer;
 import com.megacrit.cardcrawl.core.CardCrawlGame;
 import com.megacrit.cardcrawl.core.Settings;
 import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
 import com.megacrit.cardcrawl.helpers.FontHelper;
+import com.megacrit.cardcrawl.helpers.Hitbox;
 import com.megacrit.cardcrawl.helpers.ImageMaster;
 import com.megacrit.cardcrawl.helpers.PowerTip;
 import com.megacrit.cardcrawl.monsters.AbstractMonster;
+import com.megacrit.cardcrawl.orbs.AbstractOrb;
 import com.megacrit.cardcrawl.potions.AbstractPotion;
 import com.megacrit.cardcrawl.powers.AbstractPower;
 import com.megacrit.cardcrawl.relics.AbstractRelic;
 import com.megacrit.cardcrawl.rooms.AbstractRoom;
-import com.megacrit.cardcrawl.rooms.MonsterRoom;
+import com.megacrit.cardcrawl.ui.buttons.PeekButton;
 import com.megacrit.cardcrawl.ui.panels.TopPanel;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Locale;
 
@@ -26,6 +33,8 @@ public class JSONMessageBuilder {
     private String login, secret, version;
     private ArrayList<String> powerTips;
     private static final int MAX_RELICS = 25;
+
+    public static final Logger logger = LogManager.getLogger(JSONMessageBuilder.class.getName());
 
     public JSONMessageBuilder(String login, String secret, String version) {
         this.login = login;
@@ -60,13 +69,17 @@ public class JSONMessageBuilder {
         buildPotions(sb);
         sb.append(", ");
 
-        if (isInCombat()) {
+        if (isInCombat()) { // && (!AbstractDungeon.isScreenUp || PeekButton.isPeeking)
             sb.append("\"player_powers\": ");
             buildPlayerPowers(sb);
             sb.append(", ");
 
             sb.append("\"monster_powers\": ");
             buildMonsterPowers(sb);
+            sb.append(", ");
+
+            sb.append("\"custom_tips\": ");
+            buildCustomTips(sb);
             sb.append(", ");
         }
 
@@ -86,7 +99,7 @@ public class JSONMessageBuilder {
         float y = (Settings.HEIGHT - player.hb.y - player.hb.height)  / Settings.HEIGHT* 100f; // invert the y-coordinate
         float w = player.hb.width / Settings.WIDTH * 100f;
         float h = (player.hb.height + player.healthHb.height)  / Settings.HEIGHT * 100f;
-        sb.append(String.format(Locale.US, "{\"hitbox\": {\"x\": %f, \"y\": %f, \"w\": %f, \"h\": %f}, ", x, y, w, h));
+        sb.append(String.format(Locale.US, "{\"hitbox\": {\"x\": %.3f, \"y\": %.3f, \"w\": %.3f, \"h\": %.3f}, ", x, y, w, h));
 
         sb.append("\"power_tips\": ");
         ArrayList<PowerTip> tipsPrefix = new ArrayList<>();
@@ -108,7 +121,7 @@ public class JSONMessageBuilder {
             float y = (Settings.HEIGHT - monster.hb.y - monster.hb.height)  / Settings.HEIGHT* 100f; // invert the y-coordinate
             float w = monster.hb.width / Settings.WIDTH * 100f;
             float h = (monster.hb.height + monster.healthHb.height)  / Settings.HEIGHT * 100f;
-            sb.append(String.format(Locale.US, "{\"hitbox\": {\"x\": %f, \"y\": %f, \"w\": %f, \"h\": %f}, ", x, y, w, h));
+            sb.append(String.format(Locale.US, "{\"hitbox\": {\"x\": %.3f, \"y\": %.3f, \"w\": %.3f, \"h\": %.3f}, ", x, y, w, h));
 
             sb.append("\"power_tips\": ");
             ArrayList<PowerTip> tipsPrefix = new ArrayList<>();
@@ -123,6 +136,139 @@ public class JSONMessageBuilder {
                 sb.append(", ");
         }
         sb.append(']');
+    }
+
+    private void buildCustomTips(StringBuilder sb) {
+
+        sb.append('[');
+
+        buildOrbTips(sb);
+
+        // try building custom tips
+        StringBuilder sb_safe = new StringBuilder();
+        String result = "";
+        try {
+            Object[] res = getTipsFromMods();
+            ArrayList<Hitbox> hitboxes = (ArrayList<Hitbox>) res[0];
+            ArrayList<ArrayList<PowerTip>> tip_lists = (ArrayList<ArrayList<PowerTip>>) res[1];
+
+            logger.info("hitboxes size: " + hitboxes.size());
+
+            if (CardCrawlGame.dungeon.player.orbs.size() > 0 && hitboxes.size() > 0)
+                sb_safe.append(", ");
+
+            for (int i = 0; i < hitboxes.size(); i++) {
+
+                Hitbox hb = hitboxes.get(i);
+                ArrayList<PowerTip> tips = tip_lists.get(i);
+
+                float x = hb.x / Settings.WIDTH * 100f;
+                float y = (Settings.HEIGHT - hb.y - hb.height)  / Settings.HEIGHT* 100f; // invert the y-coordinate
+                float w = hb.width / Settings.WIDTH * 100f;
+                float h = hb.height  / Settings.HEIGHT * 100f;
+                sb_safe.append(String.format(Locale.US, "{\"hitbox\": {\"x\": %.3f, \"y\": %.3f, \"w\": %.3f, \"h\": %.3f}, ", x, y, w, h));
+
+                sb_safe.append("\"power_tips\": ");
+
+                buildPowerTips(sb_safe, tips);
+                sb_safe.append('}');
+
+                if (i < hitboxes.size() - 1)
+                    sb_safe.append(", ");
+            }
+            result = sb_safe.toString();
+        } catch(Exception e) {
+            logger.error("an exception occured during building hitboxes", e);
+            result = "";
+        } finally {
+            sb.append(result);
+        }
+
+        sb.append(']');
+    }
+
+    private static ArrayList<ArrayList<PowerTip>> sanitizePowerTipsLists(ArrayList<ArrayList<PowerTip>> tip_lists) {
+        ArrayList<ArrayList<PowerTip>> new_tip_lists = new ArrayList<>();
+
+        for (int i = 0; i < tip_lists.size(); i++) {
+            new_tip_lists.add(new ArrayList<>());
+            for (int j = 0; j < tip_lists.get(i).size(); j++) {
+                new_tip_lists.get(i).add(new PowerTip(tip_lists.get(i).get(j).header, tip_lists.get(i).get(j).body));
+            }
+        }
+
+        return new_tip_lists;
+    }
+
+    private Object[] getTipsFromMods() {
+        Object[] result = new Object[2];
+
+        ArrayList<Hitbox> hitboxes = new ArrayList<>();
+        ArrayList<ArrayList<PowerTip>> tip_lists = new ArrayList<>();
+
+        ArrayList<Class<?>> classes = SlayTheRelicsExporter.instance.customTipImplementingClasses;
+
+        for (int i = 0; i < classes.size(); i++) {
+            Class<?> cls = classes.get(i);
+
+            try {
+
+                logger.info("class: " + cls.getCanonicalName());
+
+                ArrayList<Hitbox> mod_hitboxes = (ArrayList<Hitbox>) cls.getField(SlayTheRelicsExporter.CUSTOM_TIP_HITBOX_NAME).get(null);
+                ArrayList<ArrayList<PowerTip>> mod_tip_lists = (ArrayList<ArrayList<PowerTip>>) cls.getField(SlayTheRelicsExporter.CUSTOM_TIP_POWERTIPS_NAME).get(null);
+
+                for (int j = 0; j < mod_hitboxes.size(); j++) {
+                    Hitbox hb = mod_hitboxes.get(j);
+                    logger.info(String.format("hitbox %d: %f %f %f %f", j, hb.x, hb.y, hb.width, hb.height));
+                }
+
+                for (int j = 0; j < mod_tip_lists.size(); j++) {
+                    logger.info(String.format("tips list  %d", j));
+                    for (int k = 0; k < mod_tip_lists.get(j).size(); k++) {
+                        PowerTip tip = mod_tip_lists.get(j).get(k);
+                        logger.info(String.format("tip %d: %s, %s", k, tip.header, tip.body));
+                    }
+                }
+
+                if (mod_hitboxes.size() == mod_tip_lists.size()) {
+                    logger.info("found fields, adding " + mod_hitboxes.size() + " entries");
+                    hitboxes.addAll(mod_hitboxes);
+                    tip_lists.addAll(sanitizePowerTipsLists(mod_tip_lists));
+                } else {
+                    logger.info("hitboxes and powertip list don't have the same size for class: " + cls.getCanonicalName());
+                }
+
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+
+        result[0] = hitboxes;
+        result[1] = tip_lists;
+        return result;
+    }
+
+    private void buildOrbTips(StringBuilder sb) {
+        ArrayList<AbstractOrb> orbs = CardCrawlGame.dungeon.player.orbs;
+        for (int i = 0; i < orbs.size(); i++) {
+            AbstractOrb orb = orbs.get(i);
+
+            float x = orb.hb.x / Settings.WIDTH * 100f;
+            float y = (Settings.HEIGHT - orb.hb.y - orb.hb.height)  / Settings.HEIGHT* 100f; // invert the y-coordinate
+            float w = orb.hb.width / Settings.WIDTH * 100f;
+            float h = orb.hb.height  / Settings.HEIGHT * 100f;
+            sb.append(String.format(Locale.US, "{\"hitbox\": {\"x\": %.3f, \"y\": %.3f, \"w\": %.3f, \"h\": %.3f}, ", x, y, w, h));
+
+            sb.append("\"power_tips\": ");
+            ArrayList<PowerTip> tips = new ArrayList<>();
+            tips.add(new PowerTip(orb.name, orb.description));
+            buildPowerTips(sb, tips);
+            sb.append('}');
+
+            if (i < orbs.size() - 1)
+                sb.append(", ");
+        }
     }
 
     private static PowerTip createPowerTip(AbstractPower p) {
@@ -142,12 +288,30 @@ public class JSONMessageBuilder {
         return tip;
     }
 
+    // implemented like this to avoid dependency on StSLib
+    private static boolean instanceOfInvisiblePower(AbstractPower p) {
+        Class[] interfaces = p.getClass().getInterfaces();
+
+        for (Class iface : interfaces) {
+            if (iface.getCanonicalName().equals("com.evacipated.cardcrawl.mod.stslib.powers.interfaces.InvisiblePower"))
+                return true;
+        }
+
+        return false;
+    }
+
     private void buildPowers(StringBuilder sb, ArrayList<AbstractPower> powers, ArrayList<PowerTip> tipsPrefix) {
         ArrayList<PowerTip> tips = (ArrayList<PowerTip>) tipsPrefix.clone();
         for (AbstractPower p: powers) {
-            tips.add(createPowerTip(p));
+
+            if (!instanceOfInvisiblePower(p)) // do not display powers that inherit InvisiblePower
+                tips.add(createPowerTip(p));
         }
 
+        buildPowerTips(sb, tips);
+    }
+
+    private void buildPowerTips(StringBuilder sb, ArrayList<PowerTip> tips) {
         sb.append('[');
         for (int i = 0; i < tips.size(); i++) {
             PowerTip tip = tips.get(i);
@@ -302,10 +466,11 @@ public class JSONMessageBuilder {
             return "";
 
         str = str.replace("\"", "\\\"");
-        str = str.replace("[R]", "[E]");
-        str = str.replace("[G]", "[E]");
-        str = str.replace("[B]", "[E]");
-        str = str.replace("[W]", "[E]");
+//        str = str.replace("[R]", "[E]");
+//        str = str.replace("[G]", "[E]");
+//        str = str.replace("[B]", "[E]");
+//        str = str.replace("[W]", "[E]");
+        str = str.replaceAll("\\[[A-Z]\\]", "[E]");
         str = str.replace("NL", "<br>");
 
         return str;
