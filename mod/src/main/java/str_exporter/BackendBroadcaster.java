@@ -9,20 +9,18 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedList;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class BackendBroadcaster {
 
     public static final Logger logger = LogManager.getLogger(BackendBroadcaster.class.getName());
 
-    private static final String EBS_URL = "https://localhost:8081";
-//    private static final String EBS_URL = "https://slaytherelics.xyz:8081";
+//    private static final String EBS_URL = "https://localhost:8081";
+    private static final String EBS_URL = "https://slaytherelics.xyz:8081";
 
     private static final long CHECK_QUEUE_PERIOD_MILLIS = 100;
     private static BackendBroadcaster instance = new BackendBroadcaster();
 
-//    public static long encodingDelay = 0;
     private String message;
     private long messageTimestamp;
     private ReentrantLock queueLock;
@@ -91,6 +89,13 @@ public class BackendBroadcaster {
         return "{\"d\":" + delay + "," + msg.substring(1);
     }
 
+    private static String compressPowerTips(String msg) {
+        int index = msg.lastIndexOf("\"w\":\"");
+
+        String comp_powertips = StringCompression.compress(msg.substring(index + 5, msg.length() - 3));
+        return msg.substring(0, index + 5) + comp_powertips + "\"}}";
+    }
+
     private void broadcastMessage(String msg, long msgTimestamp) {
 
         try {
@@ -101,6 +106,7 @@ public class BackendBroadcaster {
             con.setRequestProperty("Accept", "application/json");
             con.setDoOutput(true);
 
+            msg = compressPowerTips(msg);
             long msgDelay = msgTimestamp - System.currentTimeMillis() + SlayTheRelicsExporter.delay;
             msg = injectDelayToMessage(msg, msgDelay);
 
@@ -115,11 +121,14 @@ public class BackendBroadcaster {
                 response.append(responseLine.trim());
             }
 
-            logger.info(msg);
-            logger.info("broadcasted message, response: " + response.toString());
+            if (!response.toString().equals("Success"))
+                logger.info("message not broadcasted succesfully, response: " + response.toString());
+//            logger.info("broadcasted message, response: " + response.toString());
 
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+//            logger.info(SlayTheRelicsExporter.removeSecret(msg));
         }
     }
 }
