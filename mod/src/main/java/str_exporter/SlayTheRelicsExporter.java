@@ -52,18 +52,12 @@ public class SlayTheRelicsExporter implements
     private static String secret = null;
     private static String version = "";
 
-    private long lastBroadcast = System.currentTimeMillis();
     private long lastCheck = System.currentTimeMillis();
-    private String lastBroadcastJson = "";
     private boolean checkNextUpdate = false;
     private JSONMessageBuilder json_builder;
 
-    public static final String CUSTOM_TIP_HITBOX_NAME = "slayTheRelicsHitboxes";
-    public static final String CUSTOM_TIP_POWERTIPS_NAME = "slayTheRelicsPowerTips";
-    public ArrayList<Class<?>> customTipImplementingClasses;
-
 //    private static final long MAX_BROADCAST_PERIOD_MILLIS = 250;
-    private static final long MAX_CHECK_PERIOD_MILLIS = 2500;
+    private static final long MAX_CHECK_PERIOD_MILLIS = 100;
     public static SlayTheRelicsExporter instance = null;
 
     public static Properties strDefaultSettings = new Properties();
@@ -103,54 +97,6 @@ public class SlayTheRelicsExporter implements
         return "unkwnown";
     }
 
-    public static ArrayList<Class<?>> findCustomTipImplementingClasses() {
-        logger.info("CHECKING FOR OTHER MODS");
-
-        ArrayList<Class<?>> implementingClasses = new ArrayList<>();
-
-        ClassLoader loader = SlayTheRelicsExporter.class.getClassLoader();
-
-        for (ModInfo info : Loader.MODINFOS) {
-            if (Patcher.annotationDBMap.containsKey(info.jarURL)) {
-                Set<String> initializers = Patcher.annotationDBMap.get(info.jarURL).getAnnotationIndex().get(SpireInitializer.class.getName());
-                if (initializers != null) {
-                    System.out.println(" - " + info.Name);
-                    for (String initializer : initializers) {
-                        System.out.println("   - " + initializer);
-                        try {
-                            long startTime = System.nanoTime();
-
-                            Class<?> c = loader.loadClass(initializer);
-
-                            try {
-                                Field hitboxes = c.getField(CUSTOM_TIP_HITBOX_NAME);
-                                Field powerTips = c.getField(CUSTOM_TIP_POWERTIPS_NAME);
-
-                                if (hitboxes.getType() == ArrayList.class && powerTips.getType() == ArrayList.class) {
-                                    implementingClasses.add(c);
-                                    logger.info("Fields found for class " + c.getCanonicalName());
-                                }
-                            } catch (NoSuchFieldException e) {
-                                logger.info("No fields found for class " + c.getCanonicalName());
-//                                e.printStackTrace();
-                            }
-
-                            long endTime = System.nanoTime();
-                            long duration = endTime - startTime;
-                            System.out.println("   - " + (duration / 1000000) + "ms");
-                        } catch (ClassNotFoundException e) {
-                            System.out.println("WARNING: Unable to find method initialize() on class marked @SpireInitializer: " + initializer);
-                        }
-                    }
-                }
-            } else {
-                System.err.println(info.jarURL + " Not in DB map. Something is very wrong");
-            }
-        }
-
-        return implementingClasses;
-    }
-
     public static void initialize()
     {
         logger.info("initialize() called!");
@@ -163,6 +109,8 @@ public class SlayTheRelicsExporter implements
 
             login = lines[0].split(":")[1];
             secret = lines[1].split(":")[1];
+
+            logger.info("slaytherelics_config.txt was succesfully loaded");
 
 //            logger.info("loaded login " + login + " and secret " + secret);
         } catch (Exception e) {
@@ -184,27 +132,17 @@ public class SlayTheRelicsExporter implements
         if (areCredentialsValid()) {
             broadcast();
         } else {
-            logger.info("Either your secret or your login are null. The config file has probably not loaded properly");
+//            logger.info("Either your secret or your login are null. The config file has probably not loaded properly");
         }
     }
 
     private void broadcast() {
-
         long start = System.nanoTime();
         String json = json_builder.buildJson();
         long end = System.nanoTime();
 
-        lastBroadcast = System.currentTimeMillis();
-        lastBroadcastJson = json;
-
-        long start_broadcast = System.nanoTime();
         BackendBroadcaster.queueMessage(json);
-        long end_broadcast = System.nanoTime();
-        logger.info("broadcasting relics");
-        logger.info("json builder took " + (end - start) / 1e6 + " milliseconds");
-        logger.info("adding to broadcast queue took " + (end_broadcast - start_broadcast) / 1e6 + " milliseconds");
-//        logger.info(removeSecret(json));
-
+//        logger.info("json builder took " + (end - start) / 1e6 + " milliseconds");
     }
 
     @Override
@@ -213,7 +151,7 @@ public class SlayTheRelicsExporter implements
 
         ModLabel label1 = new ModLabel("Use the slider below to set encoding delay of your PC.", 400.0f, 700.0f, settingsPanel, (me) -> {});
         ModLabel label2 = new ModLabel("With this set to 0, the extension will be ahead of what the stream displays.", 400.0f, 650.0f, settingsPanel, (me) -> {});
-        ModSlider slider = new ModSlider("Delay", 500f, 600, 3000f, "ms", settingsPanel, (me) -> {
+        ModSlider slider = new ModSlider("Delay", 500f, 600, 10000f, "ms", settingsPanel, (me) -> {
             logger.info("slider value: " + me.value);
             delay = (long) (me.value * me.multiplier);
         });
@@ -240,8 +178,6 @@ public class SlayTheRelicsExporter implements
                 "LordAddy",
                 "This mod exports data to Slay the Relics Twitch extension. See the extension config on Twitch for setup instructions.",
                 settingsPanel);
-
-        customTipImplementingClasses = findCustomTipImplementingClasses();
     }
 
     @Override
@@ -256,47 +192,40 @@ public class SlayTheRelicsExporter implements
     }
 
     public void relicPageChanged() {
-        logger.info("Relic Page Changed");
         queue_check();
     }
 
     @Override
     public void receiveRelicGet(AbstractRelic abstractRelic) {
-        logger.info("Relic Acquired");
         queue_check();
     }
 
     @Override
     public void receivePotionGet(AbstractPotion abstractPotion) {
-        logger.info("Potion Acquired");
         queue_check();
     }
 
     @Override
     public void receiveStartGame() {
-        logger.info("StartGame received");
         queue_check();
     }
 
     @Override
     public void receivePostCreateStartingRelics(AbstractPlayer.PlayerClass playerClass, ArrayList<String> arrayList) {
-        logger.info("PostCreateStartingRelics received");
         queue_check();
     }
 
     @Override
     public void receivePowersModified() {
-        logger.info("Powers modified");
         queue_check();
     }
 
     @Override
     public void receivePostPowerApplySubscriber(AbstractPower abstractPower, AbstractCreature abstractCreature, AbstractCreature abstractCreature1) {
-        logger.info("PostPowerApply received");
         queue_check();
     }
 
-    private static String removeSecret(String str) {
+    public static String removeSecret(String str) {
         String pattern = "\"secret\": \"[a-z0-9]*\"";
         return str.replaceAll(pattern, "\"secret\": \"********************\"");
     }
