@@ -38,6 +38,10 @@ public class StringCompression {
     }
 
     public static String compress(String s) {
+        return compress(s, "\\s;:,./");
+    }
+
+    public static String compress(String s, String delims) {
 
         long start = System.nanoTime();
 
@@ -46,13 +50,14 @@ public class StringCompression {
         s = s.replace('|', ':').replace('&', ':');
         ArrayList<String> compressionDict = new ArrayList<>();
 
-        int[] ns = {1, 10, 9, 8, 7, 6, 5, 4, 3, 2};
+        int[] ns;
 
-//        int n = 1;
+        ns = new int[]{1, 19, 17, 15, 13, 11, 9, 7, 5, 3};
+
         for (int i = 0; i < ns.length && compressionDict.size() < WILDCARDS.length(); i++) {
-//            System.out.printf("n=%d\n", n);
 
-            String[] parts = s.split(" ");
+            String[] parts = splitStringSmart(s, delims);
+
             int n = Math.min(ns[i], parts.length);
 
             String[] ngrams = new String[parts.length - n + 1];
@@ -63,14 +68,10 @@ public class StringCompression {
                 StringBuilder ngram = new StringBuilder();
                 for (int k = 0; k < n; k++) {
                     ngram.append(parts[j + k]);
-                    if (k < n - 1) {
-                        ngram.append(' ');
-                    }
                 }
 
                 ngrams[j] = ngram.toString();
             }
-
             // compute cost saving of compressing each n-gram
             for (int j = 0; j < ngrams.length; j++) {
                 String word = ngrams[j];
@@ -134,4 +135,30 @@ public class StringCompression {
 //        SlayTheRelicsExporter.logger.info(String.format("compression, original len: %s new len: %s ratio %.2f, duration %.2f ms", uncompressedLength, compressedLength, compressedLength * 1f / uncompressedLength, (end-start)/1e6));
         return s;
     }
+
+    private static String[] splitStringSmart(String s, String delims) {
+
+        StringTokenizer tokenizer = new StringTokenizer(s, delims, true);
+        ArrayList<String> parts = new ArrayList<>();
+        boolean last_delim = false;
+        while(tokenizer.hasMoreTokens()) {
+            String token = tokenizer.nextToken();
+
+            if(token.length() == 1 && delims.contains(token)) {
+                if(last_delim) {
+                    int index = parts.size() - 1;
+                    parts.set(index, parts.get(index) + token);
+                } else {
+                    parts.add(token);
+                }
+                last_delim = true;
+            } else {
+                parts.add(token);
+                last_delim = false;
+            }
+        }
+
+        return parts.toArray(new String[0]);
+    }
+
 }
