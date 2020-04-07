@@ -10,8 +10,12 @@ import com.evacipated.cardcrawl.modthespire.ModInfo;
 import com.evacipated.cardcrawl.modthespire.Patcher;
 import com.evacipated.cardcrawl.modthespire.lib.SpireConfig;
 import com.evacipated.cardcrawl.modthespire.lib.SpireInitializer;
+import com.megacrit.cardcrawl.cards.AbstractCard;
+import com.megacrit.cardcrawl.cards.CardGroup;
+import com.megacrit.cardcrawl.cards.DescriptionLine;
 import com.megacrit.cardcrawl.characters.AbstractPlayer;
 import com.megacrit.cardcrawl.core.AbstractCreature;
+import com.megacrit.cardcrawl.core.CardCrawlGame;
 import com.megacrit.cardcrawl.helpers.FontHelper;
 import com.megacrit.cardcrawl.helpers.ImageMaster;
 import com.megacrit.cardcrawl.potions.AbstractPotion;
@@ -58,7 +62,7 @@ public class SlayTheRelicsExporter implements
     private JSONMessageBuilder json_builder;
 
 //    private static final long MAX_BROADCAST_PERIOD_MILLIS = 250;
-    private static final long MAX_CHECK_PERIOD_MILLIS = 100;
+    private static final long MAX_CHECK_PERIOD_MILLIS = 1000;
     public static SlayTheRelicsExporter instance = null;
 
     public static Properties strDefaultSettings = new Properties();
@@ -129,6 +133,23 @@ public class SlayTheRelicsExporter implements
         instance = new SlayTheRelicsExporter();
     }
 
+//    private void printDeck() {
+//        StringBuilder sb = new StringBuilder();
+//
+//        if (CardCrawlGame.isInARun()) {
+//            CardGroup deck = CardCrawlGame.dungeon.player.masterDeck;
+//            for (AbstractCard card : deck.group) {
+////                sb.append(CardExporter.exportCard(card));
+//                sb.append(";;");
+////                logger.info(CardExporter.exportCard(card));
+//            }
+//        }
+//
+//        logger.info(sb.toString());
+//        logger.info("deck has {} characters", sb.toString().length());
+//        logger.info("compressed deck has {} characters", StringCompression.compress(sb.toString()).length());
+//    }
+
     private void queue_check() {
         checkNextUpdate = true;
     }
@@ -147,6 +168,11 @@ public class SlayTheRelicsExporter implements
         long end = System.nanoTime();
 
         BackendBroadcaster.queueMessage(json);
+//
+        String deck = CardExporter.exportDeck();
+        logger.info(deck);
+        String compdeck = StringCompression.compress(deck);
+//        logger.info(compdeck);
 //        logger.info("json builder took " + (end - start) / 1e6 + " milliseconds");
     }
 
