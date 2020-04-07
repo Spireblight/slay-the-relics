@@ -132,7 +132,7 @@ public class StringCompression {
 
         long end = System.nanoTime();
 
-//        SlayTheRelicsExporter.logger.info(String.format("compression, original len: %s new len: %s ratio %.2f, duration %.2f ms", uncompressedLength, compressedLength, compressedLength * 1f / uncompressedLength, (end-start)/1e6));
+        SlayTheRelicsExporter.logger.info(String.format("compression, original len: %s new len: %s ratio %.2f, duration %.2f ms", uncompressedLength, compressedLength, compressedLength * 1f / uncompressedLength, (end-start)/1e6));
         return s;
     }
 
