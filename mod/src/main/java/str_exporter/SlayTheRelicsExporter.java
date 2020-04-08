@@ -27,6 +27,7 @@ import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -103,7 +104,11 @@ public class SlayTheRelicsExporter implements
         version = getVersion();
         try {
 
-            String data = new String(Files.readAllBytes(Paths.get("slaytherelics_config.txt")));
+            Path path = Paths.get("slaytherelics_config.txt");
+            if (!Files.exists(path))
+                path = Paths.get("slaytherelics_config.txt.txt");
+
+            String data = new String(Files.readAllBytes(path));
 
             String[] lines = data.split("\r\n");
 
