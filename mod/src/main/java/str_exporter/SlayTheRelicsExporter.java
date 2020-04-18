@@ -2,41 +2,26 @@ package str_exporter;
 
 import basemod.*;
 import basemod.interfaces.*;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.evacipated.cardcrawl.modthespire.Loader;
-import com.evacipated.cardcrawl.modthespire.MTSClassLoader;
 import com.evacipated.cardcrawl.modthespire.ModInfo;
-import com.evacipated.cardcrawl.modthespire.Patcher;
 import com.evacipated.cardcrawl.modthespire.lib.SpireConfig;
 import com.evacipated.cardcrawl.modthespire.lib.SpireInitializer;
-import com.megacrit.cardcrawl.cards.AbstractCard;
-import com.megacrit.cardcrawl.cards.CardGroup;
-import com.megacrit.cardcrawl.cards.DescriptionLine;
 import com.megacrit.cardcrawl.characters.AbstractPlayer;
 import com.megacrit.cardcrawl.core.AbstractCreature;
-import com.megacrit.cardcrawl.core.CardCrawlGame;
-import com.megacrit.cardcrawl.helpers.FontHelper;
 import com.megacrit.cardcrawl.helpers.ImageMaster;
 import com.megacrit.cardcrawl.potions.AbstractPotion;
 import com.megacrit.cardcrawl.powers.AbstractPower;
 import com.megacrit.cardcrawl.relics.AbstractRelic;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.scannotation.AnnotationDB;
 
-import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Field;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Properties;
-import java.util.Set;
 
 @SpireInitializer
 public class SlayTheRelicsExporter implements
@@ -59,22 +44,29 @@ public class SlayTheRelicsExporter implements
 
     private long lastCheck = System.currentTimeMillis();
     private boolean checkNextUpdate = false;
-    private JSONMessageBuilder json_builder;
+
+    private TipsJSONBuilder tipsJsonBuilder;
+    private DeckJSONBuilder deckJsonBuilder;
+    private String okayJsonMessage;
+    private BackendBroadcaster tipsBroadcaster;
+    private BackendBroadcaster deckBroadcaster;
+    private BackendBroadcaster okayBroadcaster;
+
 
 //    private static final long MAX_BROADCAST_PERIOD_MILLIS = 250;
     private static final long MAX_CHECK_PERIOD_MILLIS = 1000;
+    private static final long BROADCAST_CHECK_QUEUE_PERIOD_MILLIS = 500;
+    private static final long MAX_OKAY_BROADCAST_PERIOD_MILLIS = 1000;
+
     public static SlayTheRelicsExporter instance = null;
 
     public static Properties strDefaultSettings = new Properties();
     public static final String DELAY_SETTINGS = "delay";
     public static long delay = 0; // The boolean we'll be setting on/off (true/false)
-
+    private static long lastOkayBroadcast = 0;
 
     public SlayTheRelicsExporter()
     {
-        json_builder = new JSONMessageBuilder(login, secret, version);
-        BackendBroadcaster.start();
-
         logger.info("Slay The Relics Exporter initialized!");
         BaseMod.subscribe(this);
 
@@ -133,23 +125,6 @@ public class SlayTheRelicsExporter implements
         instance = new SlayTheRelicsExporter();
     }
 
-//    private void printDeck() {
-//        StringBuilder sb = new StringBuilder();
-//
-//        if (CardCrawlGame.isInARun()) {
-//            CardGroup deck = CardCrawlGame.dungeon.player.masterDeck;
-//            for (AbstractCard card : deck.group) {
-////                sb.append(CardExporter.exportCard(card));
-//                sb.append(";;");
-////                logger.info(CardExporter.exportCard(card));
-//            }
-//        }
-//
-//        logger.info(sb.toString());
-//        logger.info("deck has {} characters", sb.toString().length());
-//        logger.info("compressed deck has {} characters", StringCompression.compress(sb.toString()).length());
-//    }
-
     private void queue_check() {
         checkNextUpdate = true;
     }
@@ -164,20 +139,32 @@ public class SlayTheRelicsExporter implements
 
     private void broadcast() {
         long start = System.nanoTime();
-        String json = json_builder.buildJson();
+        String tips_json = tipsJsonBuilder.buildJson();
         long end = System.nanoTime();
+        logger.info("tips json builder took " + (end - start) / 1e6 + " milliseconds");
+        logger.info(tips_json);
+        tipsBroadcaster.queueMessage(tips_json);
 
-        BackendBroadcaster.queueMessage(json);
-//
-        String deck = CardExporter.exportDeck();
-        logger.info(deck);
-        String compdeck = StringCompression.compress(deck);
-//        logger.info(compdeck);
-//        logger.info("json builder took " + (end - start) / 1e6 + " milliseconds");
+        start = System.nanoTime();
+        String deck_json = deckJsonBuilder.buildJson();
+        end = System.nanoTime();
+        logger.info("deck json builder took " + (end - start) / 1e6 + " milliseconds");
+        logger.info(deck_json);
+        deckBroadcaster.queueMessage(deck_json);
     }
 
     @Override
     public void receivePostInitialize() {
+
+        tipsBroadcaster = new BackendBroadcaster(BROADCAST_CHECK_QUEUE_PERIOD_MILLIS);
+        deckBroadcaster = new BackendBroadcaster(BROADCAST_CHECK_QUEUE_PERIOD_MILLIS);
+        okayBroadcaster = new BackendBroadcaster(BROADCAST_CHECK_QUEUE_PERIOD_MILLIS);
+        tipsJsonBuilder = new TipsJSONBuilder(login, secret, version);
+        deckJsonBuilder = new DeckJSONBuilder(login, secret, version);
+
+        okayJsonMessage = new JSONMessageBuilder(login, secret, version, 5).buildJson();
+        okayJsonMessage = okayJsonMessage.replace(BackendBroadcaster.DELAY_PLACEHOLDER, "0");
+
         ModPanel settingsPanel = new ModPanel();
 
         ModLabel label1 = new ModLabel("Use the slider below to set encoding delay of your PC.", 400.0f, 700.0f, settingsPanel, (me) -> {});
@@ -219,6 +206,14 @@ public class SlayTheRelicsExporter implements
             check();
 
             checkNextUpdate = false;
+        }
+
+        if (System.currentTimeMillis() - lastOkayBroadcast > MAX_OKAY_BROADCAST_PERIOD_MILLIS) {
+
+            lastOkayBroadcast = System.currentTimeMillis();
+            okayBroadcaster.broadcastMessage(okayJsonMessage);
+            logger.info(okayJsonMessage);
+
         }
     }
 

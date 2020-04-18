@@ -18,16 +18,22 @@ public class BackendBroadcaster {
 //    private static final String EBS_URL = "https://localhost:8081";
     private static final String EBS_URL = "https://slaytherelics.xyz:8081";
 
-    private static final long CHECK_QUEUE_PERIOD_MILLIS = 100;
-    private static BackendBroadcaster instance = new BackendBroadcaster();
+//    private static final long CHECK_QUEUE_PERIOD_MILLIS = 100;
+//    private static BackendBroadcaster instance = new BackendBroadcaster();
+
+    public static final String DELAY_PLACEHOLDER = "&&&DELAY&&&";
 
     private String message;
+    private String lastMessage;
     private long messageTimestamp;
     private ReentrantLock queueLock;
     private Thread worker;
+    private long checkQueuePeriodMillis;
 
-    private BackendBroadcaster() {
+    public BackendBroadcaster(long checkQueuePeriodMillis) {
+        this.checkQueuePeriodMillis = checkQueuePeriodMillis;
         message = null;
+        lastMessage = null;
         queueLock = new ReentrantLock();
 
         worker = new Thread(() -> {
@@ -35,27 +41,25 @@ public class BackendBroadcaster {
                 readQueue();
 
                 try {
-                    Thread.sleep(CHECK_QUEUE_PERIOD_MILLIS);
+                    Thread.sleep(checkQueuePeriodMillis);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
         });
+
+        worker.start();
     }
 
-    public static void start() {
-        instance.worker.start();
-    }
-
-    public static void queueMessage(String msg) {
-        instance.queueLock.lock();
+    public void queueMessage(String msg) {
+        queueLock.lock();
         try {
-            if (instance.message == null || !instance.message.equals(msg)) {
-                instance.message = msg;
-                instance.messageTimestamp = System.currentTimeMillis();
+            if (message == null || !message.equals(msg)) {
+                message = msg;
+                messageTimestamp = System.currentTimeMillis();
             }
         } finally {
-            instance.queueLock.unlock();
+            queueLock.unlock();
         }
     }
 
@@ -64,7 +68,8 @@ public class BackendBroadcaster {
         long ts = 0;
         queueLock.lock();
         try {
-            if (message != null) {
+            if (message != null && !message.equals(lastMessage)) {
+                lastMessage = message;
                 msg = message;
                 ts = messageTimestamp;
                 message = null;
@@ -74,29 +79,18 @@ public class BackendBroadcaster {
         } finally {
             queueLock.unlock();
             if (!msg.isEmpty()) {
-                broadcastMessage(msg, ts);
-
-                try {
-                    Thread.sleep(950);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                long msgDelay = ts - System.currentTimeMillis() + SlayTheRelicsExporter.delay;
+                msg = injectDelayToMessage(msg, msgDelay);
+                broadcastMessage(msg);
             }
         }
     }
 
     private static String injectDelayToMessage(String msg, long delay) {
-        return "{\"d\":" + delay + "," + msg.substring(1);
+        return msg.replace(DELAY_PLACEHOLDER, Long.toString(delay));
     }
 
-    private static String compressPowerTips(String msg) {
-        int index = msg.lastIndexOf("\"w\":\"");
-
-        String comp_powertips = StringCompression.compress(msg.substring(index + 5, msg.length() - 3));
-        return msg.substring(0, index + 5) + comp_powertips + "\"}}";
-    }
-
-    private void broadcastMessage(String msg, long msgTimestamp) {
+    public void broadcastMessage(String msg) {
 
         try {
             URL url = new URL(EBS_URL);
@@ -105,10 +99,6 @@ public class BackendBroadcaster {
             con.setRequestProperty("Content-Type", "application/json");  //; utf-8
             con.setRequestProperty("Accept", "application/json");
             con.setDoOutput(true);
-
-            msg = compressPowerTips(msg);
-            long msgDelay = msgTimestamp - System.currentTimeMillis() + SlayTheRelicsExporter.delay;
-            msg = injectDelayToMessage(msg, msgDelay);
 
             OutputStream os = con.getOutputStream();
             byte[] input = msg.getBytes(StandardCharsets.UTF_8);
