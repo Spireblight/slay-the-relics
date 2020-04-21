@@ -47,7 +47,7 @@ public class SlayTheRelicsExporter implements
 
     private TipsJSONBuilder tipsJsonBuilder;
     private DeckJSONBuilder deckJsonBuilder;
-    private String okayJsonMessage;
+    private JSONMessageBuilder okayJsonBuilder;
     private BackendBroadcaster tipsBroadcaster;
     private BackendBroadcaster deckBroadcaster;
     private BackendBroadcaster okayBroadcaster;
@@ -156,14 +156,13 @@ public class SlayTheRelicsExporter implements
     @Override
     public void receivePostInitialize() {
 
-        tipsBroadcaster = new BackendBroadcaster(BROADCAST_CHECK_QUEUE_PERIOD_MILLIS);
-        deckBroadcaster = new BackendBroadcaster(BROADCAST_CHECK_QUEUE_PERIOD_MILLIS);
-        okayBroadcaster = new BackendBroadcaster(BROADCAST_CHECK_QUEUE_PERIOD_MILLIS);
+        tipsBroadcaster = new BackendBroadcaster(BROADCAST_CHECK_QUEUE_PERIOD_MILLIS, false);
+        deckBroadcaster = new BackendBroadcaster(BROADCAST_CHECK_QUEUE_PERIOD_MILLIS, false);
+        okayBroadcaster = new BackendBroadcaster(BROADCAST_CHECK_QUEUE_PERIOD_MILLIS, true);
         tipsJsonBuilder = new TipsJSONBuilder(login, secret, version);
         deckJsonBuilder = new DeckJSONBuilder(login, secret, version);
+        okayJsonBuilder = new JSONMessageBuilder(login, secret, version, 5);
 
-        okayJsonMessage = new JSONMessageBuilder(login, secret, version, 5).buildJson();
-        okayJsonMessage = okayJsonMessage.replace(BackendBroadcaster.DELAY_PLACEHOLDER, "0");
 
         ModPanel settingsPanel = new ModPanel();
 
@@ -210,9 +209,10 @@ public class SlayTheRelicsExporter implements
 
         if (System.currentTimeMillis() - lastOkayBroadcast > MAX_OKAY_BROADCAST_PERIOD_MILLIS) {
 
+            String okayMsg = okayJsonBuilder.buildJson();
             lastOkayBroadcast = System.currentTimeMillis();
-            okayBroadcaster.broadcastMessage(okayJsonMessage);
-            logger.info(okayJsonMessage);
+            okayBroadcaster.queueMessage(okayMsg);
+            logger.info(okayMsg);
 
         }
     }
