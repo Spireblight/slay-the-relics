@@ -378,17 +378,17 @@ public class TipsJSONBuilder extends JSONMessageBuilder{
     private static String powerTipJson(String header, String body) {
         return String.format(
                 "%s;%s",
-                sanitize(header),
-                sanitize(body)
+                sanitizeEmpty(sanitize(header)),
+                sanitizeEmpty(sanitize(body))
         );
     }
 
     private static String powerTipJson(String header, String body, String img) {
         return String.format(
                 "%s;%s;%s",
-                sanitize(header),
-                sanitize(body),
-                sanitize(img)
+                sanitizeEmpty(sanitize(header)),
+                sanitizeEmpty(sanitize(body)),
+                sanitizeEmpty(sanitize(img))
                 );
     }
 
@@ -400,6 +400,10 @@ public class TipsJSONBuilder extends JSONMessageBuilder{
         str = str.replaceAll("\\[[A-Z]\\]", "[E]");
 
         return str;
+    }
+
+    private static String sanitizeEmpty(String str) {
+        return str.isEmpty() ? " " : str;
     }
 
     private boolean isInCombat() {

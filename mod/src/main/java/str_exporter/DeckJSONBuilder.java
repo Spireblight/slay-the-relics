@@ -1,7 +1,6 @@
 package str_exporter;
 
 import basemod.BaseMod;
-import basemod.abstracts.CustomCard;
 import basemod.abstracts.DynamicVariable;
 import com.megacrit.cardcrawl.cards.AbstractCard;
 import com.megacrit.cardcrawl.cards.CardGroup;
@@ -22,58 +21,76 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
 
     public static final Logger logger = LogManager.getLogger(TipsJSONBuilder.class.getName());
 
+    private ArrayList<String> keywords;
 
     public DeckJSONBuilder(String login, String secret, String version) {
         super(login, secret, version, 4);
+
+        keywords = new ArrayList<>();
 
         TEXT = CardCrawlGame.languagePack.getUIString("TipHelper").TEXT;
     }
 
     @Override
     protected void buildMessage(StringBuilder sb) {
-        sb.append("{");
+        String character = "";
 
+        if (CardCrawlGame.isInARun() && CardCrawlGame.dungeon != null && CardCrawlGame.dungeon.player != null) {
+            character = CardCrawlGame.dungeon.player.getClass().getSimpleName();
+        }
+
+        sb.append("{");
+        sb.append("\"c\":\"").append(character).append("\","); // character
+
+        keywords.clear();
         StringBuilder sb_message = new StringBuilder();
         boolean nonempty = buildCards(sb_message);
         sb_message.append(nonempty ? ";": ";;;"); // ;;; delimits cards from keywords
         buildKeywords(sb_message);
 
         sb.append("\"k\":\""); // deck
-        sb.append(sb_message.toString());
+        sb.append(StringCompression.compress(sb_message.toString()));
         sb.append("\"}");
     }
 
     private void buildKeywords(StringBuilder sb) {
-        HashSet<String> keywords = new HashSet<>();
-
-        if (CardCrawlGame.isInARun()) {
-            CardGroup deck = CardCrawlGame.dungeon.player.masterDeck;
-
-            for (int i = 0; i < deck.group.size(); i++) {
-                for (String keyword : deck.group.get(i).keywords) {
-                    keywords.add(keyword);
-                }
-            }
-        }
-
         Iterator<String> iter = keywords.iterator();
 
         while(iter.hasNext()) {
-            String word = iter.next();
-
-            if (word.equals("[R]") || word.equals("[G]") || word.equals("[B]") || word.equals("[W]") || word.equals("[E]")) {
-                sb.append(word);
-                sb.append(' ');
-                sb.append(TEXT[0]); // word Energy
-            } else {
-                sb.append(BaseMod.getKeywordTitle(word));
-            }
-
-            sb.append(";");
-            sb.append(BaseMod.getKeywordDescription(word));
+            sb.append(iter.next());
 
             if(iter.hasNext())
                 sb.append(";;");
+        }
+    }
+
+    private String getKeywordRepr(String word) {
+        StringBuilder sb = new StringBuilder();
+
+        if (word.equals("[R]") || word.equals("[G]") || word.equals("[B]") || word.equals("[W]") || word.equals("[E]")) {
+            sb.append(sanitize(word));
+            sb.append(' ');
+            sb.append(TEXT[0]); // word Energy
+        } else {
+            sb.append(sanitize(BaseMod.getKeywordTitle(word)));
+        }
+
+        sb.append(";");
+        sb.append(sanitize(BaseMod.getKeywordDescription(word)));
+
+        return sb.toString();
+    }
+
+    private int getKeywordIndex(String keyword) {
+        String keywordRepr = getKeywordRepr(keyword);
+
+        int index = keywords.indexOf(keywordRepr);
+
+        if (index >= 0)
+            return index;
+        else {
+            keywords.add(keywordRepr);
+            return keywords.size() - 1;
         }
     }
 
@@ -96,34 +113,65 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
     }
 
     private void buildCard(StringBuilder sb, AbstractCard card) {
-
         String name = sanitize(card.name);
         String desc = parseDescription(card);
         int timesUpgraded = card.timesUpgraded;
         int cost = card.cost;
 
-        if (timesUpgraded > 0) {
-            name = colorizeString(name, "#g");
-        }
+        if (name.isEmpty())
+            name = "-";
+
+        if (desc.isEmpty())
+            desc = "-";
+
+//        if (timesUpgraded > 0) {
+//            name = colorizeString(name, "#g");
+//        }
+
+        // name ; type ; rarity ; color ; cost ; upgrades ; description ; img path ; keywords
 
         sb.append(name);
         sb.append(";");
+        sb.append(encodeCardType(card));
+        sb.append(";");
+        sb.append(encodeCardRarity(card));
+        sb.append(";");
+        sb.append(encodeCardColor(card));
+        sb.append(";");
         sb.append(cost);
+        sb.append(";");
+        sb.append(timesUpgraded);
         sb.append(';');
         sb.append(desc);
         sb.append(';');
-        sb.append(getImgPath(card));
+
+        if (card.keywords.size() == 0) {
+            sb.append('-');
+        } else {
+            Iterator<String> iter = card.keywords.iterator();
+
+            while(iter.hasNext()) {
+                sb.append(getKeywordIndex(iter.next()));
+
+                if (iter.hasNext())
+                    sb.append(',');
+            }
+        }
     }
 
-    private String getImgPath(AbstractCard card) {
-        if (card instanceof CustomCard) {
-            String[] parts = ((CustomCard) card).textureImg.split("/");
+    private String encodeCardType(AbstractCard card) {
+        int ord = card.type.ordinal();
+        return ord > 4 ? card.type.toString() : Integer.toString(ord);
+    }
 
-            return parts[0] + "/" + parts[parts.length - 1];
-        } else {
-            // could remove text
-            return card.assetUrl + ".png";
-        }
+    private String encodeCardRarity(AbstractCard card) {
+        int ord = card.rarity.ordinal();
+        return ord > 5 ? card.rarity.toString() : Integer.toString(ord);
+    }
+
+    private String encodeCardColor(AbstractCard card) {
+        int ord = card.color.ordinal();
+        return ord > 5 ? card.color.toString() : Integer.toString(ord);
     }
 
     private String sanitize(String s) {
@@ -220,4 +268,5 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
 
         return sb.toString();
     }
+
 }

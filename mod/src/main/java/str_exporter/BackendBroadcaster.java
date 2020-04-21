@@ -15,8 +15,8 @@ public class BackendBroadcaster {
 
     public static final Logger logger = LogManager.getLogger(BackendBroadcaster.class.getName());
 
-//    private static final String EBS_URL = "https://localhost:8081";
-    private static final String EBS_URL = "https://slaytherelics.xyz:8081";
+    private static final String EBS_URL = "https://localhost:8081";
+//    private static final String EBS_URL = "https://slaytherelics.xyz:8081";
 
 //    private static final long CHECK_QUEUE_PERIOD_MILLIS = 100;
 //    private static BackendBroadcaster instance = new BackendBroadcaster();
@@ -29,9 +29,11 @@ public class BackendBroadcaster {
     private ReentrantLock queueLock;
     private Thread worker;
     private long checkQueuePeriodMillis;
+    private boolean sendDuplicates;
 
-    public BackendBroadcaster(long checkQueuePeriodMillis) {
+    public BackendBroadcaster(long checkQueuePeriodMillis, boolean sendDuplicates) {
         this.checkQueuePeriodMillis = checkQueuePeriodMillis;
+        this.sendDuplicates = sendDuplicates;
         message = null;
         lastMessage = null;
         queueLock = new ReentrantLock();
@@ -52,6 +54,7 @@ public class BackendBroadcaster {
     }
 
     public void queueMessage(String msg) {
+        // queues only if the new message differs from the last one
         queueLock.lock();
         try {
             if (message == null || !message.equals(msg)) {
@@ -68,7 +71,7 @@ public class BackendBroadcaster {
         long ts = 0;
         queueLock.lock();
         try {
-            if (message != null && !message.equals(lastMessage)) {
+            if ((sendDuplicates || !message.equals(lastMessage)) && message != null)  {
                 lastMessage = message;
                 msg = message;
                 ts = messageTimestamp;
@@ -90,7 +93,7 @@ public class BackendBroadcaster {
         return msg.replace(DELAY_PLACEHOLDER, Long.toString(delay));
     }
 
-    public void broadcastMessage(String msg) {
+    private void broadcastMessage(String msg) {
 
         try {
             URL url = new URL(EBS_URL);
@@ -113,7 +116,7 @@ public class BackendBroadcaster {
 
             if (!response.toString().equals("Success"))
                 logger.info("message not broadcasted succesfully, response: " + response.toString());
-//            logger.info("broadcasted message, response: " + response.toString());
+            logger.info("broadcasted message, response: " + response.toString());
 
         } catch (Exception e) {
             e.printStackTrace();
