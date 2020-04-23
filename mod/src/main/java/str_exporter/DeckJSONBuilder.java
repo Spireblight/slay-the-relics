@@ -10,7 +10,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -22,11 +21,15 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
     public static final Logger logger = LogManager.getLogger(TipsJSONBuilder.class.getName());
 
     private ArrayList<String> keywords;
+    private ArrayList<String> cardsRepr;
+    private ArrayList<AbstractCard> cards;
 
     public DeckJSONBuilder(String login, String secret, String version) {
         super(login, secret, version, 4);
 
         keywords = new ArrayList<>();
+        cardsRepr = new ArrayList<>();
+        cards = new ArrayList<>();
 
         TEXT = CardCrawlGame.languagePack.getUIString("TipHelper").TEXT;
     }
@@ -43,9 +46,15 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
         sb.append("\"c\":\"").append(character).append("\","); // character
 
         keywords.clear();
+        cardsRepr.clear();
+        cards.clear();
+
+        // deck;;;cards;;;keywords
         StringBuilder sb_message = new StringBuilder();
-        boolean nonempty = buildCards(sb_message);
-        sb_message.append(nonempty ? ";": ";;;"); // ;;; delimits cards from keywords
+        buildDeck(sb_message);
+        sb_message.append(";;;");
+        buildCards(sb_message);
+        sb_message.append(";;;");
         buildKeywords(sb_message);
 
         sb.append("\"k\":\""); // deck
@@ -94,43 +103,122 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
         }
     }
 
-    private boolean buildCards(StringBuilder sb) {
-        //returns true if deck has 1 or more cards
-
+    private boolean buildDeck(StringBuilder sb) {
         int size = 0;
 
         if (CardCrawlGame.isInARun()) {
             CardGroup deck = CardCrawlGame.dungeon.player.masterDeck;
             for (int i = 0; i < deck.group.size(); i++) {
-                buildCard(sb, deck.group.get(i));
-                sb.append(";;");
+                sb.append(getCardIndex(deck.group.get(i)));
+                if (i < deck.group.size() - 1)
+                    sb.append(',');
             }
 
             size = deck.group.size();
         }
 
+        if (size == 0) {
+            sb.append('-');
+        }
+
         return size > 0;
     }
 
+    private void buildCards(StringBuilder sb) {
+        //returns true if deck has 1 or more cards
+
+        for (int i = 0; i < cards.size(); i++) {
+            buildCard(sb, cards.get(i));
+            if (i < cards.size() - 1)
+                sb.append(";;");
+        }
+
+        if (cards.isEmpty())
+            sb.append('-');
+    }
+
+    private int getCardIndex(AbstractCard card) {
+        String cardShortRepr = getShortCardRepr(card);
+
+        int index = cardsRepr.indexOf(cardShortRepr);
+
+        if (index >= 0)
+            return index;
+        else {
+            cards.add(card);
+            cardsRepr.add(cardShortRepr);
+            return cardsRepr.size() - 1;
+        }
+    }
+
+    private String getShortCardRepr(AbstractCard card) {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(sanitize(card.name));
+        sb.append(';');
+        sb.append(encodeCardColor(card));
+        sb.append(';');
+        sb.append(card.rawDescription);
+
+        return sb.toString();
+    }
+
     private void buildCard(StringBuilder sb, AbstractCard card) {
-        String name = sanitize(card.name);
-        String desc = parseDescription(card);
+        // inTip == true when we're building a card that's supposed to appear in a card tip (e.g. a Shiv)
+
+        String name = sanitizeEmpty(sanitize(card.name));
+        String desc = sanitizeEmpty(parseDescription(card));
+        String keywords = sanitizeEmpty(encodeKeywords(card));
+
+        AbstractCard copy = card.makeStatEquivalentCopy();
+        copy.upgrade();
+        copy.displayUpgrades();
+        String upgradedDesc = sanitizeEmpty(parseDescription(copy));
+        String upgradedName = sanitizeEmpty(copy.name);
+        String upgradedKeywords = sanitizeEmpty(encodeKeywords(copy));
+
         int timesUpgraded = card.timesUpgraded;
         int cost = card.cost;
 
-        if (name.isEmpty())
-            name = "-";
+        if (!card.canUpgrade() && card.timesUpgraded > 0) {
+            // card is already upgraded and cannot be upgraded further
+            upgradedDesc = "_";
+            upgradedName = "_";
+            upgradedKeywords = "_";
+        } else if (!card.canUpgrade() && card.timesUpgraded == 0) {
+            // card cannot be upgraded at all, e.g. a Curse
+            upgradedName = "null";
+            upgradedDesc = "-";
+            upgradedKeywords = "-";
+        } else if (card.canUpgrade() && card.timesUpgraded == 0 && upgradedName.equals(name + '+')) {
+            // card is not upgraded and can be upgraded and uses the common + sign notation
+            upgradedName = "+";
+        } else if (upgradedKeywords.equals(keywords)) {
+            upgradedKeywords = "_";
+        }
 
-        if (desc.isEmpty())
-            desc = "-";
-
-//        if (timesUpgraded > 0) {
-//            name = colorizeString(name, "#g");
-//        }
-
-        // name ; type ; rarity ; color ; cost ; upgrades ; description ; img path ; keywords
+        // for a regular card:
+        // name ; bottleStatus ; cardToPreview ; cardToPreview upgraded ; nameUpgraded ; upgrades ; keyword upgraded ; descriptionUpgraded ; keywords ; cost ; type ; rarity ; color ; description
 
         sb.append(name);
+        sb.append(";");
+        sb.append(encodeBottleStatus(card));
+        sb.append(';');
+        sb.append(encodeCardToPreview(card));
+        sb.append(';');
+        sb.append(encodeCardToPreview(copy));
+        sb.append(';');
+        sb.append(upgradedName);
+        sb.append(";");
+        sb.append(timesUpgraded);
+        sb.append(';');
+        sb.append(upgradedKeywords);
+        sb.append(';');
+        sb.append(upgradedDesc);
+        sb.append(';');
+        sb.append(keywords);
+        sb.append(';');
+        sb.append(cost);
         sb.append(";");
         sb.append(encodeCardType(card));
         sb.append(";");
@@ -138,25 +226,34 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
         sb.append(";");
         sb.append(encodeCardColor(card));
         sb.append(";");
-        sb.append(cost);
-        sb.append(";");
-        sb.append(timesUpgraded);
-        sb.append(';');
         sb.append(desc);
-        sb.append(';');
+    }
 
-        if (card.keywords.size() == 0) {
-            sb.append('-');
-        } else {
-            Iterator<String> iter = card.keywords.iterator();
+    private String sanitizeEmpty(String s) {
+        return s.isEmpty() ? "-" : s;
+    }
 
-            while(iter.hasNext()) {
-                sb.append(getKeywordIndex(iter.next()));
-
-                if (iter.hasNext())
-                    sb.append(',');
-            }
+    private String encodeCardToPreview(AbstractCard card) {
+        if (card.cardsToPreview != null) {
+            return Integer.toString(getCardIndex(card.cardsToPreview));
+        }  else {
+            return "-1";
         }
+    }
+
+    private String encodeKeywords(AbstractCard card) {
+        StringBuilder sb = new StringBuilder();
+
+        Iterator<String> iter = card.keywords.iterator();
+
+        while(iter.hasNext()) {
+            sb.append(getKeywordIndex(iter.next()));
+
+            if (iter.hasNext())
+                sb.append(',');
+        }
+
+        return sb.toString();
     }
 
     private String encodeCardType(AbstractCard card) {
@@ -172,6 +269,18 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
     private String encodeCardColor(AbstractCard card) {
         int ord = card.color.ordinal();
         return ord > 5 ? card.color.toString() : Integer.toString(ord);
+    }
+
+    private String encodeBottleStatus(AbstractCard card) {
+        if (card.inBottleFlame) {
+            return "1";
+        } else if (card.inBottleLightning) {
+            return "2";
+        } else if (card.inBottleTornado) {
+            return "3";
+        } else {
+            return "0";
+        }
     }
 
     private String sanitize(String s) {
@@ -204,7 +313,7 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
             sb.append(line.text);
 
             if(i < card.description.size() - 1)
-                sb.append(" ");
+                sb.append(" NL ");
         }
 
         String[] parts = sb.toString().split(" ");
