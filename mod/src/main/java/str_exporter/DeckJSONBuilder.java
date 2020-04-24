@@ -128,7 +128,7 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
         //returns true if deck has 1 or more cards
 
         for (int i = 0; i < cards.size(); i++) {
-            buildCard(sb, cards.get(i));
+            buildCard(sb, cards.get(i), false);
             if (i < cards.size() - 1)
                 sb.append(";;");
         }
@@ -138,32 +138,22 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
     }
 
     private int getCardIndex(AbstractCard card) {
-        String cardShortRepr = getShortCardRepr(card);
+        StringBuilder sb = new StringBuilder();
+        buildCard(sb, card, true);
+        String cardRepr = sb.toString();
 
-        int index = cardsRepr.indexOf(cardShortRepr);
+        int index = cardsRepr.indexOf(cardRepr);
 
         if (index >= 0)
             return index;
         else {
             cards.add(card);
-            cardsRepr.add(cardShortRepr);
+            cardsRepr.add(cardRepr);
             return cardsRepr.size() - 1;
         }
     }
 
-    private String getShortCardRepr(AbstractCard card) {
-        StringBuilder sb = new StringBuilder();
-
-        sb.append(sanitize(card.name));
-        sb.append(';');
-        sb.append(encodeCardColor(card));
-        sb.append(';');
-        sb.append(card.rawDescription);
-
-        return sb.toString();
-    }
-
-    private void buildCard(StringBuilder sb, AbstractCard card) {
+    private void buildCard(StringBuilder sb, AbstractCard card, boolean repr) {
         // inTip == true when we're building a card that's supposed to appear in a card tip (e.g. a Shiv)
 
         String name = sanitizeEmpty(sanitize(card.name));
@@ -184,7 +174,7 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
             // card is already upgraded and cannot be upgraded further
             upgradedDesc = "_";
             upgradedName = "_";
-            upgradedKeywords = "_";
+//            upgradedKeywords = "_";
         } else if (!card.canUpgrade() && card.timesUpgraded == 0) {
             // card cannot be upgraded at all, e.g. a Curse
             upgradedName = "null";
@@ -198,16 +188,18 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
         }
 
         // for a regular card:
-        // name ; bottleStatus ; cardToPreview ; cardToPreview upgraded ; nameUpgraded ; upgrades ; keyword upgraded ; descriptionUpgraded ; keywords ; cost ; type ; rarity ; color ; description
+        // name ; bottleStatus ; cardToPreview ; cardToPreview upgraded ; nameUpgraded ; upgrades ; keyword upgraded ; descriptionUpgraded ; keywords ; cost ; cost upgraded ; type ; rarity ; color ; description
 
         sb.append(name);
         sb.append(";");
         sb.append(encodeBottleStatus(card));
         sb.append(';');
-        sb.append(encodeCardToPreview(card));
-        sb.append(';');
-        sb.append(encodeCardToPreview(copy));
-        sb.append(';');
+        if (!repr) {
+            sb.append(encodeCardToPreview(card));
+            sb.append(';');
+            sb.append(encodeCardToPreview(copy));
+            sb.append(';');
+        }
         sb.append(upgradedName);
         sb.append(";");
         sb.append(timesUpgraded);
@@ -219,6 +211,8 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
         sb.append(keywords);
         sb.append(';');
         sb.append(cost);
+        sb.append(";");
+        sb.append(copy.cost);
         sb.append(";");
         sb.append(encodeCardType(card));
         sb.append(";");
