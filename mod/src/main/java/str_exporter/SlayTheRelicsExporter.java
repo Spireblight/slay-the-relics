@@ -142,14 +142,14 @@ public class SlayTheRelicsExporter implements
         String tips_json = tipsJsonBuilder.buildJson();
         long end = System.nanoTime();
         logger.info("tips json builder took " + (end - start) / 1e6 + " milliseconds");
-        logger.info(tips_json);
+//        logger.info(tips_json);
         tipsBroadcaster.queueMessage(tips_json);
 
         start = System.nanoTime();
         String deck_json = deckJsonBuilder.buildJson();
         end = System.nanoTime();
         logger.info("deck json builder took " + (end - start) / 1e6 + " milliseconds");
-        logger.info(deck_json);
+//        logger.info(deck_json);
         deckBroadcaster.queueMessage(deck_json);
     }
 
@@ -212,7 +212,7 @@ public class SlayTheRelicsExporter implements
             String okayMsg = okayJsonBuilder.buildJson();
             lastOkayBroadcast = System.currentTimeMillis();
             okayBroadcaster.queueMessage(okayMsg);
-            logger.info(okayMsg);
+//            logger.info(okayMsg);
 
         }
     }
