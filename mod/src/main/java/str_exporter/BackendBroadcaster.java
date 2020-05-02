@@ -71,7 +71,7 @@ public class BackendBroadcaster {
         long ts = 0;
         queueLock.lock();
         try {
-            if ((sendDuplicates || !message.equals(lastMessage)) && message != null)  {
+            if (message != null && (sendDuplicates || !message.equals(lastMessage)))  {
                 lastMessage = message;
                 msg = message;
                 ts = messageTimestamp;

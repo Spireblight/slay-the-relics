@@ -35,12 +35,13 @@ public class TipsJSONBuilder extends JSONMessageBuilder{
 
     public TipsJSONBuilder(String login, String secret, String version) {
         super(login, secret, version, 1);
+        powerTips = new ArrayList<>(40);
     }
 
     @Override
     public void buildMessage(StringBuilder sb) {
 
-        powerTips = new ArrayList<>(40);
+        powerTips.clear();
 
         String character = "";
 
