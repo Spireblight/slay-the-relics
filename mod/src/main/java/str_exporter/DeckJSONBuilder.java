@@ -2,6 +2,7 @@ package str_exporter;
 
 import basemod.BaseMod;
 import basemod.abstracts.DynamicVariable;
+import basemod.patches.whatmod.WhatMod;
 import com.megacrit.cardcrawl.cards.AbstractCard;
 import com.megacrit.cardcrawl.cards.CardGroup;
 import com.megacrit.cardcrawl.cards.DescriptionLine;
@@ -71,6 +72,9 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
             if(iter.hasNext())
                 sb.append(";;");
         }
+
+        if (keywords.size() == 0)
+            sb.append('-');
     }
 
     private String getKeywordRepr(String word) {
@@ -177,7 +181,7 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
 //            upgradedKeywords = "_";
         } else if (!card.canUpgrade() && card.timesUpgraded == 0) {
             // card cannot be upgraded at all, e.g. a Curse
-            upgradedName = "null";
+            upgradedName = "-";
             upgradedDesc = "-";
             upgradedKeywords = "-";
         } else if (card.canUpgrade() && card.timesUpgraded == 0 && upgradedName.equals(name + '+')) {
@@ -188,12 +192,14 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
         }
 
         // for a regular card:
-        // name ; bottleStatus ; cardToPreview ; cardToPreview upgraded ; nameUpgraded ; upgrades ; keyword upgraded ; descriptionUpgraded ; keywords ; cost ; cost upgraded ; type ; rarity ; color ; description
+        // name ; bottleStatus ; modName ; cardToPreview ; cardToPreview upgraded ; nameUpgraded ; upgrades ; keyword upgraded ; descriptionUpgraded ; keywords ; cost ; cost upgraded ; type ; rarity ; color ; description
 
         sb.append(name);
         sb.append(";");
         sb.append(encodeBottleStatus(card));
         sb.append(';');
+        sb.append(encodeModName(card));
+        sb.append(";");
         if (!repr) {
             sb.append(encodeCardToPreview(card));
             sb.append(';');
@@ -277,6 +283,12 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
         }
     }
 
+    private String encodeModName(AbstractCard card) {
+        String modName = WhatMod.findModName(card.getClass());
+
+        return modName != null ? modName : "-";
+    }
+
     private String sanitize(String s) {
         return s.replaceAll(";", ":")
                 .replaceAll("\"", "\\\"")
@@ -357,7 +369,7 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
                 sb.append(matcherKeyword.group(1));
             }  else { // Replace color codes for now
 
-                part = part.replaceAll("\\[[a-zA-Z_]*\\]", "");
+                part = part.replaceAll("\\[[a-zA-Z_]{2,}\\]", "");
                 part = part.replaceAll("\\[#[A-Ea-e0-9]*\\]", "");
                 part = part.replaceAll("\\[\\]", "");
                 part = part.replaceAll("\\[\\[", "[");
