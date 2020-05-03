@@ -42,8 +42,10 @@ public class SlayTheRelicsExporter implements
     private static String secret = null;
     private static String version = "";
 
-    private long lastCheck = System.currentTimeMillis();
-    private boolean checkNextUpdate = false;
+    private long lastTipsCheck = System.currentTimeMillis();
+    private long lastDeckCheck = System.currentTimeMillis();
+    private boolean checkTipsNextUpdate = false;
+    private boolean checkDeckNextUpdate = false;
 
     private TipsJSONBuilder tipsJsonBuilder;
     private DeckJSONBuilder deckJsonBuilder;
@@ -55,7 +57,9 @@ public class SlayTheRelicsExporter implements
 
 //    private static final long MAX_BROADCAST_PERIOD_MILLIS = 250;
     private static final long MAX_CHECK_PERIOD_MILLIS = 1000;
-    private static final long BROADCAST_CHECK_QUEUE_PERIOD_MILLIS = 500;
+    private static final long MIN_DECK_CHECK_PERIOD_MILLIS = 1000;
+    private static final long MAX_DECK_CHECK_PERIOD_MILLIS = 2000;
+    private static final long BROADCAST_CHECK_QUEUE_PERIOD_MILLIS = 100;
     private static final long MAX_OKAY_BROADCAST_PERIOD_MILLIS = 1000;
 
     public static SlayTheRelicsExporter instance = null;
@@ -126,28 +130,24 @@ public class SlayTheRelicsExporter implements
     }
 
     private void queue_check() {
-        checkNextUpdate = true;
+        checkTipsNextUpdate = true;
+        checkDeckNextUpdate = true;
     }
 
-    private void check() {
-        if (areCredentialsValid()) {
-            broadcast();
-        } else {
-//            logger.info("Either your secret or your login are null. The config file has probably not loaded properly");
-        }
-    }
 
-    private void broadcast() {
+    private void broadcastTips() {
         long start = System.nanoTime();
         String tips_json = tipsJsonBuilder.buildJson();
         long end = System.nanoTime();
         logger.info("tips json builder took " + (end - start) / 1e6 + " milliseconds");
 //        logger.info(tips_json);
         tipsBroadcaster.queueMessage(tips_json);
+    }
 
-        start = System.nanoTime();
+    private void broadcastDeck() {
+        long start = System.nanoTime();
         String deck_json = deckJsonBuilder.buildJson();
-        end = System.nanoTime();
+        long end = System.nanoTime();
         logger.info("deck json builder took " + (end - start) / 1e6 + " milliseconds");
 //        logger.info(deck_json);
         deckBroadcaster.queueMessage(deck_json);
@@ -199,12 +199,25 @@ public class SlayTheRelicsExporter implements
 
     @Override
     public void receivePostRender(SpriteBatch spriteBatch) {
-        if (checkNextUpdate || System.currentTimeMillis() - lastCheck > MAX_CHECK_PERIOD_MILLIS) {
+        if (checkTipsNextUpdate || System.currentTimeMillis() - lastTipsCheck > MAX_CHECK_PERIOD_MILLIS) {
 
-            lastCheck = System.currentTimeMillis();
-            check();
+            lastTipsCheck = System.currentTimeMillis();
+            if (areCredentialsValid()) {
+                broadcastTips();
+            }
 
-            checkNextUpdate = false;
+            checkTipsNextUpdate = false;
+        }
+
+        if ((checkDeckNextUpdate && System.currentTimeMillis() - lastDeckCheck > MIN_DECK_CHECK_PERIOD_MILLIS) ||
+                System.currentTimeMillis() - lastDeckCheck > MAX_DECK_CHECK_PERIOD_MILLIS) {
+
+            lastDeckCheck = System.currentTimeMillis();
+            if (areCredentialsValid()) {
+                broadcastDeck();
+            }
+
+            checkDeckNextUpdate = false;
         }
 
         if (System.currentTimeMillis() - lastOkayBroadcast > MAX_OKAY_BROADCAST_PERIOD_MILLIS) {

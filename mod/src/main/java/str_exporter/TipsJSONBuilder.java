@@ -17,10 +17,14 @@ import com.megacrit.cardcrawl.potions.AbstractPotion;
 import com.megacrit.cardcrawl.powers.AbstractPower;
 import com.megacrit.cardcrawl.relics.AbstractRelic;
 import com.megacrit.cardcrawl.rooms.AbstractRoom;
+import com.megacrit.cardcrawl.rooms.ShopRoom;
+import com.megacrit.cardcrawl.shop.StorePotion;
+import com.megacrit.cardcrawl.shop.StoreRelic;
 import com.megacrit.cardcrawl.ui.panels.TopPanel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.smartcardio.Card;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -68,16 +72,61 @@ public class TipsJSONBuilder extends JSONMessageBuilder{
             sb.append("\"m\":");
             buildMonsterPowers(sb);
             sb.append(",");
-
-            sb.append("\"u\":");
-            buildCustomTips(sb);
-            sb.append(",");
         }
 
+        sb.append("\"u\":");
+        buildCustomTips(sb);
+        sb.append(",");
+
         sb.append("\"w\":");
-        buildPowerTips(sb);
+        buildPowerTipsDictionary(sb);
 
         sb.append("}");
+    }
+
+    private void buildShop(StringBuilder sb) {
+        ArrayList<StorePotion> potions = (ArrayList<StorePotion>) ReflectionHacks.getPrivate(CardCrawlGame.dungeon.shopScreen, CardCrawlGame.dungeon.shopScreen.getClass(), "potions");
+        ArrayList<StoreRelic> relics = (ArrayList<StoreRelic>) ReflectionHacks.getPrivate(CardCrawlGame.dungeon.shopScreen, CardCrawlGame.dungeon.shopScreen.getClass(), "relics");
+
+        for (int i = 0; i < potions.size(); i++) {
+            AbstractPotion potion = potions.get(i).potion;
+
+            sb.append('[');
+            buildHitbox(sb, potion.hb);
+            sb.append(',');
+            buildPowerTips(sb, potion.tips);
+            sb.append(']');
+            if (i < potions.size() - 1 || relics.size() > 0)
+                sb.append(',');
+        }
+
+        for (int i = 0; i < relics.size(); i++) {
+            AbstractRelic relic = relics.get(i).relic;
+
+            sb.append('[');
+            buildHitbox(sb, relic.hb);
+            sb.append(',');
+            buildPowerTips(sb, relic.tips);
+            sb.append(']');
+            if (i < relics.size() - 1)
+                sb.append(',');
+        }
+    }
+
+    private void buildBossRelics(StringBuilder sb) {
+        ArrayList<AbstractRelic> relics = CardCrawlGame.dungeon.bossRelicScreen.relics;
+
+        for (int i = 0; i < relics.size(); i++) {
+            AbstractRelic relic = relics.get(i);
+
+            sb.append('[');
+            buildHitbox(sb, relic.hb);
+            sb.append(',');
+            buildPowerTips(sb, relic.tips);
+            sb.append(']');
+            if (i < relics.size() - 1)
+                sb.append(',');
+        }
     }
 
     private void buildPlayerPowers(StringBuilder sb) {
@@ -125,11 +174,59 @@ public class TipsJSONBuilder extends JSONMessageBuilder{
         sb.append(']');
     }
 
+    private float[] transformHitbox(Hitbox hb) {
+        float x = hb.x / Settings.WIDTH * 100f;
+        float y = (Settings.HEIGHT - hb.y - hb.height)  / Settings.HEIGHT* 100f; // invert the y-coordinate
+        float w = hb.width / Settings.WIDTH * 100f;
+        float h = hb.height  / Settings.HEIGHT * 100f;
+
+        return new float[]{x, y, w, h};
+    }
+
+    private void buildHitbox(StringBuilder sb, Hitbox hb) {
+        float[] coords = transformHitbox(hb);
+        sb.append(String.format(Locale.US, "%.2f,%.2f,%.2f,%.2f", coords[0], coords[1], coords[2], coords[3]));
+    }
+
     private void buildCustomTips(StringBuilder sb) {
 
         sb.append('[');
 
-        buildOrbTips(sb);
+        if (isInCombat()) {
+            boolean nonzeroOrbs = buildOrbTips(sb);
+            buildCustomTipsFromApi(sb, nonzeroOrbs);
+        } else if (isInAShop()) {
+            buildShop(sb);
+        } else if (isDisplayingBossRelics()) {
+            buildBossRelics(sb);
+        }
+
+        sb.append(']');
+    }
+
+    private boolean buildOrbTips(StringBuilder sb) {
+
+        ArrayList<AbstractOrb> orbs = CardCrawlGame.dungeon.player.orbs;
+        for (int i = 0; i < orbs.size(); i++) {
+            AbstractOrb orb = orbs.get(i);
+
+            sb.append('[');
+            buildHitbox(sb, orb.hb);
+            sb.append(',');
+
+            ArrayList<PowerTip> tips = new ArrayList<>();
+            tips.add(new PowerTip(orb.name, orb.description));
+            buildPowerTips(sb, tips);
+            sb.append(']');
+
+            if (i < orbs.size() - 1)
+                sb.append(",");
+        }
+
+        return orbs.size() > 0;
+    }
+
+    private void buildCustomTipsFromApi(StringBuilder sb, boolean nonzeroOrbs) {
 
         // try building custom tips
         StringBuilder sb_safe = new StringBuilder();
@@ -145,9 +242,6 @@ public class TipsJSONBuilder extends JSONMessageBuilder{
 //            logger.info("getTipsFromMods() took " + (end - start) + "ms");
 //            logger.info("hitboxes size: " + hitboxes.size());
 
-            if (CardCrawlGame.dungeon.player.orbs.size() > 0 && hitboxes.size() > 0)
-                sb_safe.append(",");
-
             Iterator<Hitbox> hb_iter = hitboxes.iterator();
             Iterator<ArrayList<PowerTip>> pt_iter = tip_lists.iterator();
 
@@ -155,11 +249,9 @@ public class TipsJSONBuilder extends JSONMessageBuilder{
                 Hitbox hb = hb_iter.next();
                 ArrayList<PowerTip> tips = pt_iter.next();
 
-                float x = hb.x / Settings.WIDTH * 100f;
-                float y = (Settings.HEIGHT - hb.y - hb.height)  / Settings.HEIGHT* 100f; // invert the y-coordinate
-                float w = hb.width / Settings.WIDTH * 100f;
-                float h = hb.height  / Settings.HEIGHT * 100f;
-                sb_safe.append(String.format(Locale.US, "[%.2f,%.2f,%.2f,%.2f,", x, y, w, h));
+                sb_safe.append('[');
+                buildHitbox(sb_safe, hb);
+                sb_safe.append(',');
 
                 buildPowerTips(sb_safe, tips);
                 sb_safe.append(']');
@@ -168,34 +260,14 @@ public class TipsJSONBuilder extends JSONMessageBuilder{
                     sb_safe.append(",");
             }
             result = sb_safe.toString();
-        } catch(Exception e) {
+        } catch (Exception e) {
             logger.error("an exception occured during building hitboxes", e);
             result = "";
         } finally {
+            if (nonzeroOrbs && !result.isEmpty())
+                sb_safe.append(",");
+
             sb.append(result);
-        }
-
-        sb.append(']');
-    }
-
-    private void buildOrbTips(StringBuilder sb) {
-        ArrayList<AbstractOrb> orbs = CardCrawlGame.dungeon.player.orbs;
-        for (int i = 0; i < orbs.size(); i++) {
-            AbstractOrb orb = orbs.get(i);
-
-            float x = orb.hb.x / Settings.WIDTH * 100f;
-            float y = (Settings.HEIGHT - orb.hb.y - orb.hb.height)  / Settings.HEIGHT* 100f; // invert the y-coordinate
-            float w = orb.hb.width / Settings.WIDTH * 100f;
-            float h = orb.hb.height  / Settings.HEIGHT * 100f;
-            sb.append(String.format(Locale.US, "[%.2f,%.2f,%.2f,%.2f,", x, y, w, h));
-
-            ArrayList<PowerTip> tips = new ArrayList<>();
-            tips.add(new PowerTip(orb.name, orb.description));
-            buildPowerTips(sb, tips);
-            sb.append(']');
-
-            if (i < orbs.size() - 1)
-                sb.append(",");
         }
     }
 
@@ -258,27 +330,13 @@ public class TipsJSONBuilder extends JSONMessageBuilder{
             ArrayList<AbstractPotion> potions = CardCrawlGame.dungeon.player.potions;
 
             for (int i = 0; i < potions.size(); i++) {
-                buildPotion(sb, potions.get(i));
+                buildPowerTips(sb, potions.get(i).tips);
 
                 if (i < potions.size() - 1)
                     sb.append(",");
             }
         }
         sb.append("]]");
-    }
-
-    private void buildPotion(StringBuilder sb, AbstractPotion potion) {
-        sb.append('[');
-        for (int i = 0; i < potion.tips.size(); i++) {
-            PowerTip tip = potion.tips.get(i);
-
-            sb.append(getPowerTipIndex(tip));
-
-            if (i < potion.tips.size() - 1) {
-                sb.append(",");
-            }
-        }
-        sb.append(']');
     }
 
     private void buildRelics(StringBuilder sb) {
@@ -295,7 +353,7 @@ public class TipsJSONBuilder extends JSONMessageBuilder{
         sb.append("[" + ((relics.size() > MAX_RELICS) ? 1:0) + ",");
         sb.append("[");
         for (int i = first_index; i < last_index; i++) {
-            buildRelic(sb, relics.get(i));
+            buildPowerTips(sb, relics.get(i).tips);
 
             if (i < last_index - 1)
                 sb.append(",");
@@ -303,22 +361,7 @@ public class TipsJSONBuilder extends JSONMessageBuilder{
         sb.append("]]");
     }
 
-    private void buildRelic(StringBuilder sb, AbstractRelic relic) {
-
-        sb.append('[');
-        for (int i = 0; i < relic.tips.size(); i++) {
-            PowerTip tip = relic.tips.get(i);
-
-            sb.append(getPowerTipIndex(tip));
-
-            if (i < relic.tips.size() - 1) {
-                sb.append(",");
-            }
-        }
-        sb.append(']');
-    }
-
-    private void buildPowerTips(StringBuilder sb) {
+    private void buildPowerTipsDictionary(StringBuilder sb) {
         StringBuilder sb2 = new StringBuilder();
 
         for (int i = 0; i < powerTips.size(); i++) {
@@ -329,7 +372,7 @@ public class TipsJSONBuilder extends JSONMessageBuilder{
         }
 
         sb.append('"');
-        sb.append(StringCompression.compress(sb2.toString()));
+        sb.append(StringCompression.compress(sanitizeColorCodes(sb2.toString())));
         sb.append('"');
     }
 
@@ -403,6 +446,15 @@ public class TipsJSONBuilder extends JSONMessageBuilder{
         return str;
     }
 
+    private static String sanitizeColorCodes(String text) {
+        text = text.replaceAll("\\[[a-zA-Z_]{2,}\\]", "");
+        text = text.replaceAll("\\[#[A-Ea-e0-9]*\\]", "");
+        text = text.replaceAll("\\[\\]", "");
+        text = text.replaceAll("\\[\\[", "[");
+
+        return text;
+    }
+
     private static String sanitizeEmpty(String str) {
         return str.isEmpty() ? " " : str;
     }
@@ -411,6 +463,18 @@ public class TipsJSONBuilder extends JSONMessageBuilder{
         return CardCrawlGame.isInARun() && CardCrawlGame.dungeon != null && CardCrawlGame.dungeon.player != null &&
                 CardCrawlGame.dungeon.currMapNode != null &&
                 CardCrawlGame.dungeon.getCurrRoom().phase == AbstractRoom.RoomPhase.COMBAT;
+    }
+
+    private boolean isInAShop() {
+        return CardCrawlGame.isInARun() && CardCrawlGame.dungeon != null && CardCrawlGame.dungeon.player != null &&
+                CardCrawlGame.dungeon.currMapNode != null &&
+                CardCrawlGame.dungeon.currMapNode.room instanceof ShopRoom;
+    }
+
+    private boolean isDisplayingBossRelics() {
+        return CardCrawlGame.isInARun() && CardCrawlGame.dungeon != null && CardCrawlGame.dungeon.player != null &&
+                CardCrawlGame.dungeon.currMapNode != null &&
+                CardCrawlGame.dungeon.screen == AbstractDungeon.CurrentScreen.BOSS_REWARD;
     }
 
     private ArrayList<AbstractMonster> getMonsters() {
