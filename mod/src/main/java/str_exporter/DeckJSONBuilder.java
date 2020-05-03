@@ -168,7 +168,7 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
         copy.upgrade();
         copy.displayUpgrades();
         String upgradedDesc = sanitizeEmpty(parseDescription(copy));
-        String upgradedName = sanitizeEmpty(copy.name);
+        String upgradedName = sanitizeEmpty(sanitize(copy.name));
         String upgradedKeywords = sanitizeEmpty(encodeKeywords(copy));
 
         int timesUpgraded = card.timesUpgraded;
@@ -290,8 +290,8 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
     }
 
     private String sanitize(String s) {
-        return s.replaceAll(";", ":")
-                .replaceAll("\"", "\\\"")
+        return s.replace(";", ":")
+                .replace("\"", "\\\"")
                 .replaceAll("\\[[A-Z]\\]", "[E]");
     }
 

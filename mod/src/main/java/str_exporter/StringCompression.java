@@ -38,7 +38,7 @@ public class StringCompression {
     }
 
     public static String compress(String s) {
-        return compress(s, "\\s;:,./");
+        return compress(s, " \t\n\r\f;:,./");
     }
 
     public static String compress(String s, String delims) {
