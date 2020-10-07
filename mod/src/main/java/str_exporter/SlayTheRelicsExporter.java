@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 @SpireInitializer
@@ -109,11 +110,10 @@ public class SlayTheRelicsExporter implements
                 path = Paths.get("slaytherelics_config.txt.txt");
 
             String data = new String(Files.readAllBytes(path));
+            List<String> lines = Files.readAllLines(path);
 
-            String[] lines = data.split("\r\n");
-
-            login = lines[0].split(":")[1];
-            secret = lines[1].split(":")[1];
+            login = lines.get(0).split(":")[1];
+            secret = lines.get(1).split(":")[1];
 
             logger.info("slaytherelics_config.txt was succesfully loaded");
 
@@ -139,7 +139,7 @@ public class SlayTheRelicsExporter implements
         long start = System.nanoTime();
         String tips_json = tipsJsonBuilder.buildJson();
         long end = System.nanoTime();
-        logger.info("tips json builder took " + (end - start) / 1e6 + " milliseconds");
+//        logger.info("tips json builder took " + (end - start) / 1e6 + " milliseconds");
 //        logger.info(tips_json);
         tipsBroadcaster.queueMessage(tips_json);
     }
@@ -148,7 +148,7 @@ public class SlayTheRelicsExporter implements
         long start = System.nanoTime();
         String deck_json = deckJsonBuilder.buildJson();
         long end = System.nanoTime();
-        logger.info("deck json builder took " + (end - start) / 1e6 + " milliseconds");
+//        logger.info("deck json builder took " + (end - start) / 1e6 + " milliseconds");
 //        logger.info(deck_json);
         deckBroadcaster.queueMessage(deck_json);
     }
