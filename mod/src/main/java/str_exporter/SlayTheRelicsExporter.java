@@ -112,8 +112,8 @@ public class SlayTheRelicsExporter implements
             String data = new String(Files.readAllBytes(path));
             List<String> lines = Files.readAllLines(path);
 
-            login = lines.get(0).split(":")[1];
-            secret = lines.get(1).split(":")[1];
+            login = lines.get(0).split(":")[1].toLowerCase().trim();
+            secret = lines.get(1).split(":")[1].trim();
 
             logger.info("slaytherelics_config.txt was succesfully loaded");
 

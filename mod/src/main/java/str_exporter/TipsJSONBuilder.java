@@ -265,7 +265,7 @@ public class TipsJSONBuilder extends JSONMessageBuilder{
             result = "";
         } finally {
             if (nonzeroOrbs && !result.isEmpty())
-                sb_safe.append(",");
+                sb.append(",");
 
             sb.append(result);
         }
