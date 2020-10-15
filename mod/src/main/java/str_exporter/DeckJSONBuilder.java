@@ -7,6 +7,7 @@ import com.megacrit.cardcrawl.cards.AbstractCard;
 import com.megacrit.cardcrawl.cards.CardGroup;
 import com.megacrit.cardcrawl.cards.DescriptionLine;
 import com.megacrit.cardcrawl.core.CardCrawlGame;
+import com.megacrit.cardcrawl.core.Settings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -165,12 +166,12 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
         String desc = sanitizeEmpty(parseDescription(card));
         String keywords = sanitizeEmpty(encodeKeywords(card));
 
-        AbstractCard copy = card.makeStatEquivalentCopy();
-        copy.upgrade();
-        copy.displayUpgrades();
-        String upgradedDesc = sanitizeEmpty(parseDescription(copy));
-        String upgradedName = sanitizeEmpty(sanitize(copy.name));
-        String upgradedKeywords = sanitizeEmpty(encodeKeywords(copy));
+        AbstractCard cardUpg = card.makeStatEquivalentCopy();
+        cardUpg.upgrade();
+        cardUpg.displayUpgrades();
+        String upgradedDesc = sanitizeEmpty(parseDescription(cardUpg));
+        String upgradedName = sanitizeEmpty(sanitize(cardUpg.name));
+        String upgradedKeywords = sanitizeEmpty(encodeKeywords(cardUpg));
 
         int timesUpgraded = card.timesUpgraded;
         int cost = card.cost;
@@ -192,6 +193,10 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
             upgradedKeywords = "_";
         }
 
+        // this odd ordering of properties is supposed to maximize the compression ratio of the custom compression
+        // algorithm implemented here. It's supposed to cluster features that often change together or don't change
+        // at all
+
         // for a regular card:
         // name ; bottleStatus ; modName ; cardToPreview ; cardToPreview upgraded ; nameUpgraded ; upgrades ; keyword upgraded ; descriptionUpgraded ; keywords ; cost ; cost upgraded ; type ; rarity ; color ; description
 
@@ -204,7 +209,7 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
         if (!repr) {
             sb.append(encodeCardToPreview(card));
             sb.append(';');
-            sb.append(encodeCardToPreview(copy));
+            sb.append(encodeCardToPreview(cardUpg));
             sb.append(';');
         }
         sb.append(upgradedName);
@@ -219,7 +224,7 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
         sb.append(';');
         sb.append(cost);
         sb.append(";");
-        sb.append(copy.cost);
+        sb.append(cardUpg.cost);
         sb.append(";");
         sb.append(encodeCardType(card));
         sb.append(";");
@@ -323,7 +328,17 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
                 sb.append(" NL ");
         }
 
-        String[] parts = sb.toString().split(" ");
+        String description = sb.toString();
+
+        if(Settings.lineBreakViaCharacter) { //CN or Japanese localization
+            description = description.replaceAll("D", "!D!")
+                    .replaceAll("!B!!", "!B!")
+                    .replaceAll("!M!!", "!M!");
+        }
+
+//        logger.info("first description: " + sb.toString());
+
+        String[] parts = description.split(" ");
         sb.setLength(0);
 
         Pattern patternDynVar = Pattern.compile("!(.+)!(.*)");
