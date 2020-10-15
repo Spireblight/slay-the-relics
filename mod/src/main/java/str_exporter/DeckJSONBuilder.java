@@ -81,6 +81,7 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
         StringBuilder sb = new StringBuilder();
 
         if (word.equals("[R]") || word.equals("[G]") || word.equals("[B]") || word.equals("[W]") || word.equals("[E]")) {
+            word = "[E]";
             sb.append(sanitize(word));
             sb.append(' ');
             sb.append(TEXT[0]); // word Energy
