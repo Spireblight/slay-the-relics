@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"time"
 
 	"github.com/MaT1g3R/slaytherelics/api"
 	"github.com/MaT1g3R/slaytherelics/client"
@@ -24,7 +25,8 @@ func main() {
 
 	users := slaytherelics.NewUsers(twitchClient)
 	messages := slaytherelics.NewMessages(twitchClient)
-	a := api.New(twitchClient, users, messages)
+	broadcaster := slaytherelics.NewBroadcaster(messages, 20, time.Second*3, time.Minute)
+	a := api.New(twitchClient, users, broadcaster)
 
 	err = a.Router.Run(cfg.ListenAddr)
 	if err != nil {

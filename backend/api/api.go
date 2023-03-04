@@ -12,12 +12,12 @@ import (
 type API struct {
 	Router *gin.Engine
 
-	twitch   *client.Twitch
-	users    *slaytherelics.Users
-	messages *slaytherelics.Messages
+	twitch      *client.Twitch
+	users       *slaytherelics.Users
+	broadcaster *slaytherelics.Broadcaster
 }
 
-func New(twitch *client.Twitch, users *slaytherelics.Users, messages *slaytherelics.Messages) *API {
+func New(t *client.Twitch, u *slaytherelics.Users, b *slaytherelics.Broadcaster) *API {
 	r := gin.Default()
 
 	err := r.SetTrustedProxies(nil)
@@ -29,9 +29,9 @@ func New(twitch *client.Twitch, users *slaytherelics.Users, messages *slaytherel
 	api := &API{
 		Router: r,
 
-		twitch:   twitch,
-		users:    users,
-		messages: messages,
+		twitch:      t,
+		users:       u,
+		broadcaster: b,
 	}
 
 	r.POST("/", api.postMessageHandler)
