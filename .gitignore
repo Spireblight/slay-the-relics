@@ -446,3 +446,5 @@ poetry.toml
 out.zip
 out/
 log.jsonl
+backend/bin
+backend/test-reports

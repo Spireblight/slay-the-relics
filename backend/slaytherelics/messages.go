@@ -3,9 +3,11 @@ package slaytherelics
 import (
 	"context"
 	"encoding/json"
-	"github.com/MaT1g3R/slaytherelics/client"
-	"github.com/google/uuid"
 	"unicode/utf8"
+
+	"github.com/google/uuid"
+
+	"github.com/MaT1g3R/slaytherelics/client"
 )
 
 type Messages struct {
@@ -32,8 +34,10 @@ func stringChunks(s string, chunkSize int) []string {
 	return chunks
 }
 
-func (m *Messages) SendMessage(ctx context.Context, broadcasterID string, messageType int, message map[string]any) error {
-	msg := make([]any, 3, 3)
+func (m *Messages) SendMessage(ctx context.Context,
+	broadcasterID string, messageType int, message map[string]any) error {
+
+	msg := make([]any, 3)
 	msg[0] = 0
 	msg[1] = messageType
 	msg[2] = message
@@ -56,8 +60,10 @@ func (m *Messages) SendMessage(ctx context.Context, broadcasterID string, messag
 	return nil
 }
 
-func (m *Messages) sendChunk(ctx context.Context, updateID, broadcasterID string, chunkID, chunkCount int, chunk string) error {
-	msg := make([]any, 4, 4)
+func (m *Messages) sendChunk(ctx context.Context,
+	updateID, broadcasterID string, chunkID, chunkCount int, chunk string) error {
+
+	msg := make([]any, 4)
 	msg[0] = chunkID
 	msg[1] = chunkCount
 	msg[2] = updateID

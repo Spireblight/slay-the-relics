@@ -49,14 +49,12 @@ func (a *API) postMessageHandler(c *gin.Context) {
 		return
 	}
 
-	select {
-	case <-time.After(time.Millisecond * time.Duration(req.Delay)):
-		err = a.messages.SendMessage(ctx, streamer, req.MessageType, message)
-		if err != nil {
-			log.Println(err)
-			c.JSON(500, gin.H{"error": err.Error()})
-			return
-		}
+	time.Sleep(time.Duration(req.Delay) * time.Millisecond)
+	err = a.messages.SendMessage(ctx, streamer, req.MessageType, message)
+	if err != nil {
+		log.Println(err)
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
 	}
 
 	c.JSON(200, gin.H{})

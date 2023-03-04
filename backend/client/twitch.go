@@ -5,10 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	jwt2 "github.com/golang-jwt/jwt"
-	"github.com/nicklaw5/helix"
 	"net/http"
 	"time"
+
+	jwt2 "github.com/golang-jwt/jwt"
+	"github.com/nicklaw5/helix"
 )
 
 type Twitch struct {
@@ -103,10 +104,16 @@ func (t *Twitch) PostExtensionPubSub(ctx context.Context, broadcasterID, message
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.twitch.tv/helix/extensions/pubsub", bytes.NewBuffer(bs))
+	if err != nil {
+		return err
+	}
 	req.Header.Set("Authorization", "Bearer "+jwt)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Client-ID", "ebkycs9lir8pbic2r0b7wa6bg6n7ua")
 
-	_, err = http.DefaultClient.Do(req)
+	resp, err := http.DefaultClient.Do(req)
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	return err
 }

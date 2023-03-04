@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/MaT1g3R/slaytherelics/config"
 	"log"
 
 	"github.com/MaT1g3R/slaytherelics/api"
 	"github.com/MaT1g3R/slaytherelics/client"
+	"github.com/MaT1g3R/slaytherelics/config"
 	"github.com/MaT1g3R/slaytherelics/slaytherelics"
 )
 
