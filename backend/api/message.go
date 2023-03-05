@@ -1,13 +1,15 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/MaT1g3R/slaytherelics/slaytherelics"
+	errors2 "github.com/MaT1g3R/slaytherelics/errors"
 )
 
 type RequestMessage struct {
@@ -19,6 +21,33 @@ type RequestMessage struct {
 	Metadata map[string]any `json:"meta"`
 	Delay    int            `json:"delay"`
 	Message  any            `json:"message"`
+}
+
+func (a *API) authenticate(c *gin.Context, ctx context.Context, login, secret string) (string, error) {
+	streamer, err := a.users.GetUserID(ctx, login)
+	if err != nil {
+		log.Println(err)
+		c.JSON(500, gin.H{"error": err.Error()})
+		return "", err
+	}
+
+	auth, err := a.users.UserAuth(ctx, login, secret)
+	authError := &errors2.AuthError{}
+	if errors.As(err, &authError) {
+		c.JSON(401, gin.H{"error": authError.Error()})
+		return "", err
+	}
+	if err != nil {
+		log.Println(err)
+		c.JSON(500, gin.H{"error": err.Error()})
+		return "", err
+	}
+	if !auth {
+		c.JSON(401, gin.H{"error": "unauthorized"})
+		return "", err
+	}
+
+	return streamer, nil
 }
 
 func (a *API) postMessageHandler(c *gin.Context) {
@@ -45,15 +74,14 @@ func (a *API) postMessageHandler(c *gin.Context) {
 		return
 	}
 
-	streamer, err := a.users.GetUserID(ctx, req.Streamer.Login)
+	login := strings.ToLower(req.Streamer.Login)
+	streamer, err := a.authenticate(c, ctx, login, req.Streamer.Secret)
 	if err != nil {
-		log.Println(err)
-		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 
 	err = a.broadcaster.Broadcast(ctx, time.Duration(req.Delay)*time.Millisecond, streamer, req.MessageType, message)
-	timeout := &slaytherelics.SendTimeout{}
+	timeout := &errors2.Timeout{}
 	if errors.As(err, &timeout) {
 		c.JSON(429, gin.H{"error": err.Error()})
 		return

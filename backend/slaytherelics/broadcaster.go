@@ -6,19 +6,13 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/MaT1g3R/slaytherelics/errors"
 )
 
 const keepAlive = 5
 
 var sentinel = struct{}{}
-
-type SendTimeout struct {
-	err error
-}
-
-func (s *SendTimeout) Error() string {
-	return s.err.Error()
-}
 
 type PubSub interface {
 	SendMessage(ctx context.Context, broadcasterID string, messageType int, message map[string]any) error
@@ -123,6 +117,6 @@ func (s *sender) send(ctx context.Context, typ int, m map[string]any) error {
 	case s.queue <- sentinel:
 		return nil
 	case <-ctx.Done():
-		return &SendTimeout{ctx.Err()}
+		return &errors.Timeout{Err: ctx.Err()}
 	}
 }

@@ -4,12 +4,18 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	jwt2 "github.com/golang-jwt/jwt"
+	"github.com/gorilla/websocket"
 	"github.com/nicklaw5/helix"
+
+	errors2 "github.com/MaT1g3R/slaytherelics/errors"
 )
 
 type Twitch struct {
@@ -116,4 +122,93 @@ func (t *Twitch) PostExtensionPubSub(ctx context.Context, broadcasterID, message
 		_ = resp.Body.Close()
 	}()
 	return err
+}
+
+func parseMessage(message []byte) (string, error) {
+	msg := strings.Split(string(message), "\r\n")
+
+	for _, m := range msg {
+		parts := strings.Split(m, " ")
+		if len(parts) < 2 {
+			continue
+		}
+		switch parts[1] {
+		case "001":
+			if len(parts) < 4 {
+				continue
+			}
+			if parts[3] != ":Welcome," {
+				continue
+			}
+
+			return parts[2], nil
+		case "NOTICE":
+			return "", &errors2.AuthError{Err: errors.New("failed to authenticate")}
+		}
+	}
+
+	return "", nil
+}
+
+func (t *Twitch) VerifyUserName(ctx context.Context, login string, secret string) (_ string, err error) {
+	ctx, cancel := context.WithTimeout(ctx, t.timeout)
+	defer cancel()
+
+	addr := "irc-ws.chat.twitch.tv:80"
+	u := url.URL{Scheme: "ws", Host: addr, Path: "/"}
+	c, resp, err := websocket.DefaultDialer.Dial(u.String(), nil)
+
+	defer func() {
+		cErr := resp.Body.Close()
+		if err == nil && cErr != nil {
+			err = cErr
+		}
+	}()
+	defer func() {
+		cErr := c.Close()
+		if err == nil && cErr != nil {
+			err = cErr
+		}
+	}()
+
+	if err != nil {
+		return "", err
+	}
+
+	username := make(chan string, 1)
+	failed := make(chan error, 1)
+
+	go func() {
+		for {
+			_, message, err := c.ReadMessage()
+			if err != nil {
+				failed <- err
+				return
+			}
+			uName, err := parseMessage(message)
+			if err != nil {
+				failed <- err
+				return
+			}
+			if uName != "" {
+				username <- uName
+				return
+			}
+		}
+	}()
+	if err := c.WriteMessage(websocket.TextMessage, []byte("PASS oauth:"+secret)); err != nil {
+		return "", err
+	}
+	if err := c.WriteMessage(websocket.TextMessage, []byte("NICK "+login)); err != nil {
+		return "", err
+	}
+
+	select {
+	case err := <-failed:
+		return "", err
+	case u := <-username:
+		return u, nil
+	case <-ctx.Done():
+		return "", &errors2.Timeout{Err: ctx.Err()}
+	}
 }

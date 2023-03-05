@@ -2,6 +2,9 @@ package slaytherelics
 
 import (
 	"context"
+	"crypto/sha256"
+	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/MaT1g3R/slaytherelics/client"
@@ -10,29 +13,22 @@ import (
 type Users struct {
 	twitch *client.Twitch
 
-	userIDCache map[string]string
-	userIDMutex *sync.RWMutex
+	userIDCache   sync.Map
+	userAuthCache sync.Map
 }
 
 func NewUsers(twitch *client.Twitch) *Users {
 	return &Users{
 		twitch:      twitch,
-		userIDCache: make(map[string]string),
-		userIDMutex: &sync.RWMutex{},
+		userIDCache: sync.Map{},
 	}
 }
 
 func (s *Users) GetUserID(ctx context.Context, login string) (string, error) {
-	cacheResult, ok := func() (string, bool) {
-		s.userIDMutex.RLock()
-		defer s.userIDMutex.RUnlock()
-
-		r, ok := s.userIDCache[login]
-		return r, ok
-	}()
+	cacheResult, ok := s.userIDCache.Load(login)
 
 	if ok {
-		return cacheResult, nil
+		return cacheResult.(string), nil
 	}
 
 	user, err := s.twitch.GetUser(ctx, login)
@@ -40,11 +36,28 @@ func (s *Users) GetUserID(ctx context.Context, login string) (string, error) {
 		return "", err
 	}
 
-	func() {
-		s.userIDMutex.Lock()
-		defer s.userIDMutex.Unlock()
-		s.userIDCache[login] = user.ID
-	}()
+	s.userIDCache.Store(login, user.ID)
 
 	return user.ID, err
+}
+
+func (s *Users) UserAuth(ctx context.Context, login string, secret string) (bool, error) {
+	secretHash := fmt.Sprintf("%x", sha256.Sum256([]byte(secret)))
+
+	cacheResult, ok := s.userAuthCache.Load(login)
+	if ok {
+		gotSecretHash := cacheResult.(string)
+		return secretHash == gotSecretHash, nil
+	}
+
+	user, err := s.twitch.VerifyUserName(ctx, login, secret)
+	if err != nil {
+		return false, err
+	}
+	if !strings.EqualFold(user, login) {
+		return false, nil
+	}
+
+	s.userAuthCache.Store(login, secretHash)
+	return true, nil
 }
