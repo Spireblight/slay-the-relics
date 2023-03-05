@@ -68,6 +68,7 @@ func newSender(id string, b *Broadcaster) *sender {
 
 func (s *sender) init() {
 	s.queue = make(chan struct{}, s.broadcaster.maxQueueSize)
+	log.Printf("keepalive worker initialized for %s\n", s.broadcasterID)
 	go s.keepAliveWorker()
 }
 
@@ -82,7 +83,6 @@ func (s *sender) keepAliveWorker() {
 		if s.terminated.Load() {
 			return
 		}
-		log.Printf("keepalive worker for %s\n", s.broadcasterID)
 
 		time.Sleep(s.broadcaster.keepAliveInterval)
 
