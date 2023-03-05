@@ -24,13 +24,6 @@ type RequestMessage struct {
 }
 
 func (a *API) authenticate(c *gin.Context, ctx context.Context, login, secret string) (string, error) {
-	streamer, err := a.users.GetUserID(ctx, login)
-	if err != nil {
-		log.Println(err)
-		c.JSON(500, gin.H{"error": err.Error()})
-		return "", err
-	}
-
 	auth, err := a.users.UserAuth(ctx, login, secret)
 	authError := &errors2.AuthError{}
 	if errors.As(err, &authError) {
@@ -47,6 +40,12 @@ func (a *API) authenticate(c *gin.Context, ctx context.Context, login, secret st
 		return "", err
 	}
 
+	streamer, err := a.users.GetUserID(ctx, login)
+	if err != nil {
+		log.Println(err)
+		c.JSON(500, gin.H{"error": err.Error()})
+		return "", err
+	}
 	return streamer, nil
 }
 
