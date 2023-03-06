@@ -154,7 +154,8 @@ func parseMessage(message []byte) (string, error) {
 //nolint:funlen
 func (t *Twitch) VerifyUserName(ctx context.Context,
 	login string, secret string) (_ string, err error) {
-	log.Printf("Authenticating via Twitch IRC for %s", login)
+
+	log.Printf("Authenticating via Twitch IRC for %s\n", login)
 	ctx, cancel := context.WithTimeout(ctx, t.timeout)
 	defer cancel()
 
