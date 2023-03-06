@@ -13,7 +13,7 @@ If you encounter any issues, please open a GitHub issues in this repository.
 
 ## Setup
 
-- Download the modified [SlayTheRelicsExporter.jar](./mod/SlayTheRelicsExporter.jar) file and place it in your mod
+- Download the modified [SlayTheRelicsExporter.jar](https://github.com/MaT1g3R/slay-the-relics/raw/master/mod/SlayTheRelicsExporter.jar) file and place it in your mod
   folder.
   Disable the original slay the relics mod when launching slay the spire.
 
