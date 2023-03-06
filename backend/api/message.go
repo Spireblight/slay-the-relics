@@ -3,13 +3,15 @@ package api
 import (
 	"context"
 	"errors"
-	"log"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	errors2 "github.com/MaT1g3R/slaytherelics/errors"
+	"github.com/MaT1g3R/slaytherelics/o11y"
 )
 
 type RequestMessage struct {
@@ -23,7 +25,12 @@ type RequestMessage struct {
 	Message  any            `json:"message"`
 }
 
-func (a *API) authenticate(c *gin.Context, ctx context.Context, login, secret string) (string, error) {
+func (a *API) authenticate(c *gin.Context, ctx context.Context, login, secret string) (_ string, err error) {
+	ctx, span := o11y.Tracer.Start(ctx, "api: authenticate")
+	defer o11y.End(&span, &err)
+
+	span.SetAttributes(attribute.String("login", login))
+
 	if login == "" || secret == "" {
 		err := &errors2.AuthError{Err: errors.New("missing login or secret")}
 		c.JSON(400, gin.H{"error": err.Error()})
@@ -37,7 +44,6 @@ func (a *API) authenticate(c *gin.Context, ctx context.Context, login, secret st
 		return "", err
 	}
 	if err != nil {
-		log.Println(err)
 		c.JSON(500, gin.H{"error": err.Error()})
 		return "", err
 	}
@@ -48,18 +54,21 @@ func (a *API) authenticate(c *gin.Context, ctx context.Context, login, secret st
 
 	streamer, err := a.users.GetUserID(ctx, login)
 	if err != nil {
-		log.Println(err)
 		c.JSON(500, gin.H{"error": err.Error()})
 		return "", err
 	}
+
+	span.SetAttributes(attribute.String("user_id", streamer))
 	return streamer, nil
 }
 
 func (a *API) postMessageHandler(c *gin.Context) {
-	ctx := c.Request.Context()
+	var err error
+	ctx, span := o11y.Tracer.Start(c.Request.Context(), "api: post message")
+	defer o11y.End(&span, &err)
 
 	req := RequestMessage{}
-	err := c.BindJSON(&req)
+	err = c.BindJSON(&req)
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
@@ -85,15 +94,19 @@ func (a *API) postMessageHandler(c *gin.Context) {
 		return
 	}
 
+	span.AddEvent("broadcast", trace.WithAttributes(
+		attribute.String("streamer", streamer),
+		attribute.Int("message_type", req.MessageType),
+		attribute.Int("delay_ms", req.Delay),
+	))
+
 	err = a.broadcaster.Broadcast(ctx, time.Duration(req.Delay)*time.Millisecond, streamer, req.MessageType, message)
 	timeout := &errors2.Timeout{}
 	if errors.As(err, &timeout) {
 		c.JSON(429, gin.H{"error": err.Error()})
 		return
 	}
-
 	if err != nil {
-		log.Println(err)
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}

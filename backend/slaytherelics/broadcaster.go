@@ -2,12 +2,14 @@ package slaytherelics
 
 import (
 	"context"
-	"log"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/MaT1g3R/slaytherelics/errors"
+	"github.com/MaT1g3R/slaytherelics/o11y"
 )
 
 const keepAlive = 5
@@ -33,8 +35,13 @@ func NewBroadcaster(m PubSub, maxQueueSize int, keepAliveInterval, keepAliveTime
 }
 
 func (b *Broadcaster) Broadcast(ctx context.Context,
-	delay time.Duration, broadcasterID string, messageType int, message map[string]any) error {
+	delay time.Duration, broadcasterID string, messageType int, message map[string]any) (err error) {
+	ctx, span := o11y.Tracer.Start(ctx, "broadcaster: broadcast")
+	defer o11y.End(&span, &err)
+
 	s, ok := b.senders.LoadOrStore(broadcasterID, newSender(broadcasterID, b))
+	span.SetAttributes(attribute.Bool("cache_hit", ok))
+
 	sender := s.(*sender)
 	if !ok {
 		sender.init()
@@ -68,7 +75,6 @@ func newSender(id string, b *Broadcaster) *sender {
 
 func (s *sender) init() {
 	s.queue = make(chan struct{}, s.broadcaster.maxQueueSize)
-	log.Printf("keepalive worker initialized for %s\n", s.broadcasterID)
 	go s.keepAliveWorker()
 }
 
@@ -78,7 +84,15 @@ func (s *sender) terminate() {
 }
 
 func (s *sender) keepAliveWorker() {
-	ctx := context.Background()
+	ctx, span := o11y.Tracer.Start(context.Background(), "broadcaster: keep alive worker")
+	defer o11y.End(&span, nil)
+	span.SetAttributes(
+		attribute.String("broadcaster_id", s.broadcasterID),
+		attribute.Int("max_queue_size", s.broadcaster.maxQueueSize),
+		attribute.Int64("keep_alive_interval_ms", s.broadcaster.keepAliveInterval.Milliseconds()),
+		attribute.Float64("keep_alive_timeout_s", s.broadcaster.keepAliveTimeout.Seconds()),
+	)
+
 	for {
 		if s.terminated.Load() {
 			return
@@ -89,22 +103,23 @@ func (s *sender) keepAliveWorker() {
 		select {
 		case <-s.queue:
 			s.state.Range(func(typ, msg interface{}) bool {
-				err := s.broadcaster.messages.SendMessage(ctx, s.broadcasterID, typ.(int), msg.(map[string]any))
-				if err != nil {
-					log.Println(err)
-				}
+				_ = s.broadcaster.messages.SendMessage(ctx, s.broadcasterID, typ.(int), msg.(map[string]any))
 				return true
 			})
 			continue
 		case <-time.After(s.broadcaster.keepAliveTimeout):
-			log.Printf("keepalive worker killed for %s\n", s.broadcasterID)
+			span.AddEvent("keepalive worker killed")
 			s.terminate()
 			return
 		}
 	}
 }
 
-func (s *sender) send(ctx context.Context, typ int, m map[string]any) error {
+func (s *sender) send(ctx context.Context, typ int, m map[string]any) (err error) {
+	ctx, span := o11y.Tracer.Start(ctx, "broadcaster: send message")
+	defer o11y.End(&span, &err)
+	span.SetAttributes(attribute.Bool("keep_alive", typ == keepAlive))
+
 	if typ != keepAlive {
 		s.state.Store(typ, m)
 		return s.broadcaster.messages.SendMessage(ctx, s.broadcasterID, typ, m)

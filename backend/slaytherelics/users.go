@@ -8,10 +8,12 @@ import (
 	"strings"
 	"sync"
 
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/exp/slices"
 
 	"github.com/MaT1g3R/slaytherelics/client"
 	errors2 "github.com/MaT1g3R/slaytherelics/errors"
+	"github.com/MaT1g3R/slaytherelics/o11y"
 )
 
 type Users struct {
@@ -24,14 +26,20 @@ type Users struct {
 
 func NewUsers(twitch *client.Twitch) *Users {
 	return &Users{
-		twitch:      twitch,
-		userIDCache: sync.Map{},
+		twitch:         twitch,
+		userIDCache:    sync.Map{},
+		userAuthCache:  sync.Map{},
+		invalidSecrets: sync.Map{},
 	}
 }
 
-func (s *Users) GetUserID(ctx context.Context, login string) (string, error) {
-	cacheResult, ok := s.userIDCache.Load(login)
+func (s *Users) GetUserID(ctx context.Context, login string) (_ string, err error) {
+	ctx, span := o11y.Tracer.Start(ctx, "users: get user id")
+	defer o11y.End(&span, &err)
+	span.SetAttributes(attribute.String("login", login))
 
+	cacheResult, ok := s.userIDCache.Load(login)
+	span.SetAttributes(attribute.Bool("cache_hit", ok))
 	if ok {
 		return cacheResult.(string), nil
 	}
@@ -46,21 +54,27 @@ func (s *Users) GetUserID(ctx context.Context, login string) (string, error) {
 	return user.ID, err
 }
 
-func (s *Users) UserAuth(ctx context.Context, login string, secret string) (bool, error) {
+func (s *Users) UserAuth(ctx context.Context, login string, secret string) (_ bool, err error) {
+	ctx, span := o11y.Tracer.Start(ctx, "users: auth")
+	defer o11y.End(&span, &err)
+	span.SetAttributes(attribute.String("login", login))
+
 	secretHash := fmt.Sprintf("%x", sha256.Sum256([]byte(secret)))
 
 	invalidSecrets, _ := s.invalidSecrets.LoadOrStore(login, []string{})
 	if slices.Contains(invalidSecrets.([]string), secretHash) {
+		span.SetAttributes(attribute.Bool("invalid_secret", true))
 		return false, nil
 	}
 
 	cacheResult, ok := s.userAuthCache.Load(login)
+	span.SetAttributes(attribute.Bool("cache_hit", ok))
 	if ok {
 		gotSecretHash := cacheResult.(string)
 		return secretHash == gotSecretHash, nil
 	}
 
-	user, err := s.twitch.VerifyUserName(ctx, login, secret)
+	user, err := s.twitch.GetUsernameFromSecret(ctx, login, secret)
 	authErr := &errors2.AuthError{}
 	if errors.As(err, &authErr) {
 		s.invalidSecrets.Store(login, append(invalidSecrets.([]string), secretHash))
@@ -69,7 +83,11 @@ func (s *Users) UserAuth(ctx context.Context, login string, secret string) (bool
 	if err != nil {
 		return false, err
 	}
+
+	span.SetAttributes(attribute.String("user", user))
+
 	if !strings.EqualFold(user, login) {
+		span.SetAttributes(attribute.Bool("mismatch_username", true))
 		s.invalidSecrets.Store(login, append(invalidSecrets.([]string), secretHash))
 		return false, nil
 	}

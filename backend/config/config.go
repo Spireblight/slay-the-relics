@@ -8,6 +8,7 @@ type Config struct {
 	ClientSecret    string `env:"CLIENT_SECRET"`
 	OwnerUserID     string `env:"OWNER_USER_ID"`
 	ExtensionSecret string `env:"EXTENSION_SECRET"`
+	OtelEndpoint    string `env:"OTEL_EXPORTER_ENDPOINT"`
 }
 
 func Load() Config {

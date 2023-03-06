@@ -8,6 +8,8 @@ import (
 
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"gotest.tools/v3/assert"
+
+	"github.com/MaT1g3R/slaytherelics/o11y"
 )
 
 type dummyMessage struct {
@@ -38,6 +40,10 @@ func (p *pubSubStub) SendMessage(ctx context.Context,
 
 func TestBroadcaster(t *testing.T) {
 	ctx := context.Background()
+	cancel, err := o11y.Init(ctx, "test", "")
+	defer cancel()
+	assert.NilError(t, err)
+
 	pubsub := &pubSubStub{
 		messages: []dummyMessage{},
 	}
@@ -50,7 +56,7 @@ func TestBroadcaster(t *testing.T) {
 
 	broadcaster := NewBroadcaster(pubsub, 2, 10*time.Millisecond, time.Second*2)
 
-	err := broadcaster.Broadcast(ctx, time.Nanosecond, broadcasterID1, keepAlive, messageKeepAlive)
+	err = broadcaster.Broadcast(ctx, time.Nanosecond, broadcasterID1, keepAlive, messageKeepAlive)
 	assert.NilError(t, err)
 
 	err = broadcaster.Broadcast(ctx, time.Nanosecond, broadcasterID2, keepAlive, messageKeepAlive)

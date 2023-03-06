@@ -6,8 +6,10 @@ import (
 	"unicode/utf8"
 
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/MaT1g3R/slaytherelics/client"
+	"github.com/MaT1g3R/slaytherelics/o11y"
 )
 
 type Messages struct {
@@ -35,7 +37,14 @@ func stringChunks(s string, chunkSize int) []string {
 }
 
 func (m *Messages) SendMessage(ctx context.Context,
-	broadcasterID string, messageType int, message map[string]any) error {
+	broadcasterID string, messageType int, message map[string]any) (err error) {
+
+	ctx, span := o11y.Tracer.Start(ctx, "messages: send message")
+	defer o11y.End(&span, &err)
+	span.SetAttributes(
+		attribute.String("broadcaster_id", broadcasterID),
+		attribute.Int("message_type", messageType),
+	)
 
 	msg := make([]any, 3)
 	msg[0] = 0
@@ -50,6 +59,11 @@ func (m *Messages) SendMessage(ctx context.Context,
 	updateID := uuid.NewString()
 	chunks := stringChunks(messageStr, 4000)
 	numChunks := len(chunks)
+	span.SetAttributes(
+		attribute.String("update_id", updateID),
+		attribute.Int("message_len", len(messageStr)),
+		attribute.Int("chunks", numChunks),
+	)
 
 	for i, chunk := range chunks {
 		err := m.sendChunk(ctx, updateID, broadcasterID, i, numChunks, chunk)

@@ -1,11 +1,10 @@
 package api
 
 import (
-	"log"
-
 	"github.com/gin-gonic/gin"
 
 	"github.com/MaT1g3R/slaytherelics/client"
+	"github.com/MaT1g3R/slaytherelics/o11y"
 	"github.com/MaT1g3R/slaytherelics/slaytherelics"
 )
 
@@ -17,13 +16,13 @@ type API struct {
 	broadcaster *slaytherelics.Broadcaster
 }
 
-func New(t *client.Twitch, u *slaytherelics.Users, b *slaytherelics.Broadcaster) *API {
+func New(t *client.Twitch, u *slaytherelics.Users, b *slaytherelics.Broadcaster) (*API, error) {
 	r := gin.Default()
+	r.Use(o11y.Middleware)
 
 	err := r.SetTrustedProxies(nil)
 	if err != nil {
-		log.Fatal(err)
-		return nil
+		return nil, err
 	}
 
 	api := &API{
@@ -36,5 +35,5 @@ func New(t *client.Twitch, u *slaytherelics.Users, b *slaytherelics.Broadcaster)
 
 	r.POST("/", api.postMessageHandler)
 
-	return api
+	return api, nil
 }
