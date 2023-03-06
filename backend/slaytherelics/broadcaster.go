@@ -44,7 +44,7 @@ func (b *Broadcaster) Broadcast(ctx context.Context,
 
 	sender := s.(*sender)
 	if !ok {
-		sender.init()
+		sender.init(ctx)
 	}
 
 	time.Sleep(delay)
@@ -73,9 +73,19 @@ func newSender(id string, b *Broadcaster) *sender {
 	}
 }
 
-func (s *sender) init() {
+func (s *sender) init(ctx context.Context) {
+	ctx, span := o11y.Tracer.Start(ctx, "broadcaster: init keep alive worker")
+	defer o11y.End(&span, nil)
+
+	span.SetAttributes(
+		attribute.String("broadcaster_id", s.broadcasterID),
+		attribute.Int("max_queue_size", s.broadcaster.maxQueueSize),
+		attribute.Int64("keep_alive_interval_ms", s.broadcaster.keepAliveInterval.Milliseconds()),
+		attribute.Float64("keep_alive_timeout_s", s.broadcaster.keepAliveTimeout.Seconds()),
+	)
+
 	s.queue = make(chan struct{}, s.broadcaster.maxQueueSize)
-	go s.keepAliveWorker()
+	go s.keepAliveWorker(ctx)
 }
 
 func (s *sender) terminate() {
@@ -83,15 +93,9 @@ func (s *sender) terminate() {
 	s.broadcaster.senders.Delete(s.broadcasterID)
 }
 
-func (s *sender) keepAliveWorker() {
-	ctx, span := o11y.Tracer.Start(context.Background(), "broadcaster: keep alive worker")
+func (s *sender) keepAliveWorker(ctx context.Context) {
+	ctx, span := o11y.Tracer.Start(o11y.Detach(ctx), "broadcaster: keep alive worker")
 	defer o11y.End(&span, nil)
-	span.SetAttributes(
-		attribute.String("broadcaster_id", s.broadcasterID),
-		attribute.Int("max_queue_size", s.broadcaster.maxQueueSize),
-		attribute.Int64("keep_alive_interval_ms", s.broadcaster.keepAliveInterval.Milliseconds()),
-		attribute.Float64("keep_alive_timeout_s", s.broadcaster.keepAliveTimeout.Seconds()),
-	)
 
 	for {
 		if s.terminated.Load() {
