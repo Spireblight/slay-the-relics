@@ -24,6 +24,12 @@ type RequestMessage struct {
 }
 
 func (a *API) authenticate(c *gin.Context, ctx context.Context, login, secret string) (string, error) {
+	if login == "" || secret == "" {
+		err := &errors2.AuthError{Err: errors.New("missing login or secret")}
+		c.JSON(400, gin.H{"error": err.Error()})
+		return "", err
+	}
+
 	auth, err := a.users.UserAuth(ctx, login, secret)
 	authError := &errors2.AuthError{}
 	if errors.As(err, &authError) {
