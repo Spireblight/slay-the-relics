@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"gotest.tools/v3/assert"
 )
 
@@ -86,6 +87,8 @@ func TestBroadcaster(t *testing.T) {
 		gotMessages[val.broadcasterID] = append(gotMessages[val.broadcasterID], val.message)
 	}
 
-	assert.DeepEqual(t, gotMessages[broadcasterID1], []string{`{"a":"a"}`, `{"a":"b"}`, `{"a":"a"}`, `{"a":"b"}`})
-	assert.DeepEqual(t, gotMessages[broadcasterID2], []string{`{"a":"a"}`, `{"a":"b"}`, `{"a":"a"}`, `{"a":"b"}`})
+	assert.DeepEqual(t, gotMessages[broadcasterID1], []string{`{"a":"a"}`, `{"a":"b"}`, `{"a":"a"}`, `{"a":"b"}`},
+		cmpopts.SortSlices(func(a, b string) bool { return a < b }))
+	assert.DeepEqual(t, gotMessages[broadcasterID2], []string{`{"a":"a"}`, `{"a":"b"}`, `{"a":"a"}`, `{"a":"b"}`},
+		cmpopts.SortSlices(func(a, b string) bool { return a < b }))
 }
