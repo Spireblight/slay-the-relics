@@ -2,13 +2,14 @@ package slaytherelics
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/MaT1g3R/slaytherelics/errors"
+	errors2 "github.com/MaT1g3R/slaytherelics/errors"
 	"github.com/MaT1g3R/slaytherelics/o11y"
 )
 
@@ -106,10 +107,7 @@ func (s *sender) keepAliveWorker(ctx context.Context) {
 
 		select {
 		case <-s.queue:
-			s.state.Range(func(typ, msg interface{}) bool {
-				_ = s.broadcaster.messages.SendMessage(ctx, s.broadcasterID, typ.(int), msg.(map[string]any))
-				return true
-			})
+			_ = s.sendAll()
 			continue
 		case <-time.After(s.broadcaster.keepAliveTimeout):
 			span.AddEvent("keepalive worker killed")
@@ -117,6 +115,24 @@ func (s *sender) keepAliveWorker(ctx context.Context) {
 			return
 		}
 	}
+}
+
+func (s *sender) sendAll() (err error) {
+	// ctx is deliberately background context to have the span be standalone
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
+	defer cancel()
+
+	ctx, span := o11y.Tracer.Start(ctx, "broadcaster: send all")
+	defer o11y.End(&span, &err)
+
+	span.SetAttributes(attribute.String("broadcaster_id", s.broadcasterID))
+
+	s.state.Range(func(typ, msg interface{}) bool {
+		sErr := s.broadcaster.messages.SendMessage(ctx, s.broadcasterID, typ.(int), msg.(map[string]any))
+		err = errors.Join(err, sErr)
+		return true
+	})
+	return err
 }
 
 func (s *sender) send(ctx context.Context, typ int, m map[string]any) (err error) {
@@ -136,6 +152,6 @@ func (s *sender) send(ctx context.Context, typ int, m map[string]any) (err error
 	case s.queue <- sentinel:
 		return nil
 	case <-ctx.Done():
-		return &errors.Timeout{Err: ctx.Err()}
+		return &errors2.Timeout{Err: ctx.Err()}
 	}
 }
