@@ -1,5 +1,7 @@
 # Slay the Relics
 
+<https://dashboard.twitch.tv/extensions/ebkycs9lir8pbic2r0b7wa6bg6n7ua-0.0.1>
+
 This is a continuation of the now defunct slay the relics extension
 (https://dashboard.twitch.tv/extensions/7dgfio8rek8dhju8628riism3fd11p-1.2.1) created by LordAddy.
 
@@ -13,9 +15,17 @@ If you encounter any issues, please open a GitHub issues in this repository.
 
 ## Setup
 
-- Download the modified [SlayTheRelicsExporter.jar](https://github.com/MaT1g3R/slay-the-relics/raw/master/mod/SlayTheRelicsExporter.jar) file and place it in your mod
-  folder.
-  Disable the original slay the relics mod when launching slay the spire.
+- Install the twitch extension: <https://dashboard.twitch.tv/extensions/ebkycs9lir8pbic2r0b7wa6bg6n7ua-0.0.1>
+
+- Unsubscribe from the steam workshop version of slay the relics exporter.
+
+- Install the modified version of slay the relics exporter:
+  - Requires ModTheSpire and BaseMod (you can find them on the Steam workshop!).
+  - Download the modified [SlayTheRelicsExporter.jar](https://github.com/MaT1g3R/slay-the-relics/raw/master/mod/SlayTheRelicsExporter.jar) file and place it in your mod
+    folder.
+
+    NOTE: this is not the same location as Steam workshop managed mods - for this mod,
+    you'll want to install directly inside the SlayTheSpire directory (putting it somewhere like .../steam/steamapps/common/SlayTheSpire/mods/SlayTheRelicsExporter.jar)
 
 - Obtain an OAuth key from <https://twitchapps.com/tmi>
 
