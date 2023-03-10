@@ -40,9 +40,8 @@ func (p *pubSubStub) SendMessage(ctx context.Context,
 
 func TestBroadcaster(t *testing.T) {
 	ctx := context.Background()
-	cancel, err := o11y.Init(ctx, "test", "")
-	defer cancel()
-	assert.NilError(t, err)
+	cancel := o11y.Init("test")
+	defer cancel(ctx)
 
 	pubsub := &pubSubStub{
 		messages: []dummyMessage{},
@@ -56,7 +55,7 @@ func TestBroadcaster(t *testing.T) {
 
 	broadcaster := NewBroadcaster(pubsub, 2, 10*time.Millisecond, time.Second*2)
 
-	err = broadcaster.Broadcast(ctx, time.Nanosecond, broadcasterID1, keepAlive, messageKeepAlive)
+	err := broadcaster.Broadcast(ctx, time.Nanosecond, broadcasterID1, keepAlive, messageKeepAlive)
 	assert.NilError(t, err)
 
 	err = broadcaster.Broadcast(ctx, time.Nanosecond, broadcasterID2, keepAlive, messageKeepAlive)

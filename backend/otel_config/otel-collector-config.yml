@@ -1,42 +1,65 @@
-receivers:
-  jaeger:
-    protocols:
-      thrift_http:
-        endpoint: "0.0.0.0:14278"
+extensions:
+  health_check:
+  pprof:
+    endpoint: 0.0.0.0:1777
+  zpages:
+    endpoint: 0.0.0.0:55679
 
+receivers:
   otlp:
     protocols:
       grpc:
       http:
-
-  # Dummy receiver that's never used, because a pipeline is required to have one.
-  otlp/spanmetrics:
-    protocols:
-      grpc:
-        endpoint: "localhost:65535"
-
-exporters:
-  prometheus:
-    endpoint: "0.0.0.0:8889"
-
-  jaeger:
-    endpoint: "jaeger:14250"
-    tls:
-      insecure: true
+  hostmetrics:
+    collection_interval: 10s
+    scrapers:
+      cpu:
+      disk:
+      load:
+      filesystem:
+      memory:
+      network:
+      paging:
 
 processors:
+  resourcedetection:
+    detectors: ['system']
   batch:
-  spanmetrics:
-    metrics_exporter: prometheus
+    send_batch_size: 10000
+    timeout: 10s
+
+exporters:
+  logging:
+    logLevel: debug
+  otlp/uptrace:
+    endpoint: uptrace:14317
+    tls:
+      insecure: true
+    headers: { 'uptrace-dsn': 'http://project1_secret_token@localhost:14317/1' }
+  otlp:
+    endpoint: uptrace:14317
+    tls:
+      insecure: true
+    headers:
+      uptrace-dsn: 'http://project2_secret_token@localhost:14317/2'
 
 service:
   pipelines:
     traces:
-      receivers: [otlp, jaeger]
-      processors: [spanmetrics, batch]
-      exporters: [jaeger]
-    # The exporter name in this pipeline must match the spanmetrics.metrics_exporter name.
-    # The receiver is just a dummy and never used; added to pass validation requiring at least one receiver in a pipeline.
-    metrics/spanmetrics:
-      receivers: [otlp/spanmetrics]
-      exporters: [prometheus]
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/uptrace, logging]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/uptrace]
+    metrics/hostmetrics:
+      receivers: [hostmetrics]
+      processors: [batch, resourcedetection]
+      exporters: [otlp/uptrace]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/uptrace]
+
+  extensions: [health_check, pprof, zpages]

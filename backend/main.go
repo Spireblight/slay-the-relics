@@ -19,7 +19,7 @@ func main() {
 	cfg := config.Load()
 
 	a, cancel, err := initialize(ctx, cfg)
-	defer cancel()
+	defer cancel(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -30,11 +30,8 @@ func main() {
 	}
 }
 
-func initialize(ctx context.Context, cfg config.Config) (_ *api.API, cancel func(), err error) {
-	cancel, err = o11y.Init(ctx, "slay-the-relics", cfg.OtelEndpoint)
-	if err != nil {
-		return nil, cancel, err
-	}
+func initialize(ctx context.Context, cfg config.Config) (_ *api.API, cancel func(context.Context), err error) {
+	cancel = o11y.Init("slay-the-relics")
 
 	ctx, span := o11y.Tracer.Start(ctx, "init")
 	defer o11y.End(&span, &err)
