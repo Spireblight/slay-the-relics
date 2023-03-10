@@ -448,3 +448,4 @@ out/
 log.jsonl
 backend/bin
 backend/test-reports
+frontend/*.py
