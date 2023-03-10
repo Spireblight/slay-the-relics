@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric/instrument"
 
 	errors2 "github.com/MaT1g3R/slaytherelics/errors"
 	"github.com/MaT1g3R/slaytherelics/o11y"
@@ -29,10 +30,24 @@ type Broadcaster struct {
 	keepAliveTimeout  time.Duration
 
 	senders sync.Map // map[string]*Sender
+
+	sendersCounter instrument.Int64UpDownCounter
 }
 
-func NewBroadcaster(m PubSub, maxQueueSize int, keepAliveInterval, keepAliveTimeout time.Duration) *Broadcaster {
-	return &Broadcaster{m, maxQueueSize, keepAliveInterval, keepAliveTimeout, sync.Map{}}
+func NewBroadcaster(
+	m PubSub, maxQueueSize int, keepAliveInterval, keepAliveTimeout time.Duration) (*Broadcaster, error) {
+	sendersCounter, err := o11y.Meter.Int64UpDownCounter("broadcaster.senders.count")
+	if err != nil {
+		return nil, err
+	}
+	b := &Broadcaster{
+		messages:          m,
+		maxQueueSize:      maxQueueSize,
+		keepAliveInterval: keepAliveInterval,
+		keepAliveTimeout:  keepAliveTimeout,
+		sendersCounter:    sendersCounter,
+	}
+	return b, nil
 }
 
 func (b *Broadcaster) Broadcast(ctx context.Context,
@@ -45,6 +60,7 @@ func (b *Broadcaster) Broadcast(ctx context.Context,
 
 	sender := s.(*sender)
 	if !ok {
+		b.sendersCounter.Add(ctx, 1, attribute.String("broadcaster_id", broadcasterID))
 		sender.init(ctx)
 	}
 
@@ -89,9 +105,10 @@ func (s *sender) init(ctx context.Context) {
 	go s.keepAliveWorker(ctx)
 }
 
-func (s *sender) terminate() {
+func (s *sender) terminate(ctx context.Context) {
 	s.terminated.Store(true)
 	s.broadcaster.senders.Delete(s.broadcasterID)
+	s.broadcaster.sendersCounter.Add(ctx, -1, attribute.String("broadcaster_id", s.broadcasterID))
 }
 
 func (s *sender) keepAliveWorker(ctx context.Context) {
@@ -111,7 +128,7 @@ func (s *sender) keepAliveWorker(ctx context.Context) {
 			continue
 		case <-time.After(s.broadcaster.keepAliveTimeout):
 			span.AddEvent("keepalive worker killed")
-			s.terminate()
+			s.terminate(ctx)
 			return
 		}
 	}

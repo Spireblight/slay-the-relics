@@ -49,7 +49,7 @@ func (a *API) authenticate(c *gin.Context, ctx context.Context, login, secret st
 	}
 	if !auth {
 		c.JSON(401, gin.H{"error": "unauthorized"})
-		return "", err
+		return "", &errors2.AuthError{Err: errors.New("unauthorized")}
 	}
 
 	streamer, err := a.users.GetUserID(ctx, login)

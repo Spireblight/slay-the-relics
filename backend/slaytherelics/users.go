@@ -38,8 +38,14 @@ func (s *Users) GetUserID(ctx context.Context, login string) (_ string, err erro
 	defer o11y.End(&span, &err)
 	span.SetAttributes(attribute.String("login", login))
 
+	cacheCounter, _ := o11y.Meter.Int64Counter("cache.user_id")
+
 	cacheResult, ok := s.userIDCache.Load(login)
 	span.SetAttributes(attribute.Bool("cache_hit", ok))
+	if cacheCounter != nil {
+		cacheCounter.Add(ctx, 1, attribute.Bool("hit", ok), attribute.String("login", login))
+	}
+
 	if ok {
 		return cacheResult.(string), nil
 	}
@@ -59,15 +65,23 @@ func (s *Users) UserAuth(ctx context.Context, login string, secret string) (_ bo
 	defer o11y.End(&span, &err)
 	span.SetAttributes(attribute.String("login", login))
 
+	cacheCounter, _ := o11y.Meter.Int64Counter("cache.user_auth")
+
 	secretHash := fmt.Sprintf("%x", sha256.Sum256([]byte(secret)))
 
 	invalidSecrets, _ := s.invalidSecrets.LoadOrStore(login, []string{})
 	if slices.Contains(invalidSecrets.([]string), secretHash) {
+		if cacheCounter != nil {
+			cacheCounter.Add(ctx, 1, attribute.Bool("invalid_secret_hit", true), attribute.String("login", login))
+		}
 		span.SetAttributes(attribute.Bool("invalid_secret", true))
 		return false, nil
 	}
 
 	cacheResult, ok := s.userAuthCache.Load(login)
+	if cacheCounter != nil {
+		cacheCounter.Add(ctx, 1, attribute.Bool("hit", ok), attribute.String("login", login))
+	}
 	span.SetAttributes(attribute.Bool("cache_hit", ok))
 	if ok {
 		gotSecretHash := cacheResult.(string)
@@ -77,6 +91,9 @@ func (s *Users) UserAuth(ctx context.Context, login string, secret string) (_ bo
 	user, err := s.twitch.GetUsernameFromSecret(ctx, login, secret)
 	authErr := &errors2.AuthError{}
 	if errors.As(err, &authErr) {
+		if cacheCounter != nil {
+			cacheCounter.Add(ctx, 1, attribute.Bool("invalid_secret_hit", false), attribute.String("login", login))
+		}
 		s.invalidSecrets.Store(login, append(invalidSecrets.([]string), secretHash))
 	}
 
@@ -88,6 +105,9 @@ func (s *Users) UserAuth(ctx context.Context, login string, secret string) (_ bo
 
 	if !strings.EqualFold(user, login) {
 		span.SetAttributes(attribute.Bool("mismatch_username", true))
+		if cacheCounter != nil {
+			cacheCounter.Add(ctx, 1, attribute.Bool("invalid_secret_hit", false), attribute.String("login", login))
+		}
 		s.invalidSecrets.Store(login, append(invalidSecrets.([]string), secretHash))
 		return false, nil
 	}

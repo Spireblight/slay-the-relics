@@ -53,7 +53,10 @@ func initialize(ctx context.Context, cfg config.Config) (_ *api.API, cancel func
 
 	users := slaytherelics.NewUsers(twitchClient)
 	messages := slaytherelics.NewMessages(twitchClient)
-	broadcaster := slaytherelics.NewBroadcaster(messages, 20, time.Second*3, time.Minute)
+	broadcaster, err := slaytherelics.NewBroadcaster(messages, 20, time.Second*3, time.Minute)
+	if err != nil {
+		return nil, cancel, err
+	}
 
 	span.AddEvent("starting server")
 	a, err := api.New(twitchClient, users, broadcaster)

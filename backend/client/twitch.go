@@ -99,7 +99,7 @@ func (t *Twitch) GetUser(ctx context.Context, login string) (_ helix.User, err e
 
 //nolint:funlen
 func (t *Twitch) PostExtensionPubSub(ctx context.Context, broadcasterID, message string) (err error) {
-	ctx, span := o11y.Tracer.Start(ctx, "twitch: pot extension pubsub")
+	ctx, span := o11y.Tracer.Start(ctx, "twitch: post extension pubsub")
 	defer o11y.End(&span, &err)
 	span.SetAttributes(attribute.String("broadcaster_id", broadcasterID))
 
@@ -182,7 +182,7 @@ func parseMessage(message []byte) (string, error) {
 
 			return parts[2], nil
 		case "NOTICE":
-			return "", &errors2.AuthError{Err: errors.New("failed to authenticate")}
+			return "", &errors2.AuthError{Err: fmt.Errorf("failed to authenticate: %s", m)}
 		}
 	}
 

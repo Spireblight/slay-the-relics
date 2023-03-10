@@ -53,9 +53,10 @@ func TestBroadcaster(t *testing.T) {
 	messageOther := map[string]any{"a": "a"}
 	messageOther2 := map[string]any{"a": "b"}
 
-	broadcaster := NewBroadcaster(pubsub, 2, 10*time.Millisecond, time.Second*2)
+	broadcaster, err := NewBroadcaster(pubsub, 2, 10*time.Millisecond, time.Second*2)
+	assert.NilError(t, err)
 
-	err := broadcaster.Broadcast(ctx, time.Nanosecond, broadcasterID1, keepAlive, messageKeepAlive)
+	err = broadcaster.Broadcast(ctx, time.Nanosecond, broadcasterID1, keepAlive, messageKeepAlive)
 	assert.NilError(t, err)
 
 	err = broadcaster.Broadcast(ctx, time.Nanosecond, broadcasterID2, keepAlive, messageKeepAlive)

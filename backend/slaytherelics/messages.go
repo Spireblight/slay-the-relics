@@ -46,6 +46,8 @@ func (m *Messages) SendMessage(ctx context.Context,
 		attribute.Int("message_type", messageType),
 	)
 
+	chunkHistogram, _ := o11y.Meter.Int64Histogram("send_message.chunks")
+
 	msg := make([]any, 3)
 	msg[0] = 0
 	msg[1] = messageType
@@ -59,6 +61,13 @@ func (m *Messages) SendMessage(ctx context.Context,
 	updateID := uuid.NewString()
 	chunks := stringChunks(messageStr, 4000)
 	numChunks := len(chunks)
+	if chunkHistogram != nil {
+		chunkHistogram.Record(ctx, int64(numChunks),
+			attribute.String("broadcaster_id", broadcasterID),
+			attribute.Int("message_type", messageType),
+		)
+	}
+
 	span.SetAttributes(
 		attribute.String("update_id", updateID),
 		attribute.Int("message_len", len(messageStr)),
