@@ -219,7 +219,7 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
 
         slider.setValue(delay * 1.0f / slider.multiplier);
 
-        BaseMod.registerModBadge(ImageMaster.loadImage("SlayTheRelicsExporterResources/img/ink_bottle.png"),
+        BaseMod.registerModBadge(ImageMaster.loadImage("SlayTheRelicsExporterResources/img/akabeko-32.png"),
                 "Slay the Relics Exporter",
                 "LordAddy, vmService",
                 "This mod exports data to Slay the Relics Twitch extension. See the extension config on Twitch for setup instructions.",
