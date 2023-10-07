@@ -1,6 +1,9 @@
 package str_exporter;
 
-import basemod.*;
+import basemod.BaseMod;
+import basemod.ModLabel;
+import basemod.ModPanel;
+import basemod.ModSlider;
 import basemod.interfaces.*;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.evacipated.cardcrawl.modthespire.Loader;
@@ -33,8 +36,7 @@ public class SlayTheRelicsExporter implements
         PostInitializeSubscriber,
         OnPowersModifiedSubscriber,
         PostPowerApplySubscriber,
-        PostRenderSubscriber
-{
+        PostRenderSubscriber {
 
     public static final Logger logger = LogManager.getLogger(SlayTheRelicsExporter.class.getName());
     public static final String MODID = "SlayTheRelicsExporter";
@@ -56,7 +58,7 @@ public class SlayTheRelicsExporter implements
     private BackendBroadcaster okayBroadcaster;
 
 
-//    private static final long MAX_BROADCAST_PERIOD_MILLIS = 250;
+    //    private static final long MAX_BROADCAST_PERIOD_MILLIS = 250;
     private static final long MAX_CHECK_PERIOD_MILLIS = 1000;
     private static final long MIN_DECK_CHECK_PERIOD_MILLIS = 1000;
     private static final long MAX_DECK_CHECK_PERIOD_MILLIS = 2000;
@@ -70,14 +72,17 @@ public class SlayTheRelicsExporter implements
     public static long delay = 0; // The boolean we'll be setting on/off (true/false)
     private static long lastOkayBroadcast = 0;
 
-    public SlayTheRelicsExporter()
-    {
+    public SlayTheRelicsExporter() {
         logger.info("Slay The Relics Exporter initialized!");
         BaseMod.subscribe(this);
 
         strDefaultSettings.setProperty(DELAY_SETTINGS, "150");
         try {
-            SpireConfig config = new SpireConfig("slayTheRelics", "slayTheRelicsExporterConfig", strDefaultSettings); // ...right here
+            SpireConfig
+                    config =
+                    new SpireConfig("slayTheRelics",
+                            "slayTheRelicsExporterConfig",
+                            strDefaultSettings); // ...right here
             config.load();
             delay = config.getInt(DELAY_SETTINGS);
         } catch (Exception e) {
@@ -99,8 +104,7 @@ public class SlayTheRelicsExporter implements
         return "unkwnown";
     }
 
-    public static void initialize()
-    {
+    public static void initialize() {
         logger.info("initialize() called!");
         version = getVersion();
         try {
@@ -166,15 +170,31 @@ public class SlayTheRelicsExporter implements
 
         ModPanel settingsPanel = new ModPanel();
 
-        ModLabel label1 = new ModLabel("Use the slider below to set encoding delay of your PC.", 400.0f, 700.0f, settingsPanel, (me) -> {});
-        ModLabel label2 = new ModLabel("With this set to 0, the extension will be ahead of what the stream displays.", 400.0f, 650.0f, settingsPanel, (me) -> {});
+        ModLabel
+                label1 =
+                new ModLabel("Use the slider below to set encoding delay of your PC.",
+                        400.0f,
+                        700.0f,
+                        settingsPanel,
+                        (me) -> {
+                        });
+        ModLabel
+                label2 =
+                new ModLabel("With this set to 0, the extension will be ahead of what the stream displays.",
+                        400.0f,
+                        650.0f,
+                        settingsPanel,
+                        (me) -> {
+                        });
         ModSlider slider = new ModSlider("Delay", 500f, 600, 10000f, "ms", settingsPanel, (me) -> {
             logger.info("slider value: " + me.value);
             delay = (long) (me.value * me.multiplier);
         });
         ModLabelButton btn = new ModLabelButton("Save", 400f, 480f, settingsPanel, (me) -> {
             try {
-                SpireConfig config = new SpireConfig("slayTheRelics", "slayTheRelicsExporterConfig", strDefaultSettings);
+                SpireConfig
+                        config =
+                        new SpireConfig("slayTheRelics", "slayTheRelicsExporterConfig", strDefaultSettings);
                 config.setInt(DELAY_SETTINGS, (int) delay);
                 config.save();
             } catch (IOException e) {
@@ -190,9 +210,9 @@ public class SlayTheRelicsExporter implements
         slider.setValue(delay * 1.0f / slider.multiplier);
 
         BaseMod.registerModBadge(ImageMaster.loadImage(
-                "SlayTheRelicsExporterResources/img/ink_bottle.png"),
+                        "SlayTheRelicsExporterResources/img/ink_bottle.png"),
                 "Slay the Relics Exporter",
-                "LordAddy",
+                "LordAddy, vmService",
                 "This mod exports data to Slay the Relics Twitch extension. See the extension config on Twitch for setup instructions.",
                 settingsPanel);
     }
@@ -260,7 +280,9 @@ public class SlayTheRelicsExporter implements
     }
 
     @Override
-    public void receivePostPowerApplySubscriber(AbstractPower abstractPower, AbstractCreature abstractCreature, AbstractCreature abstractCreature1) {
+    public void receivePostPowerApplySubscriber(AbstractPower abstractPower,
+                                                AbstractCreature abstractCreature,
+                                                AbstractCreature abstractCreature1) {
         queue_check();
     }
 
