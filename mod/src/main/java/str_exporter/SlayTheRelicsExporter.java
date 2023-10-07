@@ -28,8 +28,7 @@ import java.util.List;
 import java.util.Properties;
 
 @SpireInitializer
-public class SlayTheRelicsExporter implements
-        RelicGetSubscriber,
+public class SlayTheRelicsExporter implements RelicGetSubscriber,
         PotionGetSubscriber,
         StartGameSubscriber,
         PostCreateStartingRelicsSubscriber,
@@ -70,6 +69,7 @@ public class SlayTheRelicsExporter implements
     public static Properties strDefaultSettings = new Properties();
     public static final String DELAY_SETTINGS = "delay";
     public static long delay = 0; // The boolean we'll be setting on/off (true/false)
+    private static String apiUrl = "";
     private static long lastOkayBroadcast = 0;
 
     public SlayTheRelicsExporter() {
@@ -108,20 +108,17 @@ public class SlayTheRelicsExporter implements
         logger.info("initialize() called!");
         version = getVersion();
         try {
-
             Path path = Paths.get("slaytherelics_config.txt");
-            if (!Files.exists(path))
-                path = Paths.get("slaytherelics_config.txt.txt");
+            if (!Files.exists(path)) path = Paths.get("slaytherelics_config.txt.txt");
 
             String data = new String(Files.readAllBytes(path));
             List<String> lines = Files.readAllLines(path);
 
             login = lines.get(0).split(":")[1].toLowerCase().trim();
             secret = lines.get(1).split(":")[1].trim();
+            setApiUrl(lines);
 
             logger.info("slaytherelics_config.txt was succesfully loaded");
-
-//            logger.info("loaded login " + login + " and secret " + secret);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -131,6 +128,20 @@ public class SlayTheRelicsExporter implements
         }
 
         instance = new SlayTheRelicsExporter();
+    }
+
+    private static void setApiUrl(List<String> lines) {
+        SlayTheRelicsExporter.apiUrl = "https://str.otonokizaka.moe";
+        for (String line : lines) {
+            if (line.startsWith("api_url:")) {
+                SlayTheRelicsExporter.apiUrl = line.replaceFirst("api_url:", "").trim();
+                break;
+            }
+        }
+    }
+
+    public static String getApiUrl() {
+        return apiUrl;
     }
 
     private void queue_check() {
@@ -159,14 +170,12 @@ public class SlayTheRelicsExporter implements
 
     @Override
     public void receivePostInitialize() {
-
         tipsBroadcaster = new BackendBroadcaster(BROADCAST_CHECK_QUEUE_PERIOD_MILLIS, false);
         deckBroadcaster = new BackendBroadcaster(BROADCAST_CHECK_QUEUE_PERIOD_MILLIS, false);
         okayBroadcaster = new BackendBroadcaster(BROADCAST_CHECK_QUEUE_PERIOD_MILLIS, true);
         tipsJsonBuilder = new TipsJSONBuilder(login, secret, version);
         deckJsonBuilder = new DeckJSONBuilder(login, secret, version);
         okayJsonBuilder = new JSONMessageBuilder(login, secret, version, 5);
-
 
         ModPanel settingsPanel = new ModPanel();
 
@@ -190,6 +199,7 @@ public class SlayTheRelicsExporter implements
             logger.info("slider value: " + me.value);
             delay = (long) (me.value * me.multiplier);
         });
+
         ModLabelButton btn = new ModLabelButton("Save", 400f, 480f, settingsPanel, (me) -> {
             try {
                 SpireConfig
@@ -209,8 +219,7 @@ public class SlayTheRelicsExporter implements
 
         slider.setValue(delay * 1.0f / slider.multiplier);
 
-        BaseMod.registerModBadge(ImageMaster.loadImage(
-                        "SlayTheRelicsExporterResources/img/ink_bottle.png"),
+        BaseMod.registerModBadge(ImageMaster.loadImage("SlayTheRelicsExporterResources/img/ink_bottle.png"),
                 "Slay the Relics Exporter",
                 "LordAddy, vmService",
                 "This mod exports data to Slay the Relics Twitch extension. See the extension config on Twitch for setup instructions.",
