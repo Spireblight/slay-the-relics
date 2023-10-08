@@ -15,6 +15,8 @@ public class AuthHttpServer implements HttpHandler {
 
     private String index;
 
+    private String success;
+
     private String token = "";
 
     private final int port = 49000;
@@ -25,6 +27,9 @@ public class AuthHttpServer implements HttpHandler {
         FileHandle fd = Gdx.files.internal("SlayTheRelicsExporter" + File.separator + "index.html");
         this.state = state;
         index = fd.readString().replaceFirst("STATE", state);
+
+        fd = Gdx.files.internal("SlayTheRelicsExporter" + File.separator + "success.html");
+        this.success = fd.readString();
     }
 
     public void start() throws IOException {
@@ -76,8 +81,8 @@ public class AuthHttpServer implements HttpHandler {
         }
 
         setToken(code);
-        System.out.println("Sending 200");
-        httpExchange.sendResponseHeaders(200, -1);
+        httpExchange.sendResponseHeaders(200, success.length());
+        httpExchange.getResponseBody().write(success.getBytes());
     }
 
     public synchronized String getToken() {
