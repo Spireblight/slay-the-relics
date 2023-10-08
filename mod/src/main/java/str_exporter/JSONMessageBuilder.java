@@ -1,7 +1,5 @@
 package str_exporter;
 
-import com.megacrit.cardcrawl.core.CardCrawlGame;
-
 public class JSONMessageBuilder {
 
     private String login, secret, version;
@@ -12,6 +10,14 @@ public class JSONMessageBuilder {
         this.secret = secret;
         this.version = version;
         this.msg_type = msg_type;
+    }
+
+    public void setSecret(String secret) {
+        this.secret = secret;
+    }
+
+    public void setLogin(String login) {
+        this.login = login;
     }
 
     public String buildJson() {
