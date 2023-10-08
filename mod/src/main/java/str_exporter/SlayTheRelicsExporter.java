@@ -19,7 +19,9 @@ import com.megacrit.cardcrawl.relics.AbstractRelic;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.awt.*;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -56,8 +58,6 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
     private BackendBroadcaster deckBroadcaster;
     private BackendBroadcaster okayBroadcaster;
 
-
-    //    private static final long MAX_BROADCAST_PERIOD_MILLIS = 250;
     private static final long MAX_CHECK_PERIOD_MILLIS = 1000;
     private static final long MIN_DECK_CHECK_PERIOD_MILLIS = 1000;
     private static final long MAX_DECK_CHECK_PERIOD_MILLIS = 2000;
@@ -71,6 +71,10 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
     public static long delay = 0; // The boolean we'll be setting on/off (true/false)
     private static String apiUrl = "";
     private static long lastOkayBroadcast = 0;
+    private static final String OAUTH_SETTINGS = "oauth";
+    public static String oathToken = "";
+
+    SpireConfig config;
 
     public SlayTheRelicsExporter() {
         logger.info("Slay The Relics Exporter initialized!");
@@ -78,13 +82,13 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
 
         strDefaultSettings.setProperty(DELAY_SETTINGS, "150");
         try {
-            SpireConfig
-                    config =
+            config =
                     new SpireConfig("slayTheRelics",
                             "slayTheRelicsExporterConfig",
                             strDefaultSettings); // ...right here
             config.load();
             delay = config.getInt(DELAY_SETTINGS);
+            oathToken = config.getString(OAUTH_SETTINGS);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -149,7 +153,6 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
         checkDeckNextUpdate = true;
     }
 
-
     private void broadcastTips() {
         long start = System.nanoTime();
         String tips_json = tipsJsonBuilder.buildJson();
@@ -166,6 +169,38 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
 //        logger.info("deck json builder took " + (end - start) / 1e6 + " milliseconds");
 //        logger.info(deck_json);
         deckBroadcaster.queueMessage(deck_json);
+    }
+
+
+    private String getOauthToken() {
+        AuthHttpServer serv = new AuthHttpServer();
+        try {
+            serv.start();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+            try {
+                Desktop.getDesktop().browse(new URI("http://localhost:49000"));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        String token = "";
+        while (token.isEmpty()) {
+            token = serv.getToken();
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        serv.stop();
+
+        // TODO: verify the token is valid
+        return token;
     }
 
     @Override
@@ -202,13 +237,20 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
 
         ModLabelButton btn = new ModLabelButton("Save", 400f, 480f, settingsPanel, (me) -> {
             try {
-                SpireConfig
-                        config =
-                        new SpireConfig("slayTheRelics", "slayTheRelicsExporterConfig", strDefaultSettings);
                 config.setInt(DELAY_SETTINGS, (int) delay);
                 config.save();
             } catch (IOException e) {
-                e.printStackTrace();
+                throw new RuntimeException(e);
+            }
+        });
+
+        ModLabelButton oauthBtn = new ModLabelButton("Connect with Twitch", 800f, 480f, settingsPanel, (me) -> {
+            oathToken = getOauthToken();
+            config.setString(OAUTH_SETTINGS, oathToken);
+            try {
+                config.save();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
         });
 
@@ -216,6 +258,7 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
         settingsPanel.addUIElement(slider);
         settingsPanel.addUIElement(label2);
         settingsPanel.addUIElement(btn);
+        settingsPanel.addUIElement(oauthBtn);
 
         slider.setValue(delay * 1.0f / slider.multiplier);
 
