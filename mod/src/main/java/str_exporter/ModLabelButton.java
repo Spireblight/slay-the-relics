@@ -75,7 +75,6 @@ public class ModLabelButton implements IUIElement {
             this.hb.clicked = false;
             this.onClick();
         }
-
     }
 
     private void onClick() {

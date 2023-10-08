@@ -11,8 +11,11 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class EBSClient {
+    public static final AtomicLong lastSuccessAuth = new AtomicLong(0);
+
     public EBSClient() {
     }
 
@@ -35,6 +38,7 @@ public class EBSClient {
                 StandardCharsets.UTF_8))) {
             if (con.getResponseCode() == 200) {
                 JsonReader reader = new JsonReader(br);
+                EBSClient.lastSuccessAuth.set(System.currentTimeMillis());
                 return gson.fromJson(reader, User.class);
             }
             throw new IOException("Failed : HTTP error code : " + con.getResponseCode());

@@ -10,6 +10,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class BackendBroadcaster {
@@ -25,6 +26,7 @@ public class BackendBroadcaster {
     private Thread worker;
     private long checkQueuePeriodMillis;
     private boolean sendDuplicates;
+    public AtomicLong lastSuccessBroadcast = new AtomicLong(0);
 
     public BackendBroadcaster(long checkQueuePeriodMillis, boolean sendDuplicates) {
         this.checkQueuePeriodMillis = checkQueuePeriodMillis;
@@ -79,7 +81,11 @@ public class BackendBroadcaster {
             if (!msg.isEmpty()) {
                 long msgDelay = ts - System.currentTimeMillis() + SlayTheRelicsExporter.delay;
                 msg = injectDelayToMessage(msg, msgDelay);
-                broadcastMessage(msg);
+                try {
+                    broadcastMessage(msg);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -88,22 +94,7 @@ public class BackendBroadcaster {
         return msg.replace(DELAY_PLACEHOLDER, Long.toString(delay));
     }
 
-    private void broadcastMessage(String msg) {
-        try (BufferedReader br = makeRequest(msg)) {
-            StringBuilder response = new StringBuilder();
-            String responseLine;
-            while ((responseLine = br.readLine()) != null) {
-                response.append(responseLine.trim());
-            }
-            if (!response.toString().equals("Success")) {
-                logger.info("message not broadcast successfully, response: " + response);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static BufferedReader makeRequest(String msg) throws IOException {
+    private void broadcastMessage(String msg) throws IOException {
         URL url = new URL(SlayTheRelicsExporter.getApiUrl() + "/api/v1/message");
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.setRequestMethod("POST");
@@ -115,6 +106,21 @@ public class BackendBroadcaster {
         byte[] input = msg.getBytes(StandardCharsets.UTF_8);
         os.write(input, 0, input.length);
 
-        return new BufferedReader(new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8));
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(),
+                StandardCharsets.UTF_8))) {
+            StringBuilder response = new StringBuilder();
+            String responseLine;
+            while ((responseLine = br.readLine()) != null) {
+                response.append(responseLine.trim());
+            }
+            if (!response.toString().equals("Success")) {
+                logger.info("message not broadcast successfully, response: " + response);
+            }
+            if (con.getResponseCode() >= 200 && con.getResponseCode() < 300) {
+                lastSuccessBroadcast.set(System.currentTimeMillis());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
