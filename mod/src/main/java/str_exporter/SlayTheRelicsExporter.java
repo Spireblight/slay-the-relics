@@ -1,9 +1,6 @@
 package str_exporter;
 
-import basemod.BaseMod;
-import basemod.ModLabel;
-import basemod.ModPanel;
-import basemod.ModSlider;
+import basemod.*;
 import basemod.interfaces.*;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.evacipated.cardcrawl.modthespire.Loader;
@@ -30,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @SpireInitializer
 public class SlayTheRelicsExporter implements RelicGetSubscriber,
@@ -80,6 +78,10 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
     SpireConfig config;
     private static final SecureRandom secureRandom = new SecureRandom();
     private static final Base64.Encoder base64Encoder = Base64.getUrlEncoder();
+
+    private AtomicBoolean healthy = new AtomicBoolean(false);
+    private AtomicBoolean inProgress = new AtomicBoolean(false);
+
 
     public SlayTheRelicsExporter() {
         logger.info("Slay The Relics Exporter initialized!");
@@ -172,7 +174,6 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
         deckBroadcaster.queueMessage(deck_json);
     }
 
-
     private User getOauthToken(String state) {
         AuthHttpServer serv = new AuthHttpServer(state);
         try {
@@ -193,7 +194,7 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
         while (token.isEmpty()) {
             token = serv.getToken();
             try {
-                Thread.sleep(500);
+                Thread.sleep(50);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -255,34 +256,49 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
             }
         });
 
-        ModLabelButton oauthBtn = new ModLabelButton("Connect with Twitch", 800f, 480f, settingsPanel, (me) -> {
-            String state = generateNewToken();
-            User user = getOauthToken(state);
-            if (user == null) {
-                return;
-            }
-            oathToken = user.token;
-            SlayTheRelicsExporter.user = user.user;
-            config.setString(OAUTH_SETTINGS, oathToken);
-            config.setString(USER_SETTINGS, user.user);
-            tipsJsonBuilder.setSecret(oathToken);
-            tipsJsonBuilder.setLogin(user.user);
-            deckJsonBuilder.setSecret(oathToken);
-            deckJsonBuilder.setLogin(user.user);
-            okayJsonBuilder.setSecret(oathToken);
-            okayJsonBuilder.setLogin(user.user);
-            try {
-                config.save();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+        ModLabeledButton oauthBtn = new ModLabeledButton("Connect with Twitch", 575f, 480f, settingsPanel, (me) -> {
+            Thread worker = new Thread(() -> {
+                if (this.inProgress.get()) {
+                    return;
+                }
+
+                this.inProgress.set(true);
+                try {
+                    String state = generateNewToken();
+                    User user = getOauthToken(state);
+                    if (user == null) {
+                        return;
+                    }
+                    oathToken = user.token;
+                    SlayTheRelicsExporter.user = user.user;
+                    config.setString(OAUTH_SETTINGS, oathToken);
+                    config.setString(USER_SETTINGS, user.user);
+                    tipsJsonBuilder.setSecret(oathToken);
+                    tipsJsonBuilder.setLogin(user.user);
+                    deckJsonBuilder.setSecret(oathToken);
+                    deckJsonBuilder.setLogin(user.user);
+                    okayJsonBuilder.setSecret(oathToken);
+                    okayJsonBuilder.setLogin(user.user);
+                    try {
+                        config.save();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                } finally {
+                    this.inProgress.set(false);
+                }
+            });
+            worker.start();
         });
+
+        ModStatusImage statusImage = new ModStatusImage(950f, 480f, healthy, inProgress);
 
         settingsPanel.addUIElement(label1);
         settingsPanel.addUIElement(slider);
         settingsPanel.addUIElement(label2);
         settingsPanel.addUIElement(btn);
         settingsPanel.addUIElement(oauthBtn);
+        settingsPanel.addUIElement(statusImage);
 
         slider.setValue(delay * 1.0f / slider.multiplier);
 
@@ -296,7 +312,6 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
     @Override
     public void receivePostRender(SpriteBatch spriteBatch) {
         if (checkTipsNextUpdate || System.currentTimeMillis() - lastTipsCheck > MAX_CHECK_PERIOD_MILLIS) {
-
             lastTipsCheck = System.currentTimeMillis();
             if (areCredentialsValid()) {
                 broadcastTips();
@@ -317,13 +332,20 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
         }
 
         if (System.currentTimeMillis() - lastOkayBroadcast > MAX_OKAY_BROADCAST_PERIOD_MILLIS) {
-
             String okayMsg = okayJsonBuilder.buildJson();
             lastOkayBroadcast = System.currentTimeMillis();
             if (areCredentialsValid()) {
                 okayBroadcaster.queueMessage(okayMsg);
             }
+        }
 
+        long lastSuccessAuth = EBSClient.lastSuccessAuth.get();
+        long lastSuccessBroadcast = okayBroadcaster.lastSuccessBroadcast.get();
+        long lastSuccess = Math.max(lastSuccessAuth, lastSuccessBroadcast);
+        if (this.inProgress.get()) {
+            this.healthy.set(true);
+        } else {
+            this.healthy.set(System.currentTimeMillis() - lastSuccess < 2000);
         }
     }
 
