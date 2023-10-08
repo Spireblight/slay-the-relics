@@ -60,9 +60,20 @@ func (s *Users) Oauth(ctx context.Context, code string) (_ models.User, _ string
 	return user, oauthToken.Data.AccessToken, nil
 }
 
-func (s *Users) AuthenticateTwitch(ctx context.Context, code string) (_ models.User, _ string, err error) {
+func (s *Users) AuthenticateTwitch(ctx context.Context, code string) (user models.User, _ string, err error) {
 	ctx, span := o11y.Tracer.Start(ctx, "users: authenticate twitch")
 	defer o11y.End(&span, &err)
+	authCounter, _ := o11y.Meter.Int64Counter("users.authenticate.twitch")
+	defer func() {
+		if authCounter != nil {
+			authCounter.Add(ctx, 1,
+				metric.WithAttributes(
+					attribute.Bool("success", err == nil),
+					attribute.String("user_login", user.Login),
+					attribute.String("user_id", user.ID)),
+			)
+		}
+	}()
 
 	user, token, err := s.Oauth(ctx, code)
 	if err != nil {
@@ -81,10 +92,22 @@ func (s *Users) AuthenticateTwitch(ctx context.Context, code string) (_ models.U
 	return user, token, err
 }
 
-func (s *Users) AuthenticateRedis(ctx context.Context, userID, token string) (_ models.User, err error) {
+func (s *Users) AuthenticateRedis(ctx context.Context, userID, token string) (user models.User, err error) {
 	ctx, span := o11y.Tracer.Start(ctx, "users: authenticate redis")
 	defer o11y.End(&span, &err)
+	authCounter, _ := o11y.Meter.Int64Counter("users.authenticate.redis")
+	defer func() {
+		if authCounter != nil {
+			authCounter.Add(ctx, 1,
+				metric.WithAttributes(
+					attribute.Bool("success", err == nil),
+					attribute.String("user_login", user.Login),
+					attribute.String("user_id", user.ID)),
+			)
+		}
+	}()
 
+	span.SetAttributes(attribute.String("user_id", userID))
 	userBytes, err := s.rdb.Get(ctx, userID).Bytes()
 	if errors.Is(err, redis.Nil) {
 		return models.User{}, &errors2.AuthError{Err: errors.New("user not found")}
@@ -92,7 +115,7 @@ func (s *Users) AuthenticateRedis(ctx context.Context, userID, token string) (_ 
 	if err != nil {
 		return models.User{}, err
 	}
-	user := models.User{}
+	user = models.User{}
 	err = json.Unmarshal(userBytes, &user)
 	if err != nil {
 		return models.User{}, err
@@ -101,6 +124,8 @@ func (s *Users) AuthenticateRedis(ctx context.Context, userID, token string) (_ 
 	if err != nil {
 		return models.User{}, &errors2.AuthError{Err: err}
 	}
+
+	span.SetAttributes(attribute.String("user_login", user.Login))
 	return user, nil
 }
 
