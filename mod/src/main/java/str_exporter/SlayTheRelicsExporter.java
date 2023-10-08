@@ -25,7 +25,9 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Properties;
 
@@ -42,8 +44,6 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
     public static final Logger logger = LogManager.getLogger(SlayTheRelicsExporter.class.getName());
     public static final String MODID = "SlayTheRelicsExporter";
 
-    private static String login = null;
-    private static String secret = null;
     private static String version = "";
 
     private long lastTipsCheck = System.currentTimeMillis();
@@ -72,9 +72,14 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
     private static String apiUrl = "";
     private static long lastOkayBroadcast = 0;
     private static final String OAUTH_SETTINGS = "oauth";
+    private static final String USER_SETTINGS = "user";
+
     public static String oathToken = "";
+    public static String user = "";
 
     SpireConfig config;
+    private static final SecureRandom secureRandom = new SecureRandom();
+    private static final Base64.Encoder base64Encoder = Base64.getUrlEncoder();
 
     public SlayTheRelicsExporter() {
         logger.info("Slay The Relics Exporter initialized!");
@@ -89,13 +94,14 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
             config.load();
             delay = config.getInt(DELAY_SETTINGS);
             oathToken = config.getString(OAUTH_SETTINGS);
+            user = config.getString(USER_SETTINGS);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     private static boolean areCredentialsValid() {
-        return login != null && secret != null;
+        return user != null && !user.isEmpty() && oathToken != null && !oathToken.isEmpty();
     }
 
     public static String getVersion() {
@@ -118,8 +124,6 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
             String data = new String(Files.readAllBytes(path));
             List<String> lines = Files.readAllLines(path);
 
-            login = lines.get(0).split(":")[1].toLowerCase().trim();
-            secret = lines.get(1).split(":")[1].trim();
             setApiUrl(lines);
 
             logger.info("slaytherelics_config.txt was succesfully loaded");
@@ -127,9 +131,6 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
             e.printStackTrace();
         }
 
-        if (!areCredentialsValid()) {
-            logger.info("slaytherelics_config.txt wasn't loaded, check if it exists.");
-        }
 
         instance = new SlayTheRelicsExporter();
     }
@@ -172,8 +173,8 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
     }
 
 
-    private String getOauthToken() {
-        AuthHttpServer serv = new AuthHttpServer();
+    private User getOauthToken(String state) {
+        AuthHttpServer serv = new AuthHttpServer(state);
         try {
             serv.start();
         } catch (IOException e) {
@@ -199,8 +200,18 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
         }
         serv.stop();
 
-        // TODO: verify the token is valid
-        return token;
+        try {
+            return EBSClient.verifyCredentials(token);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private static String generateNewToken() {
+        byte[] randomBytes = new byte[24];
+        secureRandom.nextBytes(randomBytes);
+        return base64Encoder.encodeToString(randomBytes);
     }
 
     @Override
@@ -208,9 +219,9 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
         tipsBroadcaster = new BackendBroadcaster(BROADCAST_CHECK_QUEUE_PERIOD_MILLIS, false);
         deckBroadcaster = new BackendBroadcaster(BROADCAST_CHECK_QUEUE_PERIOD_MILLIS, false);
         okayBroadcaster = new BackendBroadcaster(BROADCAST_CHECK_QUEUE_PERIOD_MILLIS, true);
-        tipsJsonBuilder = new TipsJSONBuilder(login, secret, version);
-        deckJsonBuilder = new DeckJSONBuilder(login, secret, version);
-        okayJsonBuilder = new JSONMessageBuilder(login, secret, version, 5);
+        tipsJsonBuilder = new TipsJSONBuilder(user, oathToken, version);
+        deckJsonBuilder = new DeckJSONBuilder(user, oathToken, version);
+        okayJsonBuilder = new JSONMessageBuilder(user, oathToken, version, 5);
 
         ModPanel settingsPanel = new ModPanel();
 
@@ -245,8 +256,21 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
         });
 
         ModLabelButton oauthBtn = new ModLabelButton("Connect with Twitch", 800f, 480f, settingsPanel, (me) -> {
-            oathToken = getOauthToken();
+            String state = generateNewToken();
+            User user = getOauthToken(state);
+            if (user == null) {
+                return;
+            }
+            oathToken = user.token;
+            SlayTheRelicsExporter.user = user.user;
             config.setString(OAUTH_SETTINGS, oathToken);
+            config.setString(USER_SETTINGS, user.user);
+            tipsJsonBuilder.setSecret(oathToken);
+            tipsJsonBuilder.setLogin(user.user);
+            deckJsonBuilder.setSecret(oathToken);
+            deckJsonBuilder.setLogin(user.user);
+            okayJsonBuilder.setSecret(oathToken);
+            okayJsonBuilder.setLogin(user.user);
             try {
                 config.save();
             } catch (IOException e) {
@@ -296,8 +320,9 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
 
             String okayMsg = okayJsonBuilder.buildJson();
             lastOkayBroadcast = System.currentTimeMillis();
-            okayBroadcaster.queueMessage(okayMsg);
-//            logger.info(okayMsg);
+            if (areCredentialsValid()) {
+                okayBroadcaster.queueMessage(okayMsg);
+            }
 
         }
     }

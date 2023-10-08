@@ -104,7 +104,7 @@ public class BackendBroadcaster {
     }
 
     private static BufferedReader makeRequest(String msg) throws IOException {
-        URL url = new URL(SlayTheRelicsExporter.getApiUrl());
+        URL url = new URL(SlayTheRelicsExporter.getApiUrl() + "/api/v1/message");
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.setRequestMethod("POST");
         con.setRequestProperty("Content-Type", "application/json");  //; utf-8

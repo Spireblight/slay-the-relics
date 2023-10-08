@@ -9,15 +9,11 @@ import com.sun.net.httpserver.HttpServer;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.security.SecureRandom;
-import java.util.Base64;
 
 public class AuthHttpServer implements HttpHandler {
     private String state;
 
     private String index;
-    private static final SecureRandom secureRandom = new SecureRandom();
-    private static final Base64.Encoder base64Encoder = Base64.getUrlEncoder();
 
     private String token = "";
 
@@ -25,9 +21,9 @@ public class AuthHttpServer implements HttpHandler {
 
     private HttpServer server;
 
-    public AuthHttpServer() {
+    public AuthHttpServer(String state) {
         FileHandle fd = Gdx.files.internal("SlayTheRelicsExporter" + File.separator + "index.html");
-        state = generateNewToken();
+        this.state = state;
         index = fd.readString().replaceFirst("STATE", state);
     }
 
@@ -42,11 +38,6 @@ public class AuthHttpServer implements HttpHandler {
         server.stop(0);
     }
 
-    private static String generateNewToken() {
-        byte[] randomBytes = new byte[24];
-        secureRandom.nextBytes(randomBytes);
-        return base64Encoder.encodeToString(randomBytes);
-    }
 
     @Override
     public void handle(HttpExchange httpExchange) throws IOException {
