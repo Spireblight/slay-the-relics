@@ -33,7 +33,9 @@ func New(t *client.Twitch, u *slaytherelics.Users, b *slaytherelics.Broadcaster)
 		broadcaster: b,
 	}
 
-	r.POST("/", api.postMessageHandler)
+	r.POST("/", api.postOldMessageHandler)
+	r.POST("/api/v1/auth", api.Auth)
+	r.POST("/api/v1/message", api.postMessageHandler)
 
 	return api, nil
 }

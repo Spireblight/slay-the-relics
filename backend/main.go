@@ -51,7 +51,8 @@ func initialize(ctx context.Context, cfg config.Config) (_ *api.API, cancel func
 		return nil, cancel, err
 	}
 
-	users := slaytherelics.NewUsers(twitchClient)
+	rdb := client.NewRedis(cfg.RedisAddr)
+	users := slaytherelics.NewUsers(twitchClient, rdb)
 	messages := slaytherelics.NewMessages(twitchClient)
 	broadcaster, err := slaytherelics.NewBroadcaster(messages, 20, time.Second*3, time.Minute)
 	if err != nil {

@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 
 	"github.com/MaT1g3R/slaytherelics/client"
 	"github.com/MaT1g3R/slaytherelics/o11y"
@@ -63,8 +64,10 @@ func (m *Messages) SendMessage(ctx context.Context,
 	numChunks := len(chunks)
 	if chunkHistogram != nil {
 		chunkHistogram.Record(ctx, int64(numChunks),
-			attribute.String("broadcaster_id", broadcasterID),
-			attribute.Int("message_type", messageType),
+			metric.WithAttributes(
+				attribute.String("broadcaster_id", broadcasterID),
+				attribute.Int("message_type", messageType),
+			),
 		)
 	}
 

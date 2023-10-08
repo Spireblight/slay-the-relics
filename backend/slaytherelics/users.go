@@ -3,34 +3,105 @@ package slaytherelics
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
 	"sync"
 
+	"github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
+	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/exp/slices"
 
 	"github.com/MaT1g3R/slaytherelics/client"
 	errors2 "github.com/MaT1g3R/slaytherelics/errors"
+	"github.com/MaT1g3R/slaytherelics/models"
 	"github.com/MaT1g3R/slaytherelics/o11y"
 )
 
 type Users struct {
 	twitch *client.Twitch
+	rdb    *redis.Client
 
 	userIDCache    sync.Map
 	userAuthCache  sync.Map
 	invalidSecrets sync.Map
 }
 
-func NewUsers(twitch *client.Twitch) *Users {
+func NewUsers(twitch *client.Twitch, rdb *redis.Client) *Users {
 	return &Users{
 		twitch:         twitch,
+		rdb:            rdb,
 		userIDCache:    sync.Map{},
 		userAuthCache:  sync.Map{},
 		invalidSecrets: sync.Map{},
 	}
+}
+
+func (s *Users) Oauth(ctx context.Context, code string) (_ models.User, _ string, err error) {
+	ctx, span := o11y.Tracer.Start(ctx, "users: oauth")
+	defer o11y.End(&span, &err)
+
+	oauthToken, err := s.twitch.GetOauthToken(ctx, code)
+	if err != nil {
+		return models.User{}, "", err
+	}
+	user, err := s.twitch.VerifyToken(ctx, oauthToken.Data.AccessToken)
+	if err != nil {
+		return models.User{}, "", err
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(oauthToken.Data.AccessToken), bcrypt.DefaultCost)
+	if err != nil {
+		return models.User{}, "", err
+	}
+	user.Hash = string(hash)
+	return user, oauthToken.Data.AccessToken, nil
+}
+
+func (s *Users) AuthenticateTwitch(ctx context.Context, code string) (_ models.User, _ string, err error) {
+	ctx, span := o11y.Tracer.Start(ctx, "users: authenticate twitch")
+	defer o11y.End(&span, &err)
+
+	user, token, err := s.Oauth(ctx, code)
+	if err != nil {
+		return models.User{}, "", err
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(token), bcrypt.DefaultCost)
+	if err != nil {
+		return models.User{}, "", err
+	}
+	user.Hash = string(hash)
+	userBytes, err := json.Marshal(user)
+	if err != nil {
+		return models.User{}, "", err
+	}
+	err = s.rdb.Set(ctx, user.ID, userBytes, 0).Err()
+	return user, token, err
+}
+
+func (s *Users) AuthenticateRedis(ctx context.Context, userID, token string) (_ models.User, err error) {
+	ctx, span := o11y.Tracer.Start(ctx, "users: authenticate redis")
+	defer o11y.End(&span, &err)
+
+	userBytes, err := s.rdb.Get(ctx, userID).Bytes()
+	if errors.Is(err, redis.Nil) {
+		return models.User{}, &errors2.AuthError{Err: errors.New("user not found")}
+	}
+	if err != nil {
+		return models.User{}, err
+	}
+	user := models.User{}
+	err = json.Unmarshal(userBytes, &user)
+	if err != nil {
+		return models.User{}, err
+	}
+	err = bcrypt.CompareHashAndPassword([]byte(user.Hash), []byte(token))
+	if err != nil {
+		return models.User{}, &errors2.AuthError{Err: err}
+	}
+	return user, nil
 }
 
 func (s *Users) GetUserID(ctx context.Context, login string) (_ string, err error) {
@@ -43,7 +114,11 @@ func (s *Users) GetUserID(ctx context.Context, login string) (_ string, err erro
 	cacheResult, ok := s.userIDCache.Load(login)
 	span.SetAttributes(attribute.Bool("cache_hit", ok))
 	if cacheCounter != nil {
-		cacheCounter.Add(ctx, 1, attribute.Bool("hit", ok), attribute.String("login", login))
+		cacheCounter.Add(ctx, 1,
+			metric.WithAttributes(
+				attribute.Bool("hit", ok), attribute.String("login", login),
+			))
+
 	}
 
 	if ok {
@@ -60,6 +135,7 @@ func (s *Users) GetUserID(ctx context.Context, login string) (_ string, err erro
 	return user.ID, err
 }
 
+//nolint:funlen
 func (s *Users) UserAuth(ctx context.Context, login string, secret string) (_ bool, err error) {
 	ctx, span := o11y.Tracer.Start(ctx, "users: auth")
 	defer o11y.End(&span, &err)
@@ -72,7 +148,9 @@ func (s *Users) UserAuth(ctx context.Context, login string, secret string) (_ bo
 	invalidSecrets, _ := s.invalidSecrets.LoadOrStore(login, []string{})
 	if slices.Contains(invalidSecrets.([]string), secretHash) {
 		if cacheCounter != nil {
-			cacheCounter.Add(ctx, 1, attribute.Bool("invalid_secret_hit", true), attribute.String("login", login))
+			cacheCounter.Add(ctx, 1,
+				metric.WithAttributes(attribute.Bool("invalid_secret_hit", true), attribute.String("login", login)),
+			)
 		}
 		span.SetAttributes(attribute.Bool("invalid_secret", true))
 		return false, nil
@@ -80,7 +158,9 @@ func (s *Users) UserAuth(ctx context.Context, login string, secret string) (_ bo
 
 	cacheResult, ok := s.userAuthCache.Load(login)
 	if cacheCounter != nil {
-		cacheCounter.Add(ctx, 1, attribute.Bool("hit", ok), attribute.String("login", login))
+		cacheCounter.Add(ctx, 1,
+			metric.WithAttributes(
+				attribute.Bool("hit", ok), attribute.String("login", login)))
 	}
 	span.SetAttributes(attribute.Bool("cache_hit", ok))
 	if ok {
@@ -92,7 +172,11 @@ func (s *Users) UserAuth(ctx context.Context, login string, secret string) (_ bo
 	authErr := &errors2.AuthError{}
 	if errors.As(err, &authErr) {
 		if cacheCounter != nil {
-			cacheCounter.Add(ctx, 1, attribute.Bool("invalid_secret_hit", false), attribute.String("login", login))
+			cacheCounter.Add(ctx, 1,
+				metric.WithAttributes(
+					attribute.Bool("invalid_secret_hit", false), attribute.String("login", login),
+				),
+			)
 		}
 		s.invalidSecrets.Store(login, append(invalidSecrets.([]string), secretHash))
 	}
@@ -106,7 +190,9 @@ func (s *Users) UserAuth(ctx context.Context, login string, secret string) (_ bo
 	if !strings.EqualFold(user, login) {
 		span.SetAttributes(attribute.Bool("mismatch_username", true))
 		if cacheCounter != nil {
-			cacheCounter.Add(ctx, 1, attribute.Bool("invalid_secret_hit", false), attribute.String("login", login))
+			cacheCounter.Add(ctx, 1,
+				metric.WithAttributes(
+					attribute.Bool("invalid_secret_hit", false), attribute.String("login", login)))
 		}
 		s.invalidSecrets.Store(login, append(invalidSecrets.([]string), secretHash))
 		return false, nil

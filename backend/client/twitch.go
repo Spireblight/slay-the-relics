@@ -16,15 +16,19 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/nicklaw5/helix"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 
 	errors2 "github.com/MaT1g3R/slaytherelics/errors"
+	"github.com/MaT1g3R/slaytherelics/models"
 	"github.com/MaT1g3R/slaytherelics/o11y"
 )
 
 type Twitch struct {
-	client   *helix.Client
-	timeout  time.Duration
-	clientID string
+	client       *helix.Client
+	httpClient   *http.Client
+	timeout      time.Duration
+	clientID     string
+	clientSecret string
 }
 
 func New(ctx context.Context, clientID, clientSecret, ownerUserID, extensionSecret string) (*Twitch, error) {
@@ -42,9 +46,13 @@ func New(ctx context.Context, clientID, clientSecret, ownerUserID, extensionSecr
 	}
 
 	t := &Twitch{
-		client:   client,
-		timeout:  time.Second * 5,
-		clientID: clientID,
+		client:       client,
+		timeout:      time.Second * 5,
+		clientID:     clientID,
+		clientSecret: clientSecret,
+		httpClient: &http.Client{
+			Timeout: time.Second * 5,
+		},
 	}
 
 	err = t.setToken(ctx)
@@ -149,9 +157,11 @@ func (t *Twitch) PostExtensionPubSub(ctx context.Context, broadcasterID, message
 		if counter != nil {
 			counter.Add(
 				ctx, 1,
-				attribute.String("error", err.Error()),
-				attribute.Int("status_code", -1),
-				attribute.String("broadcaster_id", broadcasterID),
+				metric.WithAttributes(
+					attribute.String("error", err.Error()),
+					attribute.Int("status_code", -1),
+					attribute.String("broadcaster_id", broadcasterID),
+				),
 			)
 		}
 		return err
@@ -162,9 +172,10 @@ func (t *Twitch) PostExtensionPubSub(ctx context.Context, broadcasterID, message
 	if counter != nil {
 		counter.Add(
 			ctx, 1,
-			attribute.String("error", ""),
-			attribute.Int("status_code", resp.StatusCode),
-			attribute.String("broadcaster_id", broadcasterID),
+			metric.WithAttributes(
+				attribute.String("error", ""),
+				attribute.Int("status_code", resp.StatusCode),
+				attribute.String("broadcaster_id", broadcasterID)),
 		)
 	}
 
@@ -275,4 +286,78 @@ func (t *Twitch) GetUsernameFromSecret(ctx context.Context,
 	case <-ctx.Done():
 		return "", &errors2.Timeout{Err: ctx.Err()}
 	}
+}
+
+func (t *Twitch) GetOauthToken(ctx context.Context, code string) (_ helix.UserAccessTokenResponse, err error) {
+	ctx, span := o11y.Tracer.Start(ctx, "twitch: get access token")
+	defer o11y.End(&span, &err)
+
+	res := helix.UserAccessTokenResponse{}
+	body := url.Values{}
+	body.Set("client_id", t.clientID)
+	body.Set("client_secret", t.clientSecret)
+	body.Set("code", code)
+	body.Set("grant_type", "authorization_code")
+	body.Set("redirect_uri", "http://localhost:49000")
+
+	req, err := http.NewRequestWithContext(ctx, "POST", "https://id.twitch.tv/oauth2/token", bytes.NewBufferString(body.Encode()))
+	if err != nil {
+		return res, err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	resp, err := t.httpClient.Do(req)
+	if err != nil {
+		return res, err
+	}
+	defer func() {
+		cErr := resp.Body.Close()
+		if err == nil && cErr != nil {
+			err = cErr
+		}
+	}()
+	if resp.StatusCode > 399 && resp.StatusCode < 500 {
+		s, _ := io.ReadAll(resp.Body)
+		return res, &errors2.AuthError{Err: errors.New(string(s))}
+	} else if resp.StatusCode > 499 {
+		return res, errors.New("unknown error")
+	}
+	err = json.NewDecoder(resp.Body).Decode(&res.Data)
+	return res, err
+}
+
+func (t *Twitch) VerifyToken(ctx context.Context, token string) (_ models.User, err error) {
+	ctx, span := o11y.Tracer.Start(ctx, "twitch: verify token")
+	defer o11y.End(&span, &err)
+
+	req, err := http.NewRequestWithContext(ctx, "GET", "https://id.twitch.tv/oauth2/validate", nil)
+	if err != nil {
+		return models.User{}, err
+	}
+	req.Header.Set("Authorization", "OAuth "+token)
+	resp, err := t.httpClient.Do(req)
+	if err != nil {
+		return models.User{}, err
+	}
+	defer func() {
+		cErr := resp.Body.Close()
+		if err == nil && cErr != nil {
+			err = cErr
+		}
+	}()
+	if resp.StatusCode > 399 && resp.StatusCode < 500 {
+		s, _ := io.ReadAll(resp.Body)
+		return models.User{}, &errors2.AuthError{Err: errors.New(string(s))}
+	} else if resp.StatusCode > 499 {
+		return models.User{}, errors.New("unknown error")
+	}
+
+	res := helix.ValidateTokenResponse{}
+	err = json.NewDecoder(resp.Body).Decode(&res.Data)
+	if err != nil {
+		return models.User{}, err
+	}
+	return models.User{
+		Login: res.Data.Login,
+		ID:    res.Data.UserID,
+	}, nil
 }

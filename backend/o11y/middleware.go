@@ -3,6 +3,7 @@ package o11y
 import (
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -38,16 +39,20 @@ func Middleware(c *gin.Context) {
 	requestHistogram, _ := Meter.Int64Histogram("http.requests.content_length")
 	if requestCounter != nil {
 		requestCounter.Add(ctx, 1,
-			attribute.String("target", target),
-			attribute.String("method", method),
-			attribute.Int("status_code", status),
+			metric.WithAttributes(
+				attribute.String("target", target),
+				attribute.String("method", method),
+				attribute.Int("status_code", status),
+			),
 		)
 	}
 	if requestHistogram != nil {
 		requestHistogram.Record(ctx, contentLength,
-			attribute.String("target", target),
-			attribute.String("method", method),
-			attribute.Int("status_code", status),
+			metric.WithAttributes(
+				attribute.String("target", target),
+				attribute.String("method", method),
+				attribute.Int("status_code", status),
+			),
 		)
 	}
 

@@ -9,6 +9,7 @@ type Config struct {
 	OwnerUserID     string `env:"OWNER_USER_ID"`
 	ExtensionSecret string `env:"EXTENSION_SECRET"`
 	OtelEndpoint    string `env:"OTEL_EXPORTER_ENDPOINT"`
+	RedisAddr       string `env:"REDIS_ADDR" default:"localhost:6379"`
 }
 
 func Load() Config {

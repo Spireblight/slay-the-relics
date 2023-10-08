@@ -9,7 +9,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/metric/global"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -51,7 +50,7 @@ func Init(serviceName string) func(context.Context) {
 	)
 	shutdown := func(ctx context.Context) { _ = uptrace.Shutdown(ctx) }
 	Tracer = otel.Tracer(serviceName)
-	Meter = global.Meter(serviceName)
+	Meter = otel.Meter(serviceName)
 
 	return shutdown
 }

@@ -35,7 +35,23 @@ services:
     depends_on:
       clickhouse:
         condition: service_healthy
+  redis:
+    image: 'redis:7-alpine'
+    command:
+      - redis-server
+      - --save
+      - '60'
+      - '1'
+      - --loglevel
+      - warning
+    restart: on-failure
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
 
 volumes:
+  redis_data:
+    driver: local
   uptrace_data:
     driver: local

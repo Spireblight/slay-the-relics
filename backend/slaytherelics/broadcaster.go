@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric/instrument"
+	"go.opentelemetry.io/otel/metric"
 
 	errors2 "github.com/MaT1g3R/slaytherelics/errors"
 	"github.com/MaT1g3R/slaytherelics/o11y"
@@ -31,7 +31,7 @@ type Broadcaster struct {
 
 	senders sync.Map // map[string]*Sender
 
-	sendersCounter instrument.Int64UpDownCounter
+	sendersCounter metric.Int64UpDownCounter
 }
 
 func NewBroadcaster(
@@ -60,7 +60,7 @@ func (b *Broadcaster) Broadcast(ctx context.Context,
 
 	sender := s.(*sender)
 	if !ok {
-		b.sendersCounter.Add(ctx, 1, attribute.String("broadcaster_id", broadcasterID))
+		b.sendersCounter.Add(ctx, 1, metric.WithAttributes(attribute.String("broadcaster_id", broadcasterID)))
 		sender.init(ctx)
 	}
 
@@ -108,7 +108,8 @@ func (s *sender) init(ctx context.Context) {
 func (s *sender) terminate(ctx context.Context) {
 	s.terminated.Store(true)
 	s.broadcaster.senders.Delete(s.broadcasterID)
-	s.broadcaster.sendersCounter.Add(ctx, -1, attribute.String("broadcaster_id", s.broadcasterID))
+	s.broadcaster.sendersCounter.Add(ctx, -1, metric.WithAttributes(attribute.String("broadcaster_id", s.broadcasterID)))
+
 }
 
 func (s *sender) keepAliveWorker(ctx context.Context) {
