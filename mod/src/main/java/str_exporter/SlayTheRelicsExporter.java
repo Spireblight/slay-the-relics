@@ -19,6 +19,7 @@ import str_exporter.builders.JSONMessageBuilder;
 import str_exporter.builders.TipsJSONBuilder;
 import str_exporter.client.BackendBroadcaster;
 import str_exporter.client.EBSClient;
+import str_exporter.client.Message;
 import str_exporter.config.AuthManager;
 import str_exporter.config.Config;
 
@@ -94,13 +95,13 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
     }
 
     private void broadcastTips() {
-        String tips_json = tipsJsonBuilder.buildJson();
-        tipsBroadcaster.queueMessage(tips_json);
+        Message tips_json = tipsJsonBuilder.buildMessage();
+        tipsBroadcaster.queueMessage(config.gson.toJson(tips_json));
     }
 
     private void broadcastDeck() {
-        String deck_json = deckJsonBuilder.buildJson();
-        deckBroadcaster.queueMessage(deck_json);
+        Message deck_json = deckJsonBuilder.buildMessage();
+        deckBroadcaster.queueMessage(config.gson.toJson(deck_json));
     }
 
     @Override
@@ -187,20 +188,18 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
         }
 
         if (System.currentTimeMillis() - lastOkayBroadcast > MAX_OKAY_BROADCAST_PERIOD_MILLIS) {
-            String okayMsg = okayJsonBuilder.buildJson();
+            Message okayMsg = okayJsonBuilder.buildJson("");
             lastOkayBroadcast = System.currentTimeMillis();
             if (config.areCredentialsValid()) {
-                okayBroadcaster.queueMessage(okayMsg);
+                okayBroadcaster.queueMessage(config.gson.toJson(okayMsg));
             }
         }
 
-        long lastSuccessAuth = EBSClient.lastSuccessRequest.get();
-        long lastSuccessBroadcast = okayBroadcaster.lastSuccessBroadcast.get();
-        long lastSuccess = Math.max(lastSuccessAuth, lastSuccessBroadcast);
+        long lastSuccessRequest = ebsClient.lastSuccessRequest.get();
         if (this.authManager.inProgress.get()) {
             this.authManager.healthy.set(true);
         } else {
-            this.authManager.healthy.set(System.currentTimeMillis() - lastSuccess < 2000);
+            this.authManager.healthy.set(System.currentTimeMillis() - lastSuccessRequest < 2000);
         }
     }
 

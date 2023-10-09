@@ -13,8 +13,8 @@ public class Config {
     private static final String DELAY_SETTINGS = "delay";
     private static final String OAUTH_SETTINGS = "oauth";
     private static final String USER_SETTINGS = "user";
-    private final SpireConfig config;
     public final Gson gson = new Gson();
+    private final SpireConfig config;
 
     public Config() throws IOException {
         Properties strDefaultSettings = new Properties();

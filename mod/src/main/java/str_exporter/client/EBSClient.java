@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class EBSClient {
-    public static final AtomicLong lastSuccessRequest = new AtomicLong(0);
+    public final AtomicLong lastSuccessRequest = new AtomicLong(0);
     private final Config config;
 
     public EBSClient(Config config) {
@@ -52,7 +52,7 @@ public class EBSClient {
                 StandardCharsets.UTF_8))) {
             if (con.getResponseCode() >= 200 && con.getResponseCode() < 300) {
                 JsonReader reader = new JsonReader(br);
-                EBSClient.lastSuccessRequest.set(System.currentTimeMillis());
+                lastSuccessRequest.set(System.currentTimeMillis());
                 return config.gson.fromJson(reader, outputType);
             }
             throw new IOException(method + " " + path + " failed: HTTP error code: " + con.getResponseCode());
