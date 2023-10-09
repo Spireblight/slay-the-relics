@@ -19,17 +19,11 @@ import str_exporter.builders.JSONMessageBuilder;
 import str_exporter.builders.TipsJSONBuilder;
 import str_exporter.client.BackendBroadcaster;
 import str_exporter.client.EBSClient;
-import str_exporter.client.User;
-import str_exporter.config.AuthHttpServer;
+import str_exporter.config.AuthManager;
 import str_exporter.config.Config;
 
-import java.awt.*;
 import java.io.IOException;
-import java.net.URI;
-import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Base64;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 @SpireInitializer
 public class SlayTheRelicsExporter implements RelicGetSubscriber,
@@ -47,15 +41,12 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
     private static final long MAX_DECK_CHECK_PERIOD_MILLIS = 2000;
     private static final long BROADCAST_CHECK_QUEUE_PERIOD_MILLIS = 100;
     private static final long MAX_OKAY_BROADCAST_PERIOD_MILLIS = 1000;
-    private static final SecureRandom secureRandom = new SecureRandom();
-    private static final Base64.Encoder base64Encoder = Base64.getUrlEncoder();
     public static SlayTheRelicsExporter instance = null;
     private static String version = "";
     private static long lastOkayBroadcast = 0;
-    private final AtomicBoolean healthy = new AtomicBoolean(false);
-    private final AtomicBoolean inProgress = new AtomicBoolean(false);
-    Config config;
-    EBSClient ebsClient;
+    private final Config config;
+    private final EBSClient ebsClient;
+    private final AuthManager authManager;
     private long lastTipsCheck = System.currentTimeMillis();
     private long lastDeckCheck = System.currentTimeMillis();
     private boolean checkTipsNextUpdate = false;
@@ -75,6 +66,7 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
             config = new Config();
             tmpDelay = config.getDelay();
             ebsClient = new EBSClient(config);
+            authManager = new AuthManager(ebsClient, config);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -96,12 +88,6 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
         instance = new SlayTheRelicsExporter();
     }
 
-    private static String generateNewToken() {
-        byte[] randomBytes = new byte[24];
-        secureRandom.nextBytes(randomBytes);
-        return base64Encoder.encodeToString(randomBytes);
-    }
-
     private void queue_check() {
         checkTipsNextUpdate = true;
         checkDeckNextUpdate = true;
@@ -117,49 +103,14 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
         deckBroadcaster.queueMessage(deck_json);
     }
 
-    private User getOauthToken(String state) {
-        AuthHttpServer serv = new AuthHttpServer(state);
-        try {
-            serv.start();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-            try {
-                Desktop.getDesktop().browse(new URI("http://localhost:49000"));
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        String token = "";
-        while (token.isEmpty()) {
-            token = serv.getToken();
-            try {
-                Thread.sleep(50);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        serv.stop();
-
-        try {
-            return ebsClient.verifyCredentials(token);
-        } catch (IOException e) {
-            logger.error(e);
-            return null;
-        }
-    }
-
     @Override
     public void receivePostInitialize() {
         tipsBroadcaster = new BackendBroadcaster(config, ebsClient, BROADCAST_CHECK_QUEUE_PERIOD_MILLIS, false);
         deckBroadcaster = new BackendBroadcaster(config, ebsClient, BROADCAST_CHECK_QUEUE_PERIOD_MILLIS, false);
         okayBroadcaster = new BackendBroadcaster(config, ebsClient, BROADCAST_CHECK_QUEUE_PERIOD_MILLIS, true);
-        tipsJsonBuilder = new TipsJSONBuilder(config.getUser(), config.getOathToken(), version);
-        deckJsonBuilder = new DeckJSONBuilder(config.getUser(), config.getOathToken(), version);
-        okayJsonBuilder = new JSONMessageBuilder(config.getUser(), config.getOathToken(), version, 5);
+        tipsJsonBuilder = new TipsJSONBuilder(config, version);
+        deckJsonBuilder = new DeckJSONBuilder(config, version);
+        okayJsonBuilder = new JSONMessageBuilder(config, version, 5);
 
         ModPanel settingsPanel = new ModPanel();
 
@@ -192,38 +143,10 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
         });
 
         ModLabeledButton oauthBtn = new ModLabeledButton("Connect with Twitch", 575f, 480f, settingsPanel, (me) -> {
-            Thread worker = new Thread(() -> {
-                if (this.inProgress.get()) {
-                    return;
-                }
-
-                this.inProgress.set(true);
-                try {
-                    String state = generateNewToken();
-                    User user = getOauthToken(state);
-                    if (user == null) {
-                        return;
-                    }
-                    try {
-                        config.setUser(user.user);
-                        config.setOathToken(user.token);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                    tipsJsonBuilder.setSecret(user.token);
-                    tipsJsonBuilder.setLogin(user.user);
-                    deckJsonBuilder.setSecret(user.token);
-                    deckJsonBuilder.setLogin(user.user);
-                    okayJsonBuilder.setSecret(user.token);
-                    okayJsonBuilder.setLogin(user.user);
-                } finally {
-                    this.inProgress.set(false);
-                }
-            });
-            worker.start();
+            authManager.updateAuth();
         });
 
-        ModStatusImage statusImage = new ModStatusImage(950f, 480f, healthy, inProgress);
+        ModStatusImage statusImage = new ModStatusImage(950f, 480f, authManager.healthy, authManager.inProgress);
 
         settingsPanel.addUIElement(label1);
         settingsPanel.addUIElement(slider);
@@ -274,10 +197,10 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
         long lastSuccessAuth = EBSClient.lastSuccessRequest.get();
         long lastSuccessBroadcast = okayBroadcaster.lastSuccessBroadcast.get();
         long lastSuccess = Math.max(lastSuccessAuth, lastSuccessBroadcast);
-        if (this.inProgress.get()) {
-            this.healthy.set(true);
+        if (this.authManager.inProgress.get()) {
+            this.authManager.healthy.set(true);
         } else {
-            this.healthy.set(System.currentTimeMillis() - lastSuccess < 2000);
+            this.authManager.healthy.set(System.currentTimeMillis() - lastSuccess < 2000);
         }
     }
 
