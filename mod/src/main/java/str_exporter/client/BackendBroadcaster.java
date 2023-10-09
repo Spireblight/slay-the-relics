@@ -1,7 +1,8 @@
-package str_exporter;
+package str_exporter.client;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import str_exporter.config.Config;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -18,19 +19,20 @@ public class BackendBroadcaster {
     public static final Logger logger = LogManager.getLogger(BackendBroadcaster.class.getName());
 
     public static final String DELAY_PLACEHOLDER = "&&&DELAY&&&";
-
+    public AtomicLong lastSuccessBroadcast = new AtomicLong(0);
     private String message;
     private String lastMessage;
     private long messageTimestamp;
-    private ReentrantLock queueLock;
-    private Thread worker;
-    private long checkQueuePeriodMillis;
-    private boolean sendDuplicates;
-    public AtomicLong lastSuccessBroadcast = new AtomicLong(0);
+    private final ReentrantLock queueLock;
+    private final Thread worker;
+    private final long checkQueuePeriodMillis;
+    private final boolean sendDuplicates;
+    private final Config config;
 
-    public BackendBroadcaster(long checkQueuePeriodMillis, boolean sendDuplicates) {
+    public BackendBroadcaster(Config config, long checkQueuePeriodMillis, boolean sendDuplicates) {
         this.checkQueuePeriodMillis = checkQueuePeriodMillis;
         this.sendDuplicates = sendDuplicates;
+        this.config = config;
         message = null;
         lastMessage = null;
         queueLock = new ReentrantLock();
@@ -48,6 +50,10 @@ public class BackendBroadcaster {
         });
 
         worker.start();
+    }
+
+    private static String injectDelayToMessage(String msg, long delay) {
+        return msg.replace(DELAY_PLACEHOLDER, Long.toString(delay));
     }
 
     public void queueMessage(String msg) {
@@ -79,7 +85,7 @@ public class BackendBroadcaster {
         } finally {
             queueLock.unlock();
             if (!msg.isEmpty()) {
-                long msgDelay = ts - System.currentTimeMillis() + SlayTheRelicsExporter.delay;
+                long msgDelay = ts - System.currentTimeMillis() + config.getDelay();
                 msg = injectDelayToMessage(msg, msgDelay);
                 try {
                     broadcastMessage(msg);
@@ -90,12 +96,8 @@ public class BackendBroadcaster {
         }
     }
 
-    private static String injectDelayToMessage(String msg, long delay) {
-        return msg.replace(DELAY_PLACEHOLDER, Long.toString(delay));
-    }
-
     private void broadcastMessage(String msg) throws IOException {
-        URL url = new URL(SlayTheRelicsExporter.getApiUrl() + "/api/v1/message");
+        URL url = new URL(config.getApiUrl() + "/api/v1/message");
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.setRequestMethod("POST");
         con.setRequestProperty("Content-Type", "application/json");  //; utf-8

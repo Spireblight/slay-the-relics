@@ -1,4 +1,4 @@
-package str_exporter;
+package str_exporter.client;
 
 public class User {
     public String user;

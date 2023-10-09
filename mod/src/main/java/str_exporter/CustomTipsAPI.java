@@ -20,13 +20,10 @@ public class CustomTipsAPI implements PostInitializeSubscriber {
 
     private static final String CUSTOM_TIP_HITBOX_NAME = "slayTheRelicsHitboxes";
     private static final String CUSTOM_TIP_POWERTIPS_NAME = "slayTheRelicsPowerTips";
-
-    private ArrayList<Field> externalHitboxFields = new ArrayList<>();
-    private ArrayList<Field> externalPowerTipsFields = new ArrayList<>();
-
-    private static Logger logger = SlayTheRelicsExporter.logger;
-
     public static CustomTipsAPI instance;
+    private static final Logger logger = SlayTheRelicsExporter.logger;
+    private final ArrayList<Field> externalHitboxFields = new ArrayList<>();
+    private final ArrayList<Field> externalPowerTipsFields = new ArrayList<>();
 
     private CustomTipsAPI() {
         BaseMod.subscribe(this);
@@ -34,6 +31,22 @@ public class CustomTipsAPI implements PostInitializeSubscriber {
 
     public static void initialize() {
         instance = new CustomTipsAPI();
+    }
+
+    private static ArrayList<ArrayList<PowerTip>> removeImagesFromPowerTipsLists(ArrayList<ArrayList<PowerTip>> tip_lists) {
+        // removes any images
+        ArrayList<ArrayList<PowerTip>> new_tip_lists = new ArrayList<>(tip_lists.size());
+
+        for (int i = 0; i < tip_lists.size(); i++) {
+            ArrayList<PowerTip> list = tip_lists.get(i);
+
+            new_tip_lists.add(new ArrayList<>(list.size()));
+            for (int j = 0; j < list.size(); j++) {
+                new_tip_lists.get(i).add(new PowerTip(list.get(j).header, list.get(j).body));
+            }
+        }
+
+        return new_tip_lists;
     }
 
     @Override
@@ -48,7 +61,11 @@ public class CustomTipsAPI implements PostInitializeSubscriber {
 
         for (ModInfo info : Loader.MODINFOS) {
             if (Patcher.annotationDBMap.containsKey(info.jarURL)) {
-                Set<String> initializers = Patcher.annotationDBMap.get(info.jarURL).getAnnotationIndex().get(SpireInitializer.class.getName());
+                Set<String>
+                        initializers =
+                        Patcher.annotationDBMap.get(info.jarURL)
+                                .getAnnotationIndex()
+                                .get(SpireInitializer.class.getName());
                 if (initializers != null) {
                     System.out.println(" - " + info.Name);
                     for (String initializer : initializers) {
@@ -75,7 +92,9 @@ public class CustomTipsAPI implements PostInitializeSubscriber {
                             long duration = endTime - startTime;
                             logger.info("   - " + (duration / 1000000) + "ms");
                         } catch (ClassNotFoundException e) {
-                            logger.info("WARNING: Unable to find method initialize() on class marked @SpireInitializer: " + initializer);
+                            logger.info(
+                                    "WARNING: Unable to find method initialize() on class marked @SpireInitializer: " +
+                                            initializer);
                         }
                     }
                 }
@@ -97,7 +116,9 @@ public class CustomTipsAPI implements PostInitializeSubscriber {
 //                logger.info("class: " + hitbox_fields.get(i).getDeclaringClass().getSimpleName());
 
                 ArrayList<Hitbox> mod_hitboxes = (ArrayList<Hitbox>) externalHitboxFields.get(i).get(null);
-                ArrayList<ArrayList<PowerTip>> mod_tip_lists = (ArrayList<ArrayList<PowerTip>>) externalPowerTipsFields.get(i).get(null);
+                ArrayList<ArrayList<PowerTip>>
+                        mod_tip_lists =
+                        (ArrayList<ArrayList<PowerTip>>) externalPowerTipsFields.get(i).get(null);
 
                 if (mod_hitboxes.size() == mod_tip_lists.size()) {
 //                    logger.info("found fields, adding " + mod_hitboxes.size() + " entries");
@@ -113,23 +134,5 @@ public class CustomTipsAPI implements PostInitializeSubscriber {
         }
 
         return new Object[]{hitboxes, tip_lists};
-    }
-
-
-
-    private static ArrayList<ArrayList<PowerTip>> removeImagesFromPowerTipsLists(ArrayList<ArrayList<PowerTip>> tip_lists) {
-        // removes any images
-        ArrayList<ArrayList<PowerTip>> new_tip_lists = new ArrayList<>(tip_lists.size());
-
-        for (int i = 0; i < tip_lists.size(); i++) {
-            ArrayList<PowerTip> list = tip_lists.get(i);
-
-            new_tip_lists.add(new ArrayList<>(list.size()));
-            for (int j = 0; j < list.size(); j++) {
-                new_tip_lists.get(i).add(new PowerTip(list.get(j).header, list.get(j).body));
-            }
-        }
-
-        return new_tip_lists;
     }
 }

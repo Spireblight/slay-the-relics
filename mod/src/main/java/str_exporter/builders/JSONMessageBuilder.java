@@ -1,9 +1,13 @@
-package str_exporter;
+package str_exporter.builders;
+
+import str_exporter.client.BackendBroadcaster;
 
 public class JSONMessageBuilder {
 
-    private String login, secret, version;
-    private int msg_type;
+    private String login;
+    private String secret;
+    private final String version;
+    private final int msg_type;
 
     public JSONMessageBuilder(String login, String secret, String version, int msg_type) {
         this.login = login;
