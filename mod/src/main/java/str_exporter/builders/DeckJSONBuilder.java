@@ -11,6 +11,7 @@ import com.megacrit.cardcrawl.core.Settings;
 import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import str_exporter.config.Config;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -25,8 +26,8 @@ public class DeckJSONBuilder extends JSONMessageBuilder {
     private final ArrayList<String> cardsRepr;
     private final ArrayList<AbstractCard> cards;
 
-    public DeckJSONBuilder(String login, String secret, String version) {
-        super(login, secret, version, 4);
+    public DeckJSONBuilder(Config config, String version) {
+        super(config, version, 4);
 
         keywords = new ArrayList<>();
         cardsRepr = new ArrayList<>();
