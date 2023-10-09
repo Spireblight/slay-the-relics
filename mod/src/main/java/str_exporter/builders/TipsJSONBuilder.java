@@ -24,6 +24,7 @@ import com.megacrit.cardcrawl.ui.panels.TopPanel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import str_exporter.CustomTipsAPI;
+import str_exporter.config.Config;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -36,8 +37,8 @@ public class TipsJSONBuilder extends JSONMessageBuilder {
     private static final int MAX_RELICS = 25;
     private final ArrayList<String> powerTips;
 
-    public TipsJSONBuilder(String login, String secret, String version) {
-        super(login, secret, version, 1);
+    public TipsJSONBuilder(Config config, String version) {
+        super(config, version, 1);
         powerTips = new ArrayList<>(40);
     }
 
