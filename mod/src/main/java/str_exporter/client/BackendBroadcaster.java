@@ -19,13 +19,11 @@ public class BackendBroadcaster {
     private long messageTimestamp;
     private final ReentrantLock queueLock;
     private final Thread worker;
-    private final long checkQueuePeriodMillis;
     private final boolean sendDuplicates;
     private final Config config;
     private final EBSClient client;
 
     public BackendBroadcaster(Config config, EBSClient client, long checkQueuePeriodMillis, boolean sendDuplicates) {
-        this.checkQueuePeriodMillis = checkQueuePeriodMillis;
         this.sendDuplicates = sendDuplicates;
         this.config = config;
         this.client = client;
@@ -40,7 +38,7 @@ public class BackendBroadcaster {
                 try {
                     Thread.sleep(checkQueuePeriodMillis);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    logger.error(e);
                 }
             }
         });
@@ -77,7 +75,7 @@ public class BackendBroadcaster {
                 message = null;
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e);
         } finally {
             queueLock.unlock();
             if (!msg.isEmpty()) {
@@ -86,7 +84,7 @@ public class BackendBroadcaster {
                 try {
                     broadcastMessage(msg);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.error(e);
                 }
             }
         }
