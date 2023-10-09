@@ -147,7 +147,7 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
         try {
             return ebsClient.verifyCredentials(token);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e);
             return null;
         }
     }
