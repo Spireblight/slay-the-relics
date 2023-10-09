@@ -24,21 +24,23 @@ import com.megacrit.cardcrawl.ui.panels.TopPanel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import str_exporter.CustomTipsAPI;
+import str_exporter.client.Message;
 import str_exporter.config.Config;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Locale;
+import java.util.*;
 
-public class TipsJSONBuilder extends JSONMessageBuilder {
+public class TipsJSONBuilder {
 
     public static final Logger logger = LogManager.getLogger(TipsJSONBuilder.class.getName());
     private static final int MAX_RELICS = 25;
     private final ArrayList<String> powerTips;
 
+    private final JSONMessageBuilder jsonMessageBuilder;
+    private final Config config;
+
     public TipsJSONBuilder(Config config, String version) {
-        super(config, version, 1);
+        this.jsonMessageBuilder = new JSONMessageBuilder(config, version, 1);
+        this.config = config;
         powerTips = new ArrayList<>(40);
     }
 
@@ -135,10 +137,9 @@ public class TipsJSONBuilder extends JSONMessageBuilder {
         return str.isEmpty() ? " " : str;
     }
 
-    @Override
-    public void buildMessage(StringBuilder sb) {
-
+    public Message buildMessage() {
         powerTips.clear();
+        StringBuilder sb = new StringBuilder();
 
         String character = "";
 
@@ -175,6 +176,8 @@ public class TipsJSONBuilder extends JSONMessageBuilder {
         buildPowerTipsDictionary(sb);
 
         sb.append("}");
+
+        return this.jsonMessageBuilder.buildJson(this.config.gson.fromJson(sb.toString(), Map.class));
     }
 
     private void buildShop(StringBuilder sb) {
@@ -347,8 +350,6 @@ public class TipsJSONBuilder extends JSONMessageBuilder {
             LinkedList<ArrayList<PowerTip>> tip_lists = (LinkedList<ArrayList<PowerTip>>) res[1];
             long end = System.currentTimeMillis();
 
-//            logger.info("getTipsFromMods() took " + (end - start) + "ms");
-//            logger.info("hitboxes size: " + hitboxes.size());
 
             Iterator<Hitbox> hb_iter = hitboxes.iterator();
             Iterator<ArrayList<PowerTip>> pt_iter = tip_lists.iterator();

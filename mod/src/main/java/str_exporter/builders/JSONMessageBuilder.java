@@ -1,7 +1,10 @@
 package str_exporter.builders;
 
-import str_exporter.client.BackendBroadcaster;
+import str_exporter.client.Message;
 import str_exporter.config.Config;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class JSONMessageBuilder {
     private final String version;
@@ -15,26 +18,20 @@ public class JSONMessageBuilder {
         this.msg_type = msg_type;
     }
 
-    public String buildJson() {
-        StringBuilder sb = new StringBuilder();
+    public Message buildJson(Object msg) {
+        Map<String, String> meta = new HashMap<>();
+        meta.put("version", version);
 
-        sb.append("{");
-        sb.append("\"msg_type\":");
-        sb.append(msg_type);
-        sb.append(",");
-        sb.append("\"streamer\":{\"login\":\"" + config.getUser()+ "\",\"secret\":\"" + config.getOathToken()+ "\"},");
-        sb.append("\"meta\":{\"version\": \"" + version + "\"},");
-        sb.append("\"delay\":" + BackendBroadcaster.DELAY_PLACEHOLDER + ",");
-        sb.append("\"message\":");
+        Message.Streamer streamer = new Message.Streamer();
+        streamer.login = config.getUser();
+        streamer.secret = config.getOathToken();
 
-        buildMessage(sb);
+        Message message = new Message();
+        message.msg_type = msg_type;
+        message.streamer = streamer;
+        message.meta = meta;
+        message.message = msg;
 
-        sb.append("}");
-
-        return sb.toString();
-    }
-
-    protected void buildMessage(StringBuilder sb) {
-        sb.append("\"\"");
+        return message;
     }
 }

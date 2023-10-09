@@ -5,7 +5,6 @@ import org.apache.logging.log4j.Logger;
 import str_exporter.config.Config;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class BackendBroadcaster {
@@ -13,7 +12,6 @@ public class BackendBroadcaster {
     public static final Logger logger = LogManager.getLogger(BackendBroadcaster.class.getName());
 
     public static final String DELAY_PLACEHOLDER = "&&&DELAY&&&";
-    public AtomicLong lastSuccessBroadcast = new AtomicLong(0);
     private String message;
     private String lastMessage;
     private long messageTimestamp;
@@ -34,7 +32,6 @@ public class BackendBroadcaster {
         worker = new Thread(() -> {
             while (true) {
                 readQueue();
-
                 try {
                     Thread.sleep(checkQueuePeriodMillis);
                 } catch (InterruptedException e) {
