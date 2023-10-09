@@ -129,7 +129,7 @@ public class CustomTipsAPI implements PostInitializeSubscriber {
                 }
 
             } catch (IllegalAccessException e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
 
