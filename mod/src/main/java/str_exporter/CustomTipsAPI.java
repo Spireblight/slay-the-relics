@@ -20,8 +20,8 @@ public class CustomTipsAPI implements PostInitializeSubscriber {
 
     private static final String CUSTOM_TIP_HITBOX_NAME = "slayTheRelicsHitboxes";
     private static final String CUSTOM_TIP_POWERTIPS_NAME = "slayTheRelicsPowerTips";
-    public static CustomTipsAPI instance;
     private static final Logger logger = SlayTheRelicsExporter.logger;
+    public static CustomTipsAPI instance;
     private final ArrayList<Field> externalHitboxFields = new ArrayList<>();
     private final ArrayList<Field> externalPowerTipsFields = new ArrayList<>();
 

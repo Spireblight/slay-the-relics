@@ -11,41 +11,38 @@ import com.megacrit.cardcrawl.core.Settings;
 import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import str_exporter.client.Message;
 import str_exporter.config.Config;
 
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class DeckJSONBuilder extends JSONMessageBuilder {
+public class DeckJSONBuilder {
 
-    public static final Logger logger = LogManager.getLogger(TipsJSONBuilder.class.getName());
-    private final String[] TEXT;
-    private final ArrayList<String> keywords;
-    private final ArrayList<String> cardsRepr;
-    private final ArrayList<AbstractCard> cards;
+    public static final Logger logger = LogManager.getLogger(DeckJSONBuilder.class.getName());
+    private final ArrayList<String> keywords = new ArrayList<>();
+    private final ArrayList<String> cardsRepr = new ArrayList<>();
+    private final ArrayList<AbstractCard> cards = new ArrayList<>();
+    private final JSONMessageBuilder jsonMessageBuilder;
+
+    private final String energyWord;
+    private final Pattern patternKeyword = Pattern.compile("\\*(.+)");
 
     public DeckJSONBuilder(Config config, String version) {
-        super(config, version, 4);
-
-        keywords = new ArrayList<>();
-        cardsRepr = new ArrayList<>();
-        cards = new ArrayList<>();
-
-        TEXT = CardCrawlGame.languagePack.getUIString("TipHelper").TEXT;
+        this.jsonMessageBuilder = new JSONMessageBuilder(config, version, 4);
+        String[] txt = CardCrawlGame.languagePack.getUIString("TipHelper").TEXT;
+        this.energyWord = txt[0];
     }
 
-    @Override
-    protected void buildMessage(StringBuilder sb) {
+    public Message buildMessage() {
         String character = "";
+
+        Map<String, String> msg = new HashMap<>();
 
         if (CardCrawlGame.isInARun() && CardCrawlGame.dungeon != null && AbstractDungeon.player != null) {
             character = AbstractDungeon.player.getClass().getSimpleName();
         }
-
-        sb.append("{");
-        sb.append("\"c\":\"").append(character).append("\","); // character
 
         keywords.clear();
         cardsRepr.clear();
@@ -59,9 +56,9 @@ public class DeckJSONBuilder extends JSONMessageBuilder {
         sb_message.append(";;;");
         buildKeywords(sb_message);
 
-        sb.append("\"k\":\""); // deck
-        sb.append(StringCompression.compress(sb_message.toString()));
-        sb.append("\"}");
+        msg.put("c", character);
+        msg.put("k", StringCompression.compress(sb_message.toString()));
+        return jsonMessageBuilder.buildJson(msg);
     }
 
     private void buildKeywords(StringBuilder sb) {
@@ -70,12 +67,10 @@ public class DeckJSONBuilder extends JSONMessageBuilder {
         while (iter.hasNext()) {
             sb.append(iter.next());
 
-            if (iter.hasNext())
-                sb.append(";;");
+            if (iter.hasNext()) sb.append(";;");
         }
 
-        if (keywords.size() == 0)
-            sb.append('-');
+        if (keywords.isEmpty()) sb.append('-');
     }
 
     private String getKeywordRepr(String word) {
@@ -89,7 +84,7 @@ public class DeckJSONBuilder extends JSONMessageBuilder {
             word = "[E]";
             sb.append(sanitize(word));
             sb.append(' ');
-            sb.append(TEXT[0]); // word Energy
+            sb.append(energyWord);
         } else {
             sb.append(sanitize(BaseMod.getKeywordTitle(word)));
         }
@@ -105,8 +100,7 @@ public class DeckJSONBuilder extends JSONMessageBuilder {
 
         int index = keywords.indexOf(keywordRepr);
 
-        if (index >= 0)
-            return index;
+        if (index >= 0) return index;
         else {
             keywords.add(keywordRepr);
             return keywords.size() - 1;
@@ -120,8 +114,7 @@ public class DeckJSONBuilder extends JSONMessageBuilder {
             CardGroup deck = AbstractDungeon.player.masterDeck;
             for (int i = 0; i < deck.group.size(); i++) {
                 sb.append(getCardIndex(deck.group.get(i)));
-                if (i < deck.group.size() - 1)
-                    sb.append(',');
+                if (i < deck.group.size() - 1) sb.append(',');
             }
 
             size = deck.group.size();
@@ -135,16 +128,12 @@ public class DeckJSONBuilder extends JSONMessageBuilder {
     }
 
     private void buildCards(StringBuilder sb) {
-        //returns true if deck has 1 or more cards
-
         for (int i = 0; i < cards.size(); i++) {
             buildCard(sb, cards.get(i), false);
-            if (i < cards.size() - 1)
-                sb.append(";;");
+            if (i < cards.size() - 1) sb.append(";;");
         }
 
-        if (cards.isEmpty())
-            sb.append('-');
+        if (cards.isEmpty()) sb.append('-');
     }
 
     private int getCardIndex(AbstractCard card) {
@@ -154,8 +143,7 @@ public class DeckJSONBuilder extends JSONMessageBuilder {
 
         int index = cardsRepr.indexOf(cardRepr);
 
-        if (index >= 0)
-            return index;
+        if (index >= 0) return index;
         else {
             cards.add(card);
             cardsRepr.add(cardRepr);
@@ -252,18 +240,12 @@ public class DeckJSONBuilder extends JSONMessageBuilder {
     }
 
     private String encodeKeywords(AbstractCard card) {
-        StringBuilder sb = new StringBuilder();
-
-        Iterator<String> iter = card.keywords.iterator();
-
-        while (iter.hasNext()) {
-            sb.append(getKeywordIndex(iter.next()));
-
-            if (iter.hasNext())
-                sb.append(',');
+        List<String> indexes = new ArrayList<>();
+        for (String keyword : card.keywords) {
+            int i = getKeywordIndex(keyword);
+            indexes.add(Integer.toString(i));
         }
-
-        return sb.toString();
+        return String.join(",", indexes);
     }
 
     private String encodeCardType(AbstractCard card) {
@@ -300,108 +282,71 @@ public class DeckJSONBuilder extends JSONMessageBuilder {
     }
 
     private String sanitize(String s) {
-        return s.replace(";", ":")
-                .replace("\"", "\\\"")
-                .replaceAll("\\[[A-Z]\\]", "[E]");
+        return s.replace(";", ":").replaceAll("\\[[A-Z]\\]", "[E]");
     }
 
-    private String colorizeString(String s, String colorPrefix) {
-        String[] parts = s.split(" ");
-        StringBuilder sb = new StringBuilder();
-
-        for (int i = 0; i < parts.length; i++) {
-            sb.append(colorPrefix);
-            sb.append(parts[i]);
-            if (i < parts.length - 1)
-                sb.append(' ');
+    private Optional<String> parseDynVar(String part, AbstractCard card) {
+        if (!part.startsWith("!") || !part.endsWith("!")) {
+            return Optional.empty();
+        }
+        DynamicVariable dv = BaseMod.cardDynamicVariableMap.get(part.replaceAll("!", ""));
+        if (dv == null) {
+            return Optional.empty();
+        }
+        String color = "";
+        int num;
+        if (dv.isModified(card)) {
+            num = dv.value(card);
+            if (num >= dv.baseValue(card)) {
+                color = "#g";
+            } else {
+                color = "#r";
+            }
+        } else {
+            num = dv.baseValue(card);
         }
 
-        return sb.toString();
+        return Optional.of(color + num);
+    }
+
+    private Optional<String> parseKeyword(String part) {
+        Matcher matcherKeyword = patternKeyword.matcher(part);
+        if (!matcherKeyword.find()) {
+            return Optional.empty();
+        }
+        return Optional.of("#y" + matcherKeyword.group(1));
+    }
+
+    private String removeColors(String part) {
+        part = part.replaceAll("\\[[a-zA-Z_]{2,}\\]", "");
+        part = part.replaceAll("\\[#[A-Ea-e0-9]*\\]", "");
+        part = part.replaceAll("\\[\\]", "");
+        part = part.replaceAll("\\[\\[", "[");
+        return part;
     }
 
     private String parseDescription(AbstractCard card) {
+        List<String> lines = new ArrayList<>();
+        List<String> results = new ArrayList<>();
 
-        StringBuilder sb = new StringBuilder();
-
-        for (int i = 0; i < card.description.size(); i++) {
-            DescriptionLine line = card.description.get(i);
-
-            sb.append(line.text);
-
-            if (i < card.description.size() - 1)
-                sb.append(" NL ");
-        }
-
-        String description = sb.toString();
-
-        if (Settings.lineBreakViaCharacter) { //CN or Japanese localization
-            description = description.replaceAll("D", "!D!")
-                    .replaceAll("!B!!", "!B!")
-                    .replaceAll("!M!!", "!M!");
-        }
-
-//        logger.info("first description: " + sb.toString());
-
-        String[] parts = description.split(" ");
-        sb.setLength(0);
-
-        Pattern patternDynVar = Pattern.compile("!(.+)!(.*)");
-        Pattern patternKeyword = Pattern.compile("\\*(.+)");
-
-        for (int i = 0; i < parts.length; i++) {
-            String part = sanitize(parts[i]);
-
-            Matcher matcherDynVar = patternDynVar.matcher(part);
-            Matcher matcherKeyword = patternKeyword.matcher(part);
-
-            if (matcherDynVar.find()) { // !MYVAR!
-                part = matcherDynVar.group(1);
-                String end = matcherDynVar.group(2);
-
-                // Main body of method
-//                StringBuilder stringBuilder = new StringBuilder();
-                int num = 0;
-                DynamicVariable dv = BaseMod.cardDynamicVariableMap.get(part);
-
-                String color = "";
-                if (dv != null) {
-                    if (dv.isModified(card)) {
-                        num = dv.value(card);
-                        if (num >= dv.baseValue(card)) {
-                            color = "#g";
-                        } else {
-                            color = "#r";
-                        }
-                    } else {
-                        num = dv.baseValue(card);
-                    }
-
-                } else {
-                    logger.error("No dynamic card variable found for key \"" + part + "\"!");
-                }
-
-                sb.append(color);
-                sb.append(num);
-                sb.append(end);
-
-            } else if (matcherKeyword.find()) { // *Word
-                sb.append("#y");
-                sb.append(matcherKeyword.group(1));
-            } else { // Replace color codes for now
-
-                part = part.replaceAll("\\[[a-zA-Z_]{2,}\\]", "");
-                part = part.replaceAll("\\[#[A-Ea-e0-9]*\\]", "");
-                part = part.replaceAll("\\[\\]", "");
-                part = part.replaceAll("\\[\\[", "[");
-
-                sb.append(part);
+        for (DescriptionLine line : card.description) {
+            String text = line.text;
+            if (Settings.lineBreakViaCharacter) {
+                text = text.replaceAll("D", "!D!").replaceAll("!B!!", "!B!").replaceAll("!M!!", "!M!");
             }
-
-            if (i < parts.length - 1)
-                sb.append(" ");
+            text = sanitize(text);
+            lines.add(text);
         }
 
-        return sb.toString();
-    }
+        for (String l : lines) {
+            String[] parts = l.split(" ");
+            List<String> lineResults = new ArrayList<>();
+            for (String p : parts) {
+                lineResults.add(parseDynVar(p, card).orElseGet(() -> parseKeyword(p).orElse(removeColors(p))));
+            }
+            results.add(String.join(" ", lineResults));
+        }
 
+        return String.join(" NL ", results);
+    }
 }

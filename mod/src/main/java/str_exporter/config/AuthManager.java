@@ -27,6 +27,12 @@ public class AuthManager {
         this.config = config;
     }
 
+    private static String generateNewToken() {
+        byte[] randomBytes = new byte[24];
+        secureRandom.nextBytes(randomBytes);
+        return base64Encoder.encodeToString(randomBytes);
+    }
+
     public void updateAuth() {
         Thread worker = new Thread(() -> {
             if (this.inProgress.get()) {
@@ -45,12 +51,6 @@ public class AuthManager {
             }
         });
         worker.start();
-    }
-
-    private static String generateNewToken() {
-        byte[] randomBytes = new byte[24];
-        secureRandom.nextBytes(randomBytes);
-        return base64Encoder.encodeToString(randomBytes);
     }
 
     private User verifyUser(String state) throws IOException, URISyntaxException, InterruptedException {
