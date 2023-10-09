@@ -10,16 +10,16 @@ import com.megacrit.cardcrawl.helpers.ImageMaster;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ModStatusImage implements IUIElement {
-    private Hitbox hb;
-    private Texture greenTexture;
-    private Texture redTexture;
-    private Texture orangeTexture;
-    private float x;
-    private float y;
-    private float w;
-    private float h;
-    private AtomicBoolean healthy;
-    private AtomicBoolean inProgress;
+    private final Hitbox hb;
+    private final Texture greenTexture;
+    private final Texture redTexture;
+    private final Texture orangeTexture;
+    private final float x;
+    private final float y;
+    private final float w;
+    private final float h;
+    private final AtomicBoolean healthy;
+    private final AtomicBoolean inProgress;
 
     public ModStatusImage(float xPos, float yPos, AtomicBoolean healthy, AtomicBoolean inProgress) {
         this.greenTexture = ImageMaster.loadImage("SlayTheRelicsExporterResources/img/twitch_green-70.png");
@@ -30,8 +30,8 @@ public class ModStatusImage implements IUIElement {
         this.w = (float) this.greenTexture.getWidth();
         this.h = (float) this.greenTexture.getHeight();
         this.hb =
-                new Hitbox(this.x + 1F * Settings.scale,
-                        this.y + 1F * Settings.scale,
+                new Hitbox(this.x + Settings.scale,
+                        this.y + Settings.scale,
                         (this.w - 2F) * Settings.scale,
                         (this.h - 2F) * Settings.scale);
         this.healthy = healthy;

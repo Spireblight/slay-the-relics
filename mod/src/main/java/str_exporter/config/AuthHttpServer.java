@@ -1,4 +1,4 @@
-package str_exporter;
+package str_exporter.config;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
@@ -11,16 +11,10 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 
 public class AuthHttpServer implements HttpHandler {
-    private String state;
-
-    private String index;
-
-    private String success;
-
+    private final String state;
+    private final String index;
+    private final String success;
     private String token = "";
-
-    private final int port = 49000;
-
     private HttpServer server;
 
     public AuthHttpServer(String state) {
@@ -33,7 +27,8 @@ public class AuthHttpServer implements HttpHandler {
     }
 
     public void start() throws IOException {
-        server = HttpServer.create(new InetSocketAddress(this.port), 0);
+        int port = 49000;
+        server = HttpServer.create(new InetSocketAddress(port), 0);
         server.createContext("/", this);
         server.setExecutor(null);
         server.start();
@@ -42,7 +37,6 @@ public class AuthHttpServer implements HttpHandler {
     public void stop() {
         server.stop(0);
     }
-
 
     @Override
     public void handle(HttpExchange httpExchange) throws IOException {
