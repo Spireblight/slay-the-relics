@@ -13,45 +13,62 @@ If you encounter any issues, please open a GitHub issues in this repository.
 - Displays descriptions for: relics, potions, player powers, monster powers, orbs
 - Near identical UI to the game
 
-## Setup
+## Install
 
 - Install the twitch extension: <https://dashboard.twitch.tv/extensions/ebkycs9lir8pbic2r0b7wa6bg6n7ua-0.0.1>
 
 - Unsubscribe from the steam workshop version of slay the relics exporter.
 
-- Install the modified version of slay the relics exporter:
-  - Requires ModTheSpire and BaseMod (you can find them on the Steam workshop!).
-  - Download the modified [SlayTheRelicsExporter.jar](https://github.com/MaT1g3R/slay-the-relics/raw/master/mod/SlayTheRelicsExporter.jar) file and place it in your mod
-    folder.
+- Install the new slay the relics exporter:
+  - Go to https://github.com/Spireblight/STR-Spire-Mod/releases
+  - Download the latest version of `SlayTheRelicsExporter.jar` (it is under the assets tab)
+  - Find your mods folder:
+    - In your steam library, right click slay the spire
+    - Go to manage -> click browse local files
+    - There should be a folder called `mods`, if there is not, you can create one
+  - In your mods folder, delete any existing `SlayTheRelicsExporter.jar` files. Place the newly downloaded jar in the mods folder.
 
-    NOTE: this is not the same location as Steam workshop managed mods - for this mod,
-    you'll want to install directly inside the SlayTheSpire directory (putting it somewhere like .../steam/steamapps/common/SlayTheSpire/mods/SlayTheRelicsExporter.jar)
+## First time setup
 
-- Obtain an OAuth key from <https://twitchapps.com/tmi>
-
-- Open the Slay the Spire folder on your disk (PathToYourSteamLibrary/steamapps/common/SlayTheSpire)
-
-  Create a file in this folder named slaytherelics_config.txt (it's supposed to be in the same folder as
-  SlayTheSpire.exe),
-  if you have file extensions hidden on your system just create a text file with the name slaytherelics_config
-  Copy the following 2 lines into the file, put your login into it
-  (be careful, your display name might not be the same as your login name, your login is for example in the url of your
-  channel)
-  and save it:
-
-  ```
-  login:<put_your_login_here_without_the_brackets>
-  secret:<your_oauth_key (without the :oauth part)>
-  ```
-
+- Start slay the spire, make sure to choose the play with mods option
+- Make sure Slay the Relics Exporter mod is enabled
+- Start the game and go to the mods menu item. You should see a list of mods.
+  - Click Slay the Relics Exporter
+  - Click the Config button. It's located to the right of the Return button
+  - Click Connect with Twitch
+  - Clicking the button will open a new tab in your default browser and prompt you to log in with Twitch.
+    If the browser redirect did not work there should be a button to prompt you to click the redirect manually.
+    After successful authentication you can close the browser tab.
+  - You should see the Twitch icon turn from red to green.
+  - You can now click the Close button.
 - The extension now should be active and working. As long as you play with the mod everything should be working.
-  You will however most likely have issues with the extension being faster than the stream (out-of-sync).
-  You can fix this once you start streaming with your viewers giving you feedback as follows:
-    * Click Mods in the menu
-    * Select Slay The Relics Exporter
-    * Click Config in the bottom left
-    * Set a delay and press Save. To find the optimal value, try starting at 0.7 second (700ms) and ask your viewers for
-      feedback on whether the extension runs before or after the video.
-
 - In order for the extension to be properly visually aligned with the game, the game capture has to perfectly fill the
   whole stream (as if you had the game fullscreen)
+
+## Updating
+
+Close the game, follow the installation instructions and replace the old `SlayTheRelicsExporter.jar` file with a newly downloaded one,
+start the game.  There should be no need to connect with Twitch again.
+
+## Setting delay
+
+You will likely have issues with the extension being faster than the stream (out-of-sync).
+You can fix this once you start streaming with your viewers giving you feedback as follows:
+* Click Mods in the menu
+* Select Slay The Relics Exporter
+* Click Config in the bottom left
+* Set a delay and press Save. To find the optimal value, try starting at 0.7 second (700ms) and ask your viewers for
+feedback on whether the extension runs before or after the video.
+
+## Troubleshooting
+
+Check the Twitch icon in the mod panel. (main menu -> mods -> Slay The Relics Exporter -> Config)
+
+If it is green, everything should be working.
+If it is red, you can try to Connect with Twitch again.
+
+## FAQ
+
+- Where did `slaytherelics_config.txt` go?
+
+  It is no longer used, you can delete it.
