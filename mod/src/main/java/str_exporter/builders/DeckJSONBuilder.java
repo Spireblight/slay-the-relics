@@ -1,4 +1,4 @@
-package str_exporter;
+package str_exporter.builders;
 
 import basemod.BaseMod;
 import basemod.abstracts.DynamicVariable;
@@ -8,6 +8,7 @@ import com.megacrit.cardcrawl.cards.CardGroup;
 import com.megacrit.cardcrawl.cards.DescriptionLine;
 import com.megacrit.cardcrawl.core.CardCrawlGame;
 import com.megacrit.cardcrawl.core.Settings;
+import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -16,15 +17,13 @@ import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class DeckJSONBuilder extends JSONMessageBuilder{
-
-    private String[] TEXT;
+public class DeckJSONBuilder extends JSONMessageBuilder {
 
     public static final Logger logger = LogManager.getLogger(TipsJSONBuilder.class.getName());
-
-    private ArrayList<String> keywords;
-    private ArrayList<String> cardsRepr;
-    private ArrayList<AbstractCard> cards;
+    private final String[] TEXT;
+    private final ArrayList<String> keywords;
+    private final ArrayList<String> cardsRepr;
+    private final ArrayList<AbstractCard> cards;
 
     public DeckJSONBuilder(String login, String secret, String version) {
         super(login, secret, version, 4);
@@ -40,8 +39,8 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
     protected void buildMessage(StringBuilder sb) {
         String character = "";
 
-        if (CardCrawlGame.isInARun() && CardCrawlGame.dungeon != null && CardCrawlGame.dungeon.player != null) {
-            character = CardCrawlGame.dungeon.player.getClass().getSimpleName();
+        if (CardCrawlGame.isInARun() && CardCrawlGame.dungeon != null && AbstractDungeon.player != null) {
+            character = AbstractDungeon.player.getClass().getSimpleName();
         }
 
         sb.append("{");
@@ -67,10 +66,10 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
     private void buildKeywords(StringBuilder sb) {
         Iterator<String> iter = keywords.iterator();
 
-        while(iter.hasNext()) {
+        while (iter.hasNext()) {
             sb.append(iter.next());
 
-            if(iter.hasNext())
+            if (iter.hasNext())
                 sb.append(";;");
         }
 
@@ -81,7 +80,11 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
     private String getKeywordRepr(String word) {
         StringBuilder sb = new StringBuilder();
 
-        if (word.equals("[R]") || word.equals("[G]") || word.equals("[B]") || word.equals("[W]") || word.equals("[E]")) {
+        if (word.equals("[R]") ||
+                word.equals("[G]") ||
+                word.equals("[B]") ||
+                word.equals("[W]") ||
+                word.equals("[E]")) {
             word = "[E]";
             sb.append(sanitize(word));
             sb.append(' ');
@@ -113,7 +116,7 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
         int size = 0;
 
         if (CardCrawlGame.isInARun()) {
-            CardGroup deck = CardCrawlGame.dungeon.player.masterDeck;
+            CardGroup deck = AbstractDungeon.player.masterDeck;
             for (int i = 0; i < deck.group.size(); i++) {
                 sb.append(getCardIndex(deck.group.get(i)));
                 if (i < deck.group.size() - 1)
@@ -242,7 +245,7 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
     private String encodeCardToPreview(AbstractCard card) {
         if (card.cardsToPreview != null) {
             return Integer.toString(getCardIndex(card.cardsToPreview));
-        }  else {
+        } else {
             return "-1";
         }
     }
@@ -252,7 +255,7 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
 
         Iterator<String> iter = card.keywords.iterator();
 
-        while(iter.hasNext()) {
+        while (iter.hasNext()) {
             sb.append(getKeywordIndex(iter.next()));
 
             if (iter.hasNext())
@@ -324,13 +327,13 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
 
             sb.append(line.text);
 
-            if(i < card.description.size() - 1)
+            if (i < card.description.size() - 1)
                 sb.append(" NL ");
         }
 
         String description = sb.toString();
 
-        if(Settings.lineBreakViaCharacter) { //CN or Japanese localization
+        if (Settings.lineBreakViaCharacter) { //CN or Japanese localization
             description = description.replaceAll("D", "!D!")
                     .replaceAll("!B!!", "!B!")
                     .replaceAll("!M!!", "!M!");
@@ -383,7 +386,7 @@ public class DeckJSONBuilder extends JSONMessageBuilder{
             } else if (matcherKeyword.find()) { // *Word
                 sb.append("#y");
                 sb.append(matcherKeyword.group(1));
-            }  else { // Replace color codes for now
+            } else { // Replace color codes for now
 
                 part = part.replaceAll("\\[[a-zA-Z_]{2,}\\]", "");
                 part = part.replaceAll("\\[#[A-Ea-e0-9]*\\]", "");
