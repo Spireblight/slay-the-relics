@@ -154,9 +154,9 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
 
     @Override
     public void receivePostInitialize() {
-        tipsBroadcaster = new BackendBroadcaster(config, BROADCAST_CHECK_QUEUE_PERIOD_MILLIS, false);
-        deckBroadcaster = new BackendBroadcaster(config, BROADCAST_CHECK_QUEUE_PERIOD_MILLIS, false);
-        okayBroadcaster = new BackendBroadcaster(config, BROADCAST_CHECK_QUEUE_PERIOD_MILLIS, true);
+        tipsBroadcaster = new BackendBroadcaster(config, ebsClient, BROADCAST_CHECK_QUEUE_PERIOD_MILLIS, false);
+        deckBroadcaster = new BackendBroadcaster(config, ebsClient, BROADCAST_CHECK_QUEUE_PERIOD_MILLIS, false);
+        okayBroadcaster = new BackendBroadcaster(config, ebsClient, BROADCAST_CHECK_QUEUE_PERIOD_MILLIS, true);
         tipsJsonBuilder = new TipsJSONBuilder(config.getUser(), config.getOathToken(), version);
         deckJsonBuilder = new DeckJSONBuilder(config.getUser(), config.getOathToken(), version);
         okayJsonBuilder = new JSONMessageBuilder(config.getUser(), config.getOathToken(), version, 5);
@@ -271,7 +271,7 @@ public class SlayTheRelicsExporter implements RelicGetSubscriber,
             }
         }
 
-        long lastSuccessAuth = EBSClient.lastSuccessAuth.get();
+        long lastSuccessAuth = EBSClient.lastSuccessRequest.get();
         long lastSuccessBroadcast = okayBroadcaster.lastSuccessBroadcast.get();
         long lastSuccess = Math.max(lastSuccessAuth, lastSuccessBroadcast);
         if (this.inProgress.get()) {

@@ -4,13 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import str_exporter.config.Config;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -28,11 +22,13 @@ public class BackendBroadcaster {
     private final long checkQueuePeriodMillis;
     private final boolean sendDuplicates;
     private final Config config;
+    private final EBSClient client;
 
-    public BackendBroadcaster(Config config, long checkQueuePeriodMillis, boolean sendDuplicates) {
+    public BackendBroadcaster(Config config, EBSClient client, long checkQueuePeriodMillis, boolean sendDuplicates) {
         this.checkQueuePeriodMillis = checkQueuePeriodMillis;
         this.sendDuplicates = sendDuplicates;
         this.config = config;
+        this.client = client;
         message = null;
         lastMessage = null;
         queueLock = new ReentrantLock();
@@ -97,32 +93,6 @@ public class BackendBroadcaster {
     }
 
     private void broadcastMessage(String msg) throws IOException {
-        URL url = new URL(config.getApiUrl() + "/api/v1/message");
-        HttpURLConnection con = (HttpURLConnection) url.openConnection();
-        con.setRequestMethod("POST");
-        con.setRequestProperty("Content-Type", "application/json");  //; utf-8
-        con.setRequestProperty("Accept", "application/json");
-        con.setDoOutput(true);
-
-        OutputStream os = con.getOutputStream();
-        byte[] input = msg.getBytes(StandardCharsets.UTF_8);
-        os.write(input, 0, input.length);
-
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(),
-                StandardCharsets.UTF_8))) {
-            StringBuilder response = new StringBuilder();
-            String responseLine;
-            while ((responseLine = br.readLine()) != null) {
-                response.append(responseLine.trim());
-            }
-            if (!response.toString().equals("Success")) {
-                logger.info("message not broadcast successfully, response: " + response);
-            }
-            if (con.getResponseCode() >= 200 && con.getResponseCode() < 300) {
-                lastSuccessBroadcast.set(System.currentTimeMillis());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        this.client.broadcastMessage(msg);
     }
 }

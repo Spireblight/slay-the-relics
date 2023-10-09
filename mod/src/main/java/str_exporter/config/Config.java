@@ -1,6 +1,7 @@
 package str_exporter.config;
 
 import com.evacipated.cardcrawl.modthespire.lib.SpireConfig;
+import com.google.gson.Gson;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -13,6 +14,7 @@ public class Config {
     private static final String OAUTH_SETTINGS = "oauth";
     private static final String USER_SETTINGS = "user";
     private final SpireConfig config;
+    public final Gson gson = new Gson();
 
     public Config() throws IOException {
         Properties strDefaultSettings = new Properties();
