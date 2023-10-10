@@ -29,3 +29,5 @@ build
 # direnv
 .direnv/
 .envrc
+sendToDevs
+steam_appid.txt
