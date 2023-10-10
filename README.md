@@ -5,8 +5,6 @@
 This is a continuation of the now defunct slay the relics extension
 (https://dashboard.twitch.tv/extensions/7dgfio8rek8dhju8628riism3fd11p-1.2.1) created by LordAddy.
 
-If you encounter any issues, please open a GitHub issues in this repository.
-
 ## Features
 
 - Full deck view with card art, card detail view for displaying upgrades
@@ -17,16 +15,7 @@ If you encounter any issues, please open a GitHub issues in this repository.
 
 - Install the twitch extension: <https://dashboard.twitch.tv/extensions/ebkycs9lir8pbic2r0b7wa6bg6n7ua-0.0.1>
 
-- Unsubscribe from the steam workshop version of slay the relics exporter.
-
-- Install the new slay the relics exporter:
-  - Go to https://github.com/Spireblight/STR-Spire-Mod/releases
-  - Download the latest version of `SlayTheRelicsExporter.jar` (it is under the assets tab)
-  - Find your mods folder:
-    - In your steam library, right click slay the spire
-    - Go to manage -> click browse local files
-    - There should be a folder called `mods`, if there is not, you can create one
-  - In your mods folder, delete any existing `SlayTheRelicsExporter.jar` files. Place the newly downloaded jar in the mods folder.
+- Subscribe to the mod on steam workshop: <https://steamcommunity.com/sharedfiles/filedetails/?id=3048891690>
 
 ## First time setup
 
@@ -44,11 +33,6 @@ If you encounter any issues, please open a GitHub issues in this repository.
 - The extension now should be active and working. As long as you play with the mod everything should be working.
 - In order for the extension to be properly visually aligned with the game, the game capture has to perfectly fill the
   whole stream (as if you had the game fullscreen)
-
-## Updating
-
-Close the game, follow the installation instructions and replace the old `SlayTheRelicsExporter.jar` file with a newly downloaded one,
-start the game.  There should be no need to connect with Twitch again.
 
 ## Setting delay
 
@@ -72,3 +56,8 @@ If it is red, you can try to Connect with Twitch again.
 - Where did `slaytherelics_config.txt` go?
 
   It is no longer used, you can delete it.
+
+- What about the `SlayTheRelicsExporter.jar` in the `mods` folder?
+
+  It is no longer used, you should delete it.
+
