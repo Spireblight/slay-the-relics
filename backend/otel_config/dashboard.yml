@@ -1,0 +1,166 @@
+schema: v1
+id: project_2.dashboard_14
+name: Slay the relics
+table:
+    metrics: []
+    query:
+        - ""
+grid:
+    - name: HTTP Status
+      width: 6
+      height: 14
+      yAxis: 14
+      type: chart
+      chart: line
+      metrics:
+        - http.requests as $requests
+      query:
+        - group by status_code
+        - per_sec($requests)
+        - group by target
+      columns:
+        per_sec($requests):
+            color: '#5470c6'
+      legend:
+        type: list
+        placement: bottom
+        values:
+            - avg
+    - name: HTTP Content Length
+      width: 6
+      height: 14
+      xAxis: 6
+      yAxis: 28
+      type: chart
+      chart: bar
+      metrics:
+        - http.requests.content_length as $content_length
+      query:
+        - group by status_code
+        - avg($content_length)
+      columns:
+        avg(content_length):
+            color: '#91cc75'
+      legend:
+        type: list
+        placement: bottom
+        values:
+            - avg
+    - name: User Auth Cache
+      width: 6
+      height: 14
+      xAxis: 6
+      yAxis: 14
+      type: chart
+      chart: stacked-area
+      metrics:
+        - cache.user_auth as $user_auth
+      query:
+        - group by hit
+        - group by login
+        - per_sec($user_auth)
+      columns:
+        per_sec($user_auth):
+            color: '#5470c6'
+      legend:
+        type: list
+        placement: bottom
+        values:
+            - avg
+    - name: Senders Count
+      width: 6
+      height: 14
+      yAxis: 28
+      type: chart
+      chart: stacked-area
+      metrics:
+        - broadcaster.senders.count as $count
+      query:
+        - $count
+        - group by broadcaster_id
+      columns:
+        count:
+            color: '#5470c6'
+      legend:
+        type: list
+        placement: bottom
+        values:
+            - avg
+    - name: 'Twitch: POST pubsub'
+      width: 6
+      height: 14
+      yAxis: 42
+      type: chart
+      chart: line
+      metrics:
+        - twitch.post_extension_pubsub.count as $count
+      query:
+        - per_min($count)
+        - group by broadcaster_id
+        - group by status_code
+      columns:
+        per_min($count):
+            color: '#5470c6'
+      legend:
+        type: list
+        placement: bottom
+        values:
+            - avg
+    - name: Message Chunks
+      width: 6
+      height: 14
+      xAxis: 6
+      yAxis: 42
+      type: chart
+      chart: bar
+      metrics:
+        - send_message.chunks as $chunks
+      query:
+        - group by message_type
+        - avg($chunks)
+      columns:
+        avg(chunks):
+            color: '#5470c6'
+      legend:
+        type: list
+        placement: bottom
+        values:
+            - avg
+    - name: Twitch Auth
+      width: 6
+      height: 14
+      xAxis: 6
+      type: chart
+      chart: line
+      metrics:
+        - users.authenticate.twitch as $twitch
+      query:
+        - per_min($twitch)
+        - group by success
+        - group by user_login
+      columns:
+        per_min($twitch):
+            color: '#5470c6'
+      legend:
+        type: list
+        placement: bottom
+        values:
+            - avg
+    - name: Redis Auth
+      type: chart
+      chart: line
+      metrics:
+        - users.authenticate.redis as $redis
+      query:
+        - per_sec($redis)
+        - group by success
+        - group by user_login
+      columns:
+        per_sec($redis):
+            color: '#5470c6'
+      legend:
+        type: list
+        placement: bottom
+        values:
+            - avg
+
