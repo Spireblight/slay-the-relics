@@ -19,7 +19,7 @@ public class Config {
     public Config() throws IOException {
         Properties strDefaultSettings = new Properties();
         strDefaultSettings.setProperty(DELAY_SETTINGS, "150");
-        strDefaultSettings.setProperty(API_URL_SETTINGS, "https://str.otonokizaka.moe");
+        strDefaultSettings.setProperty(API_URL_SETTINGS, "https://slay-the-relics.baalorlord.tv");
 
         config = new SpireConfig("slayTheRelics", "slayTheRelicsExporterConfig", strDefaultSettings);
         config.load();
