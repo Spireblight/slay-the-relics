@@ -5,6 +5,8 @@
 This is a continuation of the now defunct slay the relics extension
 (https://dashboard.twitch.tv/extensions/7dgfio8rek8dhju8628riism3fd11p-1.2.1) created by LordAddy.
 
+You can join the development discord [here](https://discord.gg/RHYrs3Nsve).
+
 ## Features
 
 - Full deck view with card art, card detail view for displaying upgrades
