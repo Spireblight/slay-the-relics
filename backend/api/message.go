@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -48,6 +49,14 @@ func (a *API) postMessageHandler(c *gin.Context) {
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
+	}
+
+	if req.MessageType == 4 {
+		func() {
+			a.deckLock.Lock()
+			defer a.deckLock.Unlock()
+			a.deckLists[strings.ToLower(user.Login)] = message["k"].(string)
+		}()
 	}
 	err = a.broadcast(c, ctx, req, user.ID, message)
 }

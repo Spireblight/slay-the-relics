@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	"sync"
 
 	"github.com/MaT1g3R/slaytherelics/client"
 	"github.com/MaT1g3R/slaytherelics/o11y"
@@ -14,6 +15,9 @@ type API struct {
 	twitch      *client.Twitch
 	users       *slaytherelics.Users
 	broadcaster *slaytherelics.Broadcaster
+
+	deckLists map[string]string
+	deckLock  *sync.RWMutex
 }
 
 func New(t *client.Twitch, u *slaytherelics.Users, b *slaytherelics.Broadcaster) (*API, error) {
@@ -31,11 +35,13 @@ func New(t *client.Twitch, u *slaytherelics.Users, b *slaytherelics.Broadcaster)
 		twitch:      t,
 		users:       u,
 		broadcaster: b,
+		deckLists:   make(map[string]string),
+		deckLock:    &sync.RWMutex{},
 	}
 
 	r.POST("/", api.postOldMessageHandler)
 	r.POST("/api/v1/auth", api.Auth)
 	r.POST("/api/v1/message", api.postMessageHandler)
-
+	r.GET("/deck/:name", api.getDeckHandler)
 	return api, nil
 }
