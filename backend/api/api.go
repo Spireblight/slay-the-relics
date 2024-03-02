@@ -1,8 +1,9 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
 	"sync"
+
+	"github.com/gin-gonic/gin"
 
 	"github.com/MaT1g3R/slaytherelics/client"
 	"github.com/MaT1g3R/slaytherelics/o11y"

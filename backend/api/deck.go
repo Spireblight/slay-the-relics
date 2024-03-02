@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"golang.org/x/exp/slices"
 	"regexp"
 	"strings"
+
+	"github.com/gin-gonic/gin"
+	"golang.org/x/exp/slices"
 )
 
 const WILDCARDS = "0123456789abcdefghijklmnopqrstvwxyzABCDEFGHIJKLMNOPQRSTVWXYZ_`[]/^%?@><=-+*:;,.()#$!'{}~"
@@ -89,6 +90,7 @@ func parseCommaDelimitedIntegerArray(s string) ([]int, error) {
 	if s == "-" {
 		return make([]int, 0), nil
 	}
+	//nolint:prealloc
 	var result []int
 	err := json.Unmarshal([]byte(fmt.Sprintf("[%s]", s)), &result)
 	return result, err
@@ -99,6 +101,7 @@ func splitSemicolonDelimited2DArray(s string) [][]string {
 		return make([][]string, 0)
 	}
 
+	//nolint:prealloc
 	var result [][]string
 	split := strings.Split(s, ";;")
 	for _, element := range split {
@@ -108,6 +111,7 @@ func splitSemicolonDelimited2DArray(s string) [][]string {
 }
 
 func parseCards(cards [][]string) []string {
+	//nolint:prealloc
 	var result []string
 	for _, card := range cards {
 		result = append(result, parseCard(card))
