@@ -138,6 +138,10 @@ func decompressDeck(deck string) (map[string]int, error) {
 
 	deckDict := make(map[string]int)
 	for _, idx := range d {
+		if idx < 0 || idx >= len(cards) {
+			return nil, errors.New("card index out of bounds")
+		}
+
 		name := cards[idx]
 		deckDict[name]++
 	}
