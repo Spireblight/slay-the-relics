@@ -52,9 +52,21 @@ func TestDecompress(t *testing.T) {
 			shouldError: false,
 		},
 		{
-			desc:        "Basic compression",
-			input:       "love|slay the||I &0 &0 &1 relics and &1 spire",
+			desc:        "Nested compression succeeds",
+			input:       "love|the|slay &1||I &0 &0 &2 relics and &2 spire",
 			output:      "I love love slay the relics and slay the spire",
+			shouldError: false,
+		},
+		{
+			desc:        "Interleaved compression succeeds",
+			input:       "AAA|BBB&|0CCC||&1&2",
+			output:      "BBBAAACCC",
+			shouldError: false,
+		},
+		{
+			desc:        "Interleaved repeated compression fails",
+			input:       "AAA|BBB&|1CCC||&1&2",
+			output:      "BBB&1CCC",
 			shouldError: false,
 		},
 		{
