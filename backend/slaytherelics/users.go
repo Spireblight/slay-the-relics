@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"sync"
 
 	"github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/otel/attribute"
@@ -25,18 +24,18 @@ type Users struct {
 	twitch *client.Twitch
 	rdb    *redis.Client
 
-	userIDCache    sync.Map
-	userAuthCache  sync.Map
-	invalidSecrets sync.Map
+	userIDCache    SyncMap[string, string]
+	userAuthCache  SyncMap[string, string]
+	invalidSecrets SyncMap[string, []string]
 }
 
 func NewUsers(twitch *client.Twitch, rdb *redis.Client) *Users {
 	return &Users{
 		twitch:         twitch,
 		rdb:            rdb,
-		userIDCache:    sync.Map{},
-		userAuthCache:  sync.Map{},
-		invalidSecrets: sync.Map{},
+		userIDCache:    SyncMap[string, string]{},
+		userAuthCache:  SyncMap[string, string]{},
+		invalidSecrets: SyncMap[string, []string]{},
 	}
 }
 
@@ -88,8 +87,13 @@ func (s *Users) AuthenticateTwitch(ctx context.Context, code string) (user model
 	if err != nil {
 		return models.User{}, "", err
 	}
+
 	err = s.rdb.Set(ctx, user.ID, userBytes, 0).Err()
-	return user, token, err
+	if err != nil {
+		return user, token, err
+	}
+
+	return user, token, nil
 }
 
 func (s *Users) AuthenticateRedis(ctx context.Context, userID, token string) (user models.User, err error) {
@@ -108,6 +112,7 @@ func (s *Users) AuthenticateRedis(ctx context.Context, userID, token string) (us
 	}()
 
 	span.SetAttributes(attribute.String("user_id", userID))
+
 	userBytes, err := s.rdb.Get(ctx, userID).Bytes()
 	if errors.Is(err, redis.Nil) {
 		return models.User{}, &errors2.AuthError{Err: errors.New("user not found")}
@@ -120,6 +125,7 @@ func (s *Users) AuthenticateRedis(ctx context.Context, userID, token string) (us
 	if err != nil {
 		return models.User{}, err
 	}
+
 	err = bcrypt.CompareHashAndPassword([]byte(user.Hash), []byte(token))
 	if err != nil {
 		return models.User{}, &errors2.AuthError{Err: err}
@@ -147,7 +153,7 @@ func (s *Users) GetUserID(ctx context.Context, login string) (_ string, err erro
 	}
 
 	if ok {
-		return cacheResult.(string), nil
+		return cacheResult, nil
 	}
 
 	user, err := s.twitch.GetUser(ctx, login)
@@ -170,8 +176,8 @@ func (s *Users) UserAuth(ctx context.Context, login string, secret string) (_ bo
 
 	secretHash := fmt.Sprintf("%x", sha256.Sum256([]byte(secret)))
 
-	invalidSecrets, _ := s.invalidSecrets.LoadOrStore(login, []string{})
-	if slices.Contains(invalidSecrets.([]string), secretHash) {
+	invalidSecrets, _ := s.invalidSecrets.Load(login)
+	if slices.Contains(invalidSecrets, secretHash) {
 		if cacheCounter != nil {
 			cacheCounter.Add(ctx, 1,
 				metric.WithAttributes(attribute.Bool("invalid_secret_hit", true), attribute.String("login", login)),
@@ -189,7 +195,7 @@ func (s *Users) UserAuth(ctx context.Context, login string, secret string) (_ bo
 	}
 	span.SetAttributes(attribute.Bool("cache_hit", ok))
 	if ok {
-		gotSecretHash := cacheResult.(string)
+		gotSecretHash := cacheResult
 		return secretHash == gotSecretHash, nil
 	}
 
@@ -203,7 +209,8 @@ func (s *Users) UserAuth(ctx context.Context, login string, secret string) (_ bo
 				),
 			)
 		}
-		s.invalidSecrets.Store(login, append(invalidSecrets.([]string), secretHash))
+		invalidSecrets = append(invalidSecrets, secretHash)
+		s.invalidSecrets.Store(login, invalidSecrets)
 	}
 
 	if err != nil {
@@ -219,7 +226,8 @@ func (s *Users) UserAuth(ctx context.Context, login string, secret string) (_ bo
 				metric.WithAttributes(
 					attribute.Bool("invalid_secret_hit", false), attribute.String("login", login)))
 		}
-		s.invalidSecrets.Store(login, append(invalidSecrets.([]string), secretHash))
+		invalidSecrets = append(invalidSecrets, secretHash)
+		s.invalidSecrets.Store(login, invalidSecrets)
 		return false, nil
 	}
 
