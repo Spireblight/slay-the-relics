@@ -24,18 +24,20 @@ type Users struct {
 	twitch *client.Twitch
 	rdb    *redis.Client
 
-	userIDCache    SyncMap[string, string]
-	userAuthCache  SyncMap[string, string]
-	invalidSecrets SyncMap[string, []string]
+	userIDCache        SyncMap[string, string]
+	userAuthCache      SyncMap[string, string]
+	redisUserAuthCache SyncMap[string, string]
+	invalidSecrets     SyncMap[string, []string]
 }
 
 func NewUsers(twitch *client.Twitch, rdb *redis.Client) *Users {
 	return &Users{
-		twitch:         twitch,
-		rdb:            rdb,
-		userIDCache:    SyncMap[string, string]{},
-		userAuthCache:  SyncMap[string, string]{},
-		invalidSecrets: SyncMap[string, []string]{},
+		twitch:             twitch,
+		rdb:                rdb,
+		userIDCache:        SyncMap[string, string]{},
+		userAuthCache:      SyncMap[string, string]{},
+		redisUserAuthCache: SyncMap[string, string]{},
+		invalidSecrets:     SyncMap[string, []string]{},
 	}
 }
 
@@ -93,6 +95,7 @@ func (s *Users) AuthenticateTwitch(ctx context.Context, code string) (user model
 		return user, token, err
 	}
 
+	s.redisUserAuthCache.Store(user.ID, token)
 	return user, token, nil
 }
 
@@ -126,10 +129,22 @@ func (s *Users) AuthenticateRedis(ctx context.Context, userID, token string) (us
 		return models.User{}, err
 	}
 
+	// Attempt to check for a cached token value.
+	cachedToken, ok := s.redisUserAuthCache.Load(userID)
+	if ok {
+		if cachedToken == token {
+			span.SetAttributes(attribute.String("user_login", user.Login))
+			return user, nil
+		}
+	}
+
 	err = bcrypt.CompareHashAndPassword([]byte(user.Hash), []byte(token))
 	if err != nil {
 		return models.User{}, &errors2.AuthError{Err: err}
 	}
+
+	// Succesful authentication, so cache this token as a valid value.
+	s.redisUserAuthCache.Store(userID, token)
 
 	span.SetAttributes(attribute.String("user_login", user.Login))
 	return user, nil
