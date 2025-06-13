@@ -1,6 +1,6 @@
 module github.com/MaT1g3R/slaytherelics
 
-go 1.20
+go 1.23
 
 require (
 	github.com/alecthomas/kong v0.7.1

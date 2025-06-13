@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"net/http"
-	_ "net/http/pprof"
+	_ "net/http/pprof" // nolint:gosec
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -69,11 +69,11 @@ func initialize(ctx context.Context, cfg config.Config) (_ *api.API, cancel func
 	return a, cancel, err
 }
 
-// setupPprofListener runs a background listener for handling pprof requests. This is done separately from any other router
-// to avoid middleware conflicts or auth confusion. This also allows us to easily expose this port locally for our debugging
-// but not to the wider web.
+// setupPprofListener runs a background listener for handling pprof requests. This is done separately from any other
+// router to avoid middleware conflicts or auth confusion. This also allows us to easily expose this port locally for
+// our debugging but not to the wider web.
 func setupPprofListener(cfg config.Config) {
 	go func() {
-		http.ListenAndServe(cfg.PprofAddr, nil)
+		_ = http.ListenAndServe(cfg.PprofAddr, nil) //nolint:gosec
 	}()
 }

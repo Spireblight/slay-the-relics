@@ -269,7 +269,7 @@ func BenchmarkDecompressDeck(b *testing.B) {
 	for _, tc := range testCases {
 		b.Run(tc.desc, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				decompressDeck(tc.input)
+				_, _ = decompressDeck(tc.input)
 			}
 		})
 	}
