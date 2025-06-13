@@ -74,6 +74,7 @@ func (a *API) getDeckHandler(c *gin.Context) {
 		result.WriteString("\n")
 	}
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	c.Data(200, "text/plain", []byte(result.String()))
 }
 
