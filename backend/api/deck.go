@@ -13,6 +13,23 @@ import (
 
 const WILDCARDS = "0123456789abcdefghijklmnopqrstvwxyzABCDEFGHIJKLMNOPQRSTVWXYZ_`[]/^%?@><=-+*:;,.()#$!'{}~"
 
+func (a *API) getPlayersHandler(c *gin.Context) {
+	a.deckLock.RLock()
+	defer a.deckLock.RUnlock()
+
+	var players []string
+	for user := range a.deckLists {
+		deck := a.deckLists[user]
+		if strings.TrimSpace(deck) == "" {
+			continue
+		}
+		players = append(players, user)
+	}
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	c.JSON(200, gin.H{"players": players})
+}
+
 func (a *API) getDeckHandler(c *gin.Context) {
 	name := c.Param("name")
 	name = strings.ToLower(name)

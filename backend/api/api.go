@@ -45,5 +45,6 @@ func New(t *client.Twitch, u *slaytherelics.Users, b *slaytherelics.Broadcaster)
 	r.POST("/api/v1/login", api.Login)
 	r.POST("/api/v1/message", api.postMessageHandler)
 	r.GET("/deck/:name", api.getDeckHandler)
+	r.GET("/players", api.getPlayersHandler)
 	return api, nil
 }
