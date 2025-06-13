@@ -1,5 +1,5 @@
 ## Build
-FROM golang:1.20-bullseye AS build
+FROM golang:1.23-bullseye AS build
 
 WORKDIR /app
 
@@ -12,7 +12,7 @@ COPY . ./
 RUN go build -o /slay-the-relics
 
 ## Deploy
-FROM golang:1.20-bullseye
+FROM golang:1.23-bullseye
 
 RUN adduser appuser
 USER appuser
