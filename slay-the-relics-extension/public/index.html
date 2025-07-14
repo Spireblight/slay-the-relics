@@ -1,44 +1,39 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
-    <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Web site created using create-react-app"
-    />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <!--
-      manifest.json provides metadata used when your web app is installed on a
-      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-    -->
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <script src="https://extension-files.twitch.tv/helper/v1/twitch-ext.min.js"></script>
-    <!--
-      Notice the use of %PUBLIC_URL% in the tags above.
-      It will be replaced with the URL of the `public` folder during the build.
-      Only files inside the `public` folder can be referenced from the HTML.
-
-      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-      work correctly both with client-side routing and a non-root public URL.
-      Learn how to configure a non-root public URL by running `npm run build`.
-    -->
-    <title>React App</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Get Started</title>
   </head>
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
+    <div>
+      You have two options for using this boilerplate when developing Twitch Extensions: 
+      <ol>
+        <li>Use the <a href="https://dev.twitch.tv/docs/extensions/rig">Twitch Developer Rig</a> and follow the instructions in the included README. This is going to be the easiest solution, but does not support all Twitch functions, including Bits.</li>
+        <li>Develop on Twitch when in <a href="https://dev.twitch.tv/docs/extensions/life-cycle#local-test">Local Test</a>, which treats your extension as if it were live. This is going to accurately reflect the realities of production, and supports all extension functions.</li>
+      </ol>
+      <br /> 
+      <h3>Showing Extension on Twitch in Local Test</h3>
+      <p>
+        This process takes a larger amount of time to set up, but as noted above, allows you to test your extension on the full Twitch site. 
+        <ol>
+          <li>Now that you have the boilerplate loaded and installed, you'll need two things first.
+            <ul>
+              <li>An extension made on <a href="https://dev.twitch.tv/console">the Twitch Developer Site</a>. If you're unsure of what kind of extension view to use, select them all as you can turn them off later. Out of the box, the boilerplate supports all views via multiple entry points. </li>
+              <li>The extension installed on your own channel. This can be done in the "Invite Only" section of the Extension Manager, where you'll find your extension listed. </li>
+            </ul>
+          </li>
+          <li>
+            Once you've installed your extension, you'll need to activate the extension and add it to any of the available slots: Panel, Component, or Overlay. Do note that Component or Overlay extensions require you to be live when testing. 
+          </li>
+          <li>Go to your channel on Twitch and you'll have to click on "Accept" on the extension. It should load.</li>
+          <li>If it doesn't load, don't fret! Simply visit the URL for the view (https://localhost:8080/panel.html for a panel view, for example) and accept the certificate. Go back to your channel page on Twitch and you'll be good to go!</li>
+        </ol>
+      </p>
 
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
-
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
+      <p>
+        Now that you're up and running, once you're in a good finished state, see the README on building production files and uploading them to the Developer site. 
+      </p>
+    </div>
   </body>
 </html>
