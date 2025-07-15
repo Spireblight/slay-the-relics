@@ -59,21 +59,14 @@ module.exports = (_env, argv) => {
                 {
                     test: /\.scss$/,
                     use: [
-                        "style-loader", // creates style nodes from JS strings
-                        "css-loader", // translates CSS into CommonJS
-                        "sass-loader", // compiles Sass to CSS, using Node Sass by default
+                        "style-loader", // creates style nodes from js strings
+                        "css-loader", // translates css into commonjs
+                        "sass-loader", // compiles sass to css, using node sass by default
                     ]
                 },
-                {
-                    test: /\.(jpe?g|png|gif|svg)$/i,
-                    loader: "file-loader",
-                    options: {
-                        name: "img/[name].[ext]"
-                    }
-                }
             ]
         },
-        resolve: {extensions: ['*', '.js', '.jsx', '.ts', '.tsx']},
+        resolve: {extensions: ['*', '.js', '.jsx', '.ts', '.tsx', '.png']},
         output: {
             filename: "[name].bundle.js",
             path: bundlePath

@@ -1,17 +1,18 @@
-import * as React from "react";
+import {Component} from "react";
 import './App.css'
+import {LookupRelic, RelicBar} from "../Relic/Relic";
 
-export default class App extends React.Component {
+
+export default class App extends Component {
     private readonly twitch: any;
+
 
     constructor(props) {
         super(props)
 
         //if the extension is running on twitch or dev rig, set the shorthand here. otherwise, set to null. 
-        this.twitch = window["Twitch"] ? window["Twitch"].ext : null
-    }
-
-    contextUpdate(context, delta) {
+        this.twitch = window["Twitch"] ? window["Twitch"].ext : null;
+        this.state = {relics: []};
     }
 
     componentDidMount() {
@@ -22,6 +23,8 @@ export default class App extends React.Component {
                 // do something...
             })
         }
+
+        this.setState({relics: ["akabeko", "bakabeko", "cakabeko", "dakabeko"]});
     }
 
     componentWillUnmount() {
@@ -33,7 +36,8 @@ export default class App extends React.Component {
     render() {
         return (
             <div className="App">
-                <p>Hello world! </p>
+                <RelicBar relics={this.state.relics.map((relic, i) => LookupRelic(relic))}
+                          multiPage={false}/>
             </div>
         )
     }
