@@ -11,15 +11,13 @@
     "@types/react-dom": "^19.1.6",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-router": "^7.6.3",
-    "react-scripts": "5.0.1",
     "web-vitals": "^2.1.0"
   },
   "scripts": {
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "build": "webpack --mode production && cd dist && zip build.zip *",
-    "start": "webpack-dev-server --mode development"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "echo 'Testing is not configured for Vite yet.'"
   },
   "eslintConfig": {
     "extends": [
@@ -40,11 +38,8 @@
     ]
   },
   "devDependencies": {
-    "@babel/preset-react": "^7.27.1",
-    "@babel/preset-typescript": "^7.27.1",
-    "clean-webpack-plugin": "^4.0.0",
-    "html-webpack-plugin": "^5.6.3",
-    "webpack": "^5.100.1",
-    "webpack-cli": "^6.0.1"
+    "@vitejs/plugin-react": "^4.0.0",
+    "prettier": "3.6.2",
+    "vite": "^5.0.0"
   }
 }

@@ -23,17 +23,7 @@ export class RelicProp {
 export function LookupRelic(relic: string): RelicProp {
     switch (relic) {
         case "akabeko":
-            return new RelicProp("Akabeko", "mu", [
-            ])
-        case "bakabeko":
-            return new RelicProp("Bakabeko", "mu", [
-            ])
-        case "cakabeko":
-            return new RelicProp("cakabeko", "mu", [
-            ])
-        case "dakabeko":
-            return new RelicProp("dakabeko", "mu", [
-            ])
+            return new RelicProp("Akabeko", "mu", [])
         default:
             return new RelicProp(relic, relic, []);
     }
