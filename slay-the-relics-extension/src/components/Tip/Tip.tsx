@@ -42,7 +42,7 @@ export function PowerTip(props: {
 
   return (
     <div className={"powertip"} style={additionalStyles}>
-      <div className={"powertip-header outline " + headerImgClass}>
+      <div className={"powertip-header outline-black " + headerImgClass}>
         {props.tip.header}
       </div>
       <div>{props.tip.description}</div>
