@@ -39,7 +39,7 @@ div.powertip {
   text-shadow: 0.139rem 0.139rem 0px rgba(0, 0, 0, 0.3);
   margin-bottom: 0.278rem;
 
-  position: relative;
+  /*position: relative;*/
 }
 
 .powertip-shadow {
@@ -82,22 +82,22 @@ div.powertip-header {
   letter-spacing: 0.046rem;
 }
 
-div.powertip-strip {
-  display: none;
-  position: absolute;
-  width: 14.583rem;
-}
+/*div.powertip-strip {*/
+/*  display: none;*/
+/*  !*position: absolute;*!*/
+/*  width: 14.583rem;*/
+/*}*/
 
-div.powertip-multicol {
-  display: none;
-  position: absolute;
-}
+/*div.powertip-multicol {*/
+/*  display: none;*/
+/*  position: absolute;*/
+/*}*/
 
-div.powertip-multicol-column {
-  float: left;
-  width: 14.583rem;
-  margin-right: 0.37rem;
-}
+/*div.powertip-multicol-column {*/
+/*  float: left;*/
+/*  width: 14.583rem;*/
+/*  margin-right: 0.37rem;*/
+/*}*/
 
 .button-border {
   border: 1px solid rgba(255, 255, 255, 0.4);

@@ -37,7 +37,6 @@ export function Relic(props: { relic: RelicProp; hitbox: HitBox }) {
       magGlass={true}
       hitbox={props.hitbox}
       tips={props.relic.getTips()}
-      offset={{ x: "70%", y: "-30%" }}
     />
   );
 }
