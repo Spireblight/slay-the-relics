@@ -1,6 +1,6 @@
 import { Component } from "react";
 import "./App.css";
-import { LookupRelic, RelicBar } from "../Relic/Relic";
+import { RelicBar } from "../Relic/Relic";
 import { HitBox, PowerTipBlock, Tip } from "../Tip/Tip";
 import { DeckView } from "../deck/Deck";
 import PotionBar from "../Potion/Potion";
@@ -10,7 +10,7 @@ interface AppState {
   relics: string[];
   deck: string[];
   potions: string[];
-  additionalTips: Tip[];
+  additionalTips: { tips: Tip[]; hitbox: HitBox }[];
 }
 
 export default class App extends Component<any, AppState> {
@@ -48,7 +48,34 @@ export default class App extends Component<any, AppState> {
 
     this.setState((prevState) => ({
       ...prevState,
-      relics: ["akabeko", "bakabeko", "cakabeko", "dakabeko"],
+      relics: [
+        "akabeko",
+        "bakabeko",
+        "cakabeko",
+        "dakabeko",
+        "ekabeko",
+        "fakabeko",
+        "gakabeko",
+        "hakabeko",
+        "ikabeko",
+        "jakabeko",
+        "kakabeko",
+        "lakabeko",
+        "makabeko",
+        "nakabeko",
+        "oakabeko",
+        "pakabeko",
+        "qakabeko",
+        "rakabeko",
+        "sakabeko",
+        "takabeko",
+        "uakabeko",
+        "vakabeko",
+        "wakabeko",
+        "xakabeko",
+        "yakabeko",
+        // "zakabeko",
+      ],
     }));
 
     this.setState((prevState) => ({
@@ -101,17 +128,7 @@ export default class App extends Component<any, AppState> {
       ...prevState,
       potions: ["", "Energy Potion", "", "Weak Potion"],
     }));
-  }
 
-  componentWillUnmount() {
-    if (this.twitch) {
-      this.twitch.unlisten("broadcast", () =>
-        console.log("successfully unlistened"),
-      );
-    }
-  }
-
-  render() {
     const playerHitbox: HitBox = {
       x: "19.06%",
       y: "43.15%",
@@ -134,22 +151,41 @@ export default class App extends Component<any, AppState> {
       new Tip("tip 5", "description 5", null),
       new Tip("tip 6", "description 6", null),
     ];
+    this.setState((prevState) => ({
+      ...prevState,
+      additionalTips: [
+        {
+          hitbox: playerHitbox,
+          tips: playerTips,
+        },
+      ],
+    }));
+  }
 
+  componentWillUnmount() {
+    if (this.twitch) {
+      this.twitch.unlisten("broadcast", () =>
+        console.log("successfully unlistened"),
+      );
+    }
+  }
+
+  render() {
     return (
       <div className={"App"}>
-        <RelicBar
-          relics={this.state.relics.map((relic, i) => LookupRelic(relic))}
-          multiPage={false}
-        />
+        <RelicBar relics={this.state.relics} />
         <PotionBar potions={this.state.potions} />
-
         <DeckView cards={this.state.deck} />
-        <PowerTipBlock
-          magGlass={false}
-          hitbox={playerHitbox}
-          tips={playerTips}
-          offset={{ x: "0", y: "0" }}
-        />
+        <div>
+          {this.state.additionalTips.map((t, i) => (
+            <PowerTipBlock
+              key={"additional-tips-" + i}
+              magGlass={false}
+              hitbox={t.hitbox}
+              tips={t.tips}
+            />
+          ))}
+        </div>
       </div>
     );
   }

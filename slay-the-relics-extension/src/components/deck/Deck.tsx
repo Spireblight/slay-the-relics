@@ -7,19 +7,6 @@ import {
   useState,
 } from "react";
 
-const CARD_BASE_WIDTH = 12.361; //rem
-const CARD_BASE_HEIGHT = 15.926; //rem
-const DECK_VIEW_Y_MARGIN = 0.55; // rem
-const DECK_VIEW_X_OFFSET = 13.541; // rem
-const DECK_VIEW_Y_OFFSET = 3; // rem
-const CARD_HOVER_SCALE = 1.32;
-
-const DECK_VIEW_CARD_PREVIEW_SCALE = 0.95;
-const DECK_VIEW_CARD_PREVIEW_WIDTH =
-  CARD_BASE_WIDTH * DECK_VIEW_CARD_PREVIEW_SCALE;
-const DECK_VIEW_CARD_PREVIEW_X_OFFSET = -0.8; // rem
-const DECK_VIEW_CARD_PREVIEW_Y_OFFSET = 0.15;
-
 function formatForSlaytabase(val: string): string {
   return val
     .split("+")[0]

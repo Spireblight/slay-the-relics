@@ -85,7 +85,6 @@ export function PowerTipBlock(props: {
   magGlass: boolean;
   hitbox: HitBox;
   tips: Tip[];
-  offset: { x: string; y: string };
 }) {
   return (
     <Hitbox magGlass={props.magGlass} hitbox={props.hitbox}>

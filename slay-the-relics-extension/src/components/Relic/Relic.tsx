@@ -3,6 +3,7 @@ import { HitBox, PowerTipStrip, Tip } from "../Tip/Tip";
 const RELIC_HITBOX_WIDTH = 3.75; //%
 const RELIC_HITBOX_LEFT = 1.458; //%
 const RELIC_HITBOX_MULTIPAGE_OFFSET = 1.875; //%
+const RELIC_PER_PAGE = 25; //count
 
 export class RelicProp {
   name: string;
@@ -41,11 +42,11 @@ export function Relic(props: { relic: RelicProp; hitbox: HitBox }) {
   );
 }
 
-export function RelicBar(props: { relics: RelicProp[]; multiPage: boolean }) {
-  const multiPage = props.multiPage ? 1 : 0;
+export function RelicBar(props: { relics: string[] }) {
+  const multiPage = props.relics.length > RELIC_PER_PAGE ? 1 : 0;
   return (
     <div id={"relic-bar"}>
-      {props.relics.map((relic, i) => {
+      {props.relics.slice(0, RELIC_PER_PAGE).map((relic, i) => {
         const hitbox = {
           x:
             RELIC_HITBOX_LEFT +
@@ -57,7 +58,13 @@ export function RelicBar(props: { relics: RelicProp[]; multiPage: boolean }) {
           w: 3.75 + "%",
           h: 8.666 + "%",
         };
-        return <Relic key={"relic-bar-" + i} hitbox={hitbox} relic={relic} />;
+        return (
+          <Relic
+            key={"relic-bar-" + i}
+            hitbox={hitbox}
+            relic={LookupRelic(relic)}
+          />
+        );
       })}
     </div>
   );
