@@ -44,7 +44,7 @@ export function PowerTip(props: { tip: Tip }) {
     props.tip.img === null ? "powertip-header-noimg" : "powertip-header-wimg";
 
   return (
-    <div className={"powertip"}>
+    <div className={"powertip powertip-shadow"}>
       <div className={"powertip-header outline-black " + headerImgClass}>
         {props.tip.header}
       </div>
