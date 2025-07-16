@@ -3,11 +3,13 @@ import "./App.css";
 import { LookupRelic, RelicBar } from "../Relic/Relic";
 import { HitBox, PowerTipBlock, Tip } from "../Tip/Tip";
 import { DeckView } from "../deck/Deck";
+import PotionBar from "../Potion/Potion";
 
 interface AppState {
   channel: string;
   relics: string[];
   deck: string[];
+  potions: string[];
   additionalTips: Tip[];
 }
 
@@ -24,6 +26,7 @@ export default class App extends Component<any, AppState> {
       channel: "",
       additionalTips: [],
       deck: [],
+      potions: [],
     };
   }
 
@@ -93,6 +96,11 @@ export default class App extends Component<any, AppState> {
         "Calculated Gamble",
       ],
     }));
+
+    this.setState((prevState) => ({
+      ...prevState,
+      potions: ["", "Energy Potion", "", "Weak Potion"],
+    }));
   }
 
   componentWillUnmount() {
@@ -133,6 +141,7 @@ export default class App extends Component<any, AppState> {
           relics={this.state.relics.map((relic, i) => LookupRelic(relic))}
           multiPage={false}
         />
+        <PotionBar potions={this.state.potions} />
 
         <DeckView cards={this.state.deck} />
         <PowerTipBlock
