@@ -9,24 +9,6 @@ export type HitBox = {
   z: number | string;
 };
 
-const REM_PX = 21.6;
-
-const POTION_HITBOX_WIDTH = 2.916; // %
-const POWERTIP_WIDTH = 16.406; //%
-const POWERTIP_WIDTH_REM = 14.583; //%
-const MAX_POWERTIP_MULTICOL_HEIGHT = 70.0; //%
-const POWERTIP_BOTTOM_MARGIN = 0.365; //%
-const MULTICOL_COLUMN_RIGHT_MARGIN = 0.469; //% - don't mess with this number or the columns won't be separated
-
-const MAX_DISPLAY_RELICS = 25; //count
-
-const MAX_RIGHT = 99.0; //%
-const MAX_BOTTOM = 98.0; //%
-const MIN_TOP = 2.0; //%
-const CHARACTER_POWERS_OFFSET_R = 1.0416; //%
-const CHARACTER_POWERS_OFFSET_L = -2.917; //%
-const CHARACTER_HEALTHBAR_HEIGHT = 6.666; //%
-
 export class Tip {
   header: string;
   description: string;

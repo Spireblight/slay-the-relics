@@ -160,10 +160,10 @@ interface AppState {
   mapPath: number[][];
 }
 
-export default class App extends Component<any, AppState> {
+export default class App extends Component<never, AppState> {
   private readonly twitch: typeof Twitch.ext | null;
 
-  constructor(props: any) {
+  constructor(props: never) {
     super(props);
 
     //if the extension is running on twitch or dev rig, set the shorthand here. otherwise, set to null.
@@ -189,6 +189,7 @@ export default class App extends Component<any, AppState> {
         }));
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       this.twitch.listen("broadcast", (target, contentType, body) => {
         // now that you've got a listener, do something with the result...
         // do something...

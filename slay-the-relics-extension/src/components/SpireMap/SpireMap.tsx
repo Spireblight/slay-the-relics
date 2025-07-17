@@ -143,7 +143,7 @@ function MapCanvas(props: {
       ctx.stroke();
       ctx.closePath();
     }
-  }, []);
+  }, [nodes, path, canvasRef]);
 
   return (
     <div
