@@ -27,6 +27,35 @@ export class Tip {
   }
 }
 
+function EnergyOrbElement(props: { character: string; key: string }) {
+  switch (props.character) {
+    case "silent":
+      return (
+        <span key={props.key}>
+          <img src={orbTheSilent} alt={"Orb"} className={"inline-block"} />
+        </span>
+      );
+    case "defect":
+      return (
+        <span key={props.key}>
+          <img src={orbDefect} alt={"Orb"} className={"inline-block"} />;
+        </span>
+      );
+    case "watcher":
+      return (
+        <span key={props.key}>
+          <img src={orbWatcher} alt={"Orb"} className={"inline-block"} />;
+        </span>
+      );
+    default:
+      return (
+        <span key={props.key}>
+          <img src={orbIronclad} alt={"Orb"} className={"inline-block"} />
+        </span>
+      );
+  }
+}
+
 function TipPartElement(props: {
   part: string;
   index: number;
@@ -38,64 +67,55 @@ function TipPartElement(props: {
   if (part === "NL") {
     return <br key={key} />;
   } else if (part === "[E]") {
-    switch (props.character) {
-      case "silent":
-        return <img key={key} src={orbTheSilent} alt={"Orb"} />;
-      case "defect":
-        return <img key={key} src={orbDefect} alt={"Orb"} />;
-      case "watcher":
-        return <img key={key} src={orbWatcher} alt={"Orb"} />;
-      default:
-        return <img key={key} src={orbIronclad} alt={"Orb"} />;
-    }
+    return <EnergyOrbElement character={props.character} key={key} />;
   } else if (part === "[R]") {
-    return <img key={key} src={orbIronclad} alt={"Orb"} />;
+    return <EnergyOrbElement character={"ironclad"} key={key} />;
   } else if (part === "[G]") {
-    return <img key={key} src={orbTheSilent} alt={"Orb"} />;
+    return <EnergyOrbElement character={"silent"} key={key} />;
   } else if (part === "[B]") {
-    return <img key={key} src={orbDefect} alt={"Orb"} />;
+    return <EnergyOrbElement character={"defect"} key={key} />;
   } else if (part === "[W]") {
-    return <img key={key} src={orbWatcher} alt={"Orb"} />;
+    return <EnergyOrbElement character={"watcher"} key={key} />;
   } else if (part.startsWith("#y")) {
     return (
       <span key={key} className={"text-yellow"}>
-        {part.substring(2)}
+        {part.substring(2) + " "}
       </span>
     );
   } else if (part.startsWith("#b")) {
     return (
       <span key={key} className={"text-blue"}>
-        {part.substring(2)}
+        {part.substring(2) + " "}
       </span>
     );
   } else if (part.startsWith("#r")) {
     return (
       <span key={key} className={"text-red"}>
-        {part.substring(2)}
+        {part.substring(2) + " "}
       </span>
     );
   } else if (part.startsWith("#g")) {
     return (
       <span key={key} className={"text-green"}>
-        {part.substring(2)}
+        {part.substring(2) + " "}
       </span>
     );
   } else if (part.startsWith("#p")) {
     return (
       <span key={key} className={"text-pink"}>
-        {part.substring(2)}
+        {part.substring(2) + " "}
       </span>
     );
   } else if (part.startsWith("#")) {
     return (
       <span key={key} className={"text-other"}>
-        {part.substring(2)}
+        {part.substring(2) + " "}
       </span>
     );
   } else
     return (
       <span key={key} className={"text-white"}>
-        {part}
+        {part + " "}
       </span>
     );
 }
@@ -113,7 +133,6 @@ function TipBody(props: { character: string; raw: string }) {
               index={index}
               character={props.character}
             />
-            {index < parts.length - 1 ? " " : ""}
           </span>
         );
       })}

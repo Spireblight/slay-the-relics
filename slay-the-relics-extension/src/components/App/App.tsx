@@ -203,7 +203,15 @@ export default class App extends Component<never, AppState> {
     this.setState((prev) => ({ ...prev, character: "ironclad" }));
     this.setState((prevState) => ({
       ...prevState,
-      relics: ["Akabeko", "Tiny House", "Sacred Bark", "Bottled Flame"],
+      relics: [
+        "Akabeko",
+        "Tiny House",
+        "Sacred Bark",
+        "Bottled Flame",
+        "Happy Flower",
+        "Sundial",
+        "Cursed Key",
+      ],
     }));
     this.setState((prevState) => ({
       ...prevState,
