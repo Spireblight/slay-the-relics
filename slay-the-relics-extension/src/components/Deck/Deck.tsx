@@ -4,8 +4,11 @@ import {
   SetStateAction,
   useCallback,
   useEffect,
+  useId,
   useState,
 } from "react";
+import { CardsLoc } from "../tmp";
+import { KeywordTips, PowerTipBlock } from "../Tip/Tip";
 
 function formatForSlaytabase(val: string): string {
   return val
@@ -21,8 +24,24 @@ function slaytabaseUrlForCard(card: string): string {
   return `https://raw.githubusercontent.com/OceanUwU/slaytabase/refs/heads/main/docs/slay%20the%20spire/cards/${formattedCard}.png`;
 }
 
+function lookupCard(name: string): string {
+  const normalName = name.replaceAll("+", "");
+  const upgraded = name.includes("+");
+
+  const cardLoc = CardsLoc[normalName];
+  if (!cardLoc) {
+    return "";
+  }
+
+  if (upgraded && cardLoc.UPGRADE_DESCRIPTION) {
+    return cardLoc.UPGRADE_DESCRIPTION;
+  }
+  return cardLoc.DESCRIPTION;
+}
+
 export function Card(props: {
   name: string;
+  character: string;
   onClick: () => void;
   additionalClasses: string;
 }) {
@@ -35,12 +54,23 @@ export function Card(props: {
     backgroundImage: `url(${slaytabaseUrlForCard(props.name)})`,
     backgroundPosition: backgroundPosition,
   };
+  const tips = KeywordTips(lookupCard(props.name));
+  const tooltipId = useId();
   return (
     <div
       style={cardStyle}
       className={props.additionalClasses}
       onClick={props.onClick}
-    />
+      data-tooltip-id={tooltipId}
+    >
+      <PowerTipBlock
+        magGlass={false}
+        hitbox={tooltipId}
+        tips={tips}
+        character={props.character}
+        noExpand={true}
+      />
+    </div>
   );
 }
 
@@ -52,6 +82,7 @@ export function CardView(props: {
   setDisplay: Dispatch<SetStateAction<string>>;
   upgradeChecked: Map<number, boolean>;
   setUpgradeChecked: Dispatch<SetStateAction<Map<number, boolean>>>;
+  character: string;
 }) {
   if (props.cards.length < 1) {
     return <div></div>;
@@ -107,6 +138,7 @@ export function CardView(props: {
         name={
           isUpgrade(props.selectedIndex) ? card + "+" : card.replaceAll("+", "")
         }
+        character={props.character}
         additionalClasses={"card-view-card"}
         onClick={() => {
           props.setDisplay("hidden");
@@ -131,6 +163,7 @@ export function CardGrid(props: {
   deckViewMode: string;
   setCardIndex: Dispatch<SetStateAction<number>>;
   setCardViewMode: Dispatch<SetStateAction<string>>;
+  character: string;
 }) {
   return (
     <div
@@ -155,6 +188,7 @@ export function CardGrid(props: {
             key={"card-" + i}
             name={card}
             additionalClasses={"deck-card"}
+            character={props.character}
             onClick={() => {
               props.setCardIndex(i);
               props.setCardViewMode("flex");
@@ -193,7 +227,7 @@ export function DeckButton(props: {
   );
 }
 
-export function DeckView(props: { cards: string[] }) {
+export function DeckView(props: { cards: string[]; character: string }) {
   const [deckViewMode, setDeckViewMode] = useState("hidden");
   const [cardViewMode, setCardViewMode] = useState("hidden");
   const [cardIndex, setCardIndex] = useState(0);
@@ -260,11 +294,13 @@ export function DeckView(props: { cards: string[] }) {
       />
       <CardGrid
         cards={props.cards}
+        character={props.character}
         deckViewMode={deckViewMode}
         setCardIndex={setCardIndex}
         setCardViewMode={setCardViewMode}
       />
       <CardView
+        character={props.character}
         cards={props.cards}
         selectedIndex={cardIndex}
         setSelectedIndex={setCardIndex}

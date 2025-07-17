@@ -1,4 +1,5 @@
 import { HitBox, PowerTipStrip, Tip } from "../Tip/Tip";
+import { RelicsLoc } from "../tmp";
 
 const RELIC_HITBOX_WIDTH = 3.75; //%
 const RELIC_HITBOX_LEFT = 1.458; //%
@@ -23,26 +24,56 @@ export class RelicProp {
   }
 }
 
-export function LookupRelic(relic: string): RelicProp {
-  switch (relic) {
-    case "akabeko":
-      return new RelicProp("Akabeko", "mu", []);
-    default:
-      return new RelicProp(relic, relic, []);
+export function LookupRelic(
+  relic: string,
+  relicParams: (string | number)[],
+): RelicProp {
+  const relicLoc = RelicsLoc[relic];
+  if (relicLoc === undefined || relicLoc === null) {
+    return new RelicProp(relic, relic, []);
   }
+
+  const descriptions = [...relicLoc.DESCRIPTIONS];
+  const params = [...relicParams];
+
+  const descriptionParts = [];
+  // append to descriptionParts alternating between text and parameters
+  while (descriptions.length > 0 || params.length > 0) {
+    const des = descriptions.shift();
+    if (des !== undefined) {
+      descriptionParts.push(des);
+    }
+    const param = params.shift();
+    if (param !== undefined) {
+      descriptionParts.push(param);
+    }
+  }
+
+  const description = descriptionParts.join("");
+  return new RelicProp(relic, description, []);
 }
 
-export function Relic(props: { relic: RelicProp; hitbox: HitBox }) {
+export function Relic(props: {
+  character: string;
+  relic: RelicProp;
+  hitbox: HitBox;
+}) {
   return (
     <PowerTipStrip
+      character={props.character}
       magGlass={true}
       hitbox={props.hitbox}
       tips={props.relic.getTips()}
+      place={"bottom-start"}
     />
   );
 }
 
-export function RelicBar(props: { relics: string[] }) {
+export function RelicBar(props: {
+  character: string;
+  relics: string[];
+  relicParams: Record<number, (string | number)[]>;
+}) {
   const multiPage = props.relics.length > RELIC_PER_PAGE ? 1 : 0;
   return (
     <div id={"relic-bar"}>
@@ -58,11 +89,13 @@ export function RelicBar(props: { relics: string[] }) {
           w: 3.75 + "%",
           h: 8.666 + "%",
         };
+        const relicParams = props.relicParams[i] || [];
         return (
           <Relic
+            character={props.character}
             key={"relic-bar-" + i}
             hitbox={hitbox}
-            relic={LookupRelic(relic)}
+            relic={LookupRelic(relic, relicParams)}
           />
         );
       })}

@@ -151,8 +151,10 @@ const path = [
 ];
 
 interface AppState {
+  character: string;
   channel: string;
   relics: string[];
+  baseRelicStats: Record<number, (string | number)[]>;
   deck: string[];
   potions: string[];
   additionalTips: { tips: Tip[]; hitbox: HitBox }[];
@@ -170,12 +172,14 @@ export default class App extends Component<never, AppState> {
     this.twitch = window.Twitch ? window.Twitch.ext : null;
     this.state = {
       relics: [],
+      character: "",
       channel: "",
       additionalTips: [],
       deck: [],
       potions: [],
       mapNodes: [],
       mapPath: [],
+      baseRelicStats: {},
     };
   }
 
@@ -196,36 +200,14 @@ export default class App extends Component<never, AppState> {
       });
     }
 
+    this.setState((prev) => ({ ...prev, character: "ironclad" }));
     this.setState((prevState) => ({
       ...prevState,
-      relics: [
-        "akabeko",
-        "bakabeko",
-        "cakabeko",
-        "dakabeko",
-        "ekabeko",
-        "fakabeko",
-        "gakabeko",
-        "hakabeko",
-        "ikabeko",
-        "jakabeko",
-        "kakabeko",
-        "lakabeko",
-        "makabeko",
-        "nakabeko",
-        "oakabeko",
-        "pakabeko",
-        "qakabeko",
-        "rakabeko",
-        "sakabeko",
-        "takabeko",
-        "uakabeko",
-        "vakabeko",
-        "wakabeko",
-        "xakabeko",
-        "yakabeko",
-        // "zakabeko",
-      ],
+      relics: ["Akabeko", "Tiny House", "Sacred Bark", "Bottled Flame"],
+    }));
+    this.setState((prevState) => ({
+      ...prevState,
+      baseRelicStats: { 3: ["#yFiend #yFire"] },
     }));
 
     this.setState((prevState) => ({
@@ -330,16 +312,26 @@ export default class App extends Component<never, AppState> {
     return (
       <div className={"App"}>
         <SpireMap nodes={this.state.mapNodes} path={this.state.mapPath} />
-        <RelicBar relics={this.state.relics} />
-        <PotionBar potions={this.state.potions} />
-        <DeckView cards={this.state.deck} />
+        <RelicBar
+          relics={this.state.relics}
+          character={this.state.character}
+          relicParams={this.state.baseRelicStats}
+        />
+        <PotionBar
+          potions={this.state.potions}
+          relics={this.state.relics}
+          character={this.state.character}
+        />
+        <DeckView cards={this.state.deck} character={this.state.character} />
         <div>
           {this.state.additionalTips.map((t, i) => (
             <PowerTipBlock
+              character={this.state.character}
               key={"additional-tips-" + i}
               magGlass={false}
               hitbox={t.hitbox}
               tips={t.tips}
+              offset={66}
             />
           ))}
         </div>
