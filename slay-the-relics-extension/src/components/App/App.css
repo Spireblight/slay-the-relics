@@ -1,242 +1,255 @@
 @import "tailwindcss";
 
 :root {
-  --card-base-width: 12.361rem;
-  --card-base-height: 15.926rem;
-  --card-hover-scale: 1.32;
+    --card-base-width: 12.361rem;
+    --card-base-height: 15.926rem;
+    --card-hover-scale: 1.32;
 
-  --card-view-card-width: 31.388rem;
-  --card-view-card-height: 40.4405rem;
+    --card-view-card-width: 31.388rem;
+    --card-view-card-height: 40.4405rem;
 }
 
 .App {
-  font-size: 2vh; /* Pixel values are based on height 1080px therefore 1rem = 21.6px for this resolution */
-  -webkit-user-select: none; /* Safari */
-  -moz-user-select: none; /* Firefox */
-  -ms-user-select: none; /* IE10+/Edge */
-  user-select: none; /* Standard */
+    font-size: 2vh; /* Pixel values are based on height 1080px therefore 1rem = 21.6px for this resolution */
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE10+/Edge */
+    user-select: none; /* Standard */
 
-  background: darkgrey;
-  height: 100vh;
+    background: darkgrey;
+    height: 100vh;
 }
 
 div.hitbox {
-  position: absolute;
+    position: absolute;
 }
 
 .mag-glass {
-  cursor:
-    url(../../img/ui/magGlass2.png) 24 25,
+    cursor: url(../../img/ui/magGlass2.png) 24 25,
     auto;
 }
 
 div.powertip {
-  box-sizing: border-box;
-  color: rgb(255, 247, 222);
-  background-color: rgb(34, 42, 43);
-  font-family: "Kreon", serif;
-  font-weight: 400;
-  line-height: 1.17;
-  border: 0.324rem solid;
-  border-radius: 0.63rem; /*0.694rem;*/
-  -moz-border-radius: 0.63rem;
-  -webkit-border-radius: 0.63rem;
-  border-top-color: rgb(83, 105, 110);
-  border-left-color: rgb(83, 105, 110);
-  border-right-color: rgb(51, 66, 70);
-  border-bottom-color: rgb(51, 66, 70);
-  width: 14.583rem;
-  padding: 0px 0.509rem 0.417rem;
-  font-size: 1.019rem;
-  text-shadow: 0.139rem 0.139rem 0px rgba(0, 0, 0, 0.3);
-  margin-bottom: 0.278rem;
+    box-sizing: border-box;
+    color: rgb(255, 247, 222);
+    background-color: rgb(34, 42, 43);
+    font-family: "Kreon", serif;
+    font-weight: 400;
+    line-height: 1.17;
+    border: 0.324rem solid;
+    border-radius: 0.63rem; /*0.694rem;*/
+    -moz-border-radius: 0.63rem;
+    -webkit-border-radius: 0.63rem;
+    border-top-color: rgb(83, 105, 110);
+    border-left-color: rgb(83, 105, 110);
+    border-right-color: rgb(51, 66, 70);
+    border-bottom-color: rgb(51, 66, 70);
+    width: 14.583rem;
+    padding: 0px 0.509rem 0.417rem;
+    font-size: 1.019rem;
+    text-shadow: 0.139rem 0.139rem 0px rgba(0, 0, 0, 0.3);
+    margin-bottom: 0.278rem;
 
-  /*position: relative;*/
+    /*position: relative;*/
 }
 
 .powertip-shadow {
-  -webkit-box-shadow: 0.65em 0.7em 0.035em 0.105em rgba(0, 0, 0, 0.3);
-  -moz-box-shadow: 0.65em 0.7em 0.035em 0.105em rgba(0, 0, 0, 0.3);
-  box-shadow: 0.65em 0.7em 0.035em 0.105em rgba(0, 0, 0, 0.3);
+    -webkit-box-shadow: 0.65em 0.7em 0.035em 0.105em rgba(0, 0, 0, 0.3);
+    -moz-box-shadow: 0.65em 0.7em 0.035em 0.105em rgba(0, 0, 0, 0.3);
+    box-shadow: 0.65em 0.7em 0.035em 0.105em rgba(0, 0, 0, 0.3);
 }
 
 div.powertip-header-noimg {
-  margin: 0.324rem 0rem 0.231rem;
+    margin: 0.324rem 0rem 0.231rem;
 }
 
 div.powertip-header-wimg {
-  margin: 0.093rem 0px -0.046rem;
+    margin: 0.093rem 0px -0.046rem;
 }
 
 img.powertip-img {
-  vertical-align: -0.509rem;
-  width: 1.667rem;
-  height: 1.667rem;
+    vertical-align: -0.509rem;
+    width: 1.667rem;
+    height: 1.667rem;
 }
 
 img.energy-orb-img {
-  vertical-align: top;
-  width: 1.111rem;
-  height: 1.111rem;
+    vertical-align: top;
+    width: 1.111rem;
+    height: 1.111rem;
 }
 
 img.energy-orb-img-scalable {
-  vertical-align: top;
-  width: 1.111em;
-  height: 1.111em;
+    vertical-align: top;
+    width: 1.111em;
+    height: 1.111em;
 }
 
 div.powertip-header {
-  color: rgb(239, 200, 81);
-  font-weight: 700;
-  -webkit-text-stroke-color: rgb(58, 49, 20);
-  text-shadow: 0.046rem 0.046rem 0px rgba(0, 0, 0, 0.3);
-  letter-spacing: 0.046rem;
+    color: rgb(239, 200, 81);
+    font-weight: 700;
+    -webkit-text-stroke-color: rgb(58, 49, 20);
+    text-shadow: 0.046rem 0.046rem 0px rgba(0, 0, 0, 0.3);
+    letter-spacing: 0.046rem;
 }
 
 .button-border {
-  border: 1px solid rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
 .button-border:hover {
-  border: 2px solid rgba(255, 255, 255, 0.8);
+    border: 2px solid rgba(255, 255, 255, 0.8);
 }
 
 .deck-card {
-  width: var(--card-base-width);
-  height: var(--card-base-height);
-  background-size: cover;
+    width: var(--card-base-width);
+    height: var(--card-base-height);
+    background-size: cover;
 }
 
 .deck-card:hover {
-  transform: scale(var(--card-hover-scale));
-  transition: transform 0.05s ease-in-out;
+    transform: scale(var(--card-hover-scale));
+    transition: transform 0.05s ease-in-out;
 }
 
 #deck_button {
-  position: absolute;
-  width: 3.438%;
-  height: 8%;
-  top: 0%;
-  right: 4.322%; /*.053*/
-  z-index: 9;
-  background-size: contain;
-  background-position-y: -0.046rem;
-  /* border: 1px solid rgba(255,255,255,0.0); */
-  box-sizing: border-box;
-  background-repeat: no-repeat;
+    position: absolute;
+    width: 3.438%;
+    height: 8%;
+    top: 0%;
+    right: 4.322%; /*.053*/
+    z-index: 9;
+    background-size: contain;
+    background-position-y: -0.046rem;
+    /* border: 1px solid rgba(255,255,255,0.0); */
+    box-sizing: border-box;
+    background-repeat: no-repeat;
+}
+
+#map_button {
+    position: absolute;
+    width: 3.438%;
+    height: 8%;
+    top: 0%;
+    right: 8.322%; /*.053*/
+    z-index: 9;
+    background-size: contain;
+    background-position-y: -0.046rem;
+    /* border: 1px solid rgba(255,255,255,0.0); */
+    box-sizing: border-box;
+    background-repeat: no-repeat;
 }
 
 .card-view-card {
-  width: var(--card-view-card-width);
-  height: var(--card-view-card-height);
-  background-size: cover;
+    width: var(--card-view-card-width);
+    height: var(--card-view-card-height);
+    background-size: cover;
 }
 
 #card_view {
-  z-index: 20;
-  background-color: rgba(0, 0, 0, 0.9);
+    z-index: 20;
+    background-color: rgba(0, 0, 0, 0.9);
 }
 
 #card_view_prev_btn {
-  position: absolute;
-  width: 7.812%;
-  height: 14.815%;
-  left: 24.74%;
-  top: 40.13%;
-  background-image: url(../../img/ui/btn_prev_base.png);
-  background-repeat: no-repeat;
-  background-size: cover;
-  z-index: 30;
+    position: absolute;
+    width: 7.812%;
+    height: 14.815%;
+    left: 24.74%;
+    top: 40.13%;
+    background-image: url(../../img/ui/btn_prev_base.png);
+    background-repeat: no-repeat;
+    background-size: cover;
+    z-index: 30;
 }
 
 #card_view_prev_btn:hover {
-  background-image: url(../../img/ui/btn_prev_hover.png);
+    background-image: url(../../img/ui/btn_prev_hover.png);
 }
 
 #card_view_next_btn {
-  position: absolute;
-  width: 7.812%;
-  height: 14.815%;
-  left: 67.813%;
-  top: 40.13%;
-  background-image: url(../../img/ui/btn_next_base.png);
-  background-repeat: no-repeat;
-  background-size: cover;
-  z-index: 30;
+    position: absolute;
+    width: 7.812%;
+    height: 14.815%;
+    left: 67.813%;
+    top: 40.13%;
+    background-image: url(../../img/ui/btn_next_base.png);
+    background-repeat: no-repeat;
+    background-size: cover;
+    z-index: 30;
 }
 
 #card_view_next_btn:hover {
-  background-image: url(../../img/ui/btn_next_hover.png);
+    background-image: url(../../img/ui/btn_next_hover.png);
 }
 
 #card_view_prev_btn.card-view-prev-btn-pressed1 {
-  background-image: url(../../img/ui/btn_prev_base.png);
+    background-image: url(../../img/ui/btn_prev_base.png);
 }
 
 #card_view_prev_btn.card-view-prev-btn-pressed2 {
-  background-image: url(../../img/ui/btn_prev_hover.png);
+    background-image: url(../../img/ui/btn_prev_hover.png);
 }
 
 #card_view_next_btn.card-view-next-btn-pressed1 {
-  background-image: url(../../img/ui/btn_next_base.png);
+    background-image: url(../../img/ui/btn_next_base.png);
 }
 
 #card_view_next_btn.card-view-next-btn-pressed2 {
-  background-image: url(../../img/ui/btn_next_hover.png);
+    background-image: url(../../img/ui/btn_next_hover.png);
 }
 
 #card_view_checkbox {
-  position: absolute;
-  width: 13.594%;
-  height: 4.907%;
-  left: 43.229%;
-  top: 89.296%;
-  background-repeat: none;
-  background-size: cover;
-  z-index: 30;
+    position: absolute;
+    width: 13.594%;
+    height: 4.907%;
+    left: 43.229%;
+    top: 89.296%;
+    background-repeat: none;
+    background-size: cover;
+    z-index: 30;
 }
 
 .card-view-checkbox-unchecked {
-  background-image: url(../../img/ui/checkbox_upgrade.png);
+    background-image: url(../../img/ui/checkbox_upgrade.png);
 }
 
 .card-view-checkbox-unchecked:hover {
-  background-image: url(../../img/ui/checkbox_upgrade_hover.png);
+    background-image: url(../../img/ui/checkbox_upgrade_hover.png);
 }
 
 .card-view-checkbox-checked {
-  background-image: url(../../img/ui/checkbox_upgrade_checked.png);
+    background-image: url(../../img/ui/checkbox_upgrade_checked.png);
 }
 
 .card-view-checkbox-checked:hover {
-  background-image: url(../../img/ui/checkbox_upgrade_checked_hover.png);
+    background-image: url(../../img/ui/checkbox_upgrade_checked_hover.png);
 }
 
 .text-white {
-  color: rgb(255, 247, 222);
+    color: rgb(255, 247, 222);
 }
 
 .text-yellow {
-  color: rgb(239, 200, 81);
+    color: rgb(239, 200, 81);
 }
 
 .text-blue {
-  color: rgb(135, 206, 235);
+    color: rgb(135, 206, 235);
 }
 
 .text-red {
-  color: rgb(255, 101, 99);
+    color: rgb(255, 101, 99);
 }
 
 .text-green {
-  color: rgb(127, 255, 0);
+    color: rgb(127, 255, 0);
 }
 
 .text-pink {
-  color: rgb(238, 130, 238);
+    color: rgb(238, 130, 238);
 }
 
 .text-other {
-  color: rgb(53, 255, 255);
+    color: rgb(53, 255, 255);
 }

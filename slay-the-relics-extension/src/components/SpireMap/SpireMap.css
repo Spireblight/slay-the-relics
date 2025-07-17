@@ -1,0 +1,7 @@
+.spire-map-container {
+    overflow: scroll;
+}
+
+.spire-map {
+    background: url("../../img/map/completemap.png");
+}
