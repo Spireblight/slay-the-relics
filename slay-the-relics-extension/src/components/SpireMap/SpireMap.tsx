@@ -47,8 +47,7 @@ function getBossImage(): HTMLImageElement {
 }
 
 export default function SpireMap(props: {
-  nodes: string[][];
-  edges: number[][][];
+  nodes: { type: string; parents: number[] }[][];
   path: number[][];
 }) {
   const [showMap, setShowMap] = useState(false);
@@ -76,20 +75,18 @@ export default function SpireMap(props: {
           setShowMap((prev) => !prev);
         }}
       ></button>
-      {showMap && props.nodes.length > 0 && props.edges.length > 0 && (
-        <MapCanvas nodes={props.nodes} edges={props.edges} path={props.path} />
+      {showMap && props.nodes.length > 0 && (
+        <MapCanvas nodes={props.nodes} path={props.path} />
       )}
     </div>
   );
 }
 
 function MapCanvas(props: {
-  nodes: string[][];
-  edges: number[][][];
+  nodes: { type: string; parents: number[] }[][];
   path: number[][];
 }) {
   const nodes = props.nodes;
-  const edges = props.edges;
   const path = props.path;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -105,53 +102,48 @@ function MapCanvas(props: {
 
     const bossImg = getBossImage();
     bossImg.onload = () => {
-      ctx.drawImage(bossImg, 3 * 160, 165 + (nodes.length - 1 - 16) * 170);
+      ctx.drawImage(bossImg, 3 * 160, 365 + (nodes.length - 1 - 16) * 170);
     };
 
     const nodeCoordinates = new Map();
-
+    const getLocation = (i: number, j: number) => {
+      const x = 200 + j * 160;
+      const y = 600 + (nodes.length - 1 - i) * 160; // Invert y-axis for canvas
+      return { x: x, y: y };
+    };
+    const lineOffset = 64;
     for (let i = 0; i < nodes.length; i++) {
       for (let j = 0; j < nodes[i].length; j++) {
         const node = nodes[i][j];
-        const img = getImgForNode(node);
-        const x = 200 + j * 160;
-        const y = 400 + (nodes.length - 1 - i) * 160; // Invert y-axis for canvas
+        const img = getImgForNode(node.type);
+        const { x, y } = getLocation(i, j);
         nodeCoordinates.set(`${j},${i}`, { x: x, y: y });
         img.onload = () => {
           ctx.drawImage(img, x, y);
         };
-      }
-    }
-
-    const lineOffset = 64;
-    for (const edge of edges) {
-      const start = nodeCoordinates.get(`${edge[0][0]},${edge[0][1]}`);
-      const end = nodeCoordinates.get(`${edge[1][0]},${edge[1][1]}`);
-
-      if (start && end) {
-        // draw the line from start to end
-        ctx.beginPath();
-        ctx.moveTo(start.x + lineOffset, start.y + lineOffset); // Center the line on the node
-        ctx.lineTo(end.x + lineOffset, end.y + lineOffset); // Center the line on the node
-        ctx.lineWidth = 5;
-        ctx.strokeStyle = "#453d3b";
-        ctx.setLineDash([15]);
-        ctx.stroke();
-        ctx.closePath();
+        for (const parent of node.parents) {
+          const start = getLocation(i - 1, parent);
+          ctx.beginPath();
+          ctx.moveTo(start.x + lineOffset, start.y + lineOffset); // Center the line on the node
+          ctx.lineTo(x + lineOffset, y + lineOffset); // Center the line on the node
+          ctx.lineWidth = 5;
+          ctx.strokeStyle = "#453d3b";
+          ctx.setLineDash([15]);
+          ctx.stroke();
+          ctx.closePath();
+        }
       }
     }
 
     for (const pathNode of path) {
-      const node = nodeCoordinates.get(`${pathNode[0]},${pathNode[1]}`);
-      if (node) {
-        ctx.beginPath();
-        ctx.arc(node.x + lineOffset, node.y + lineOffset, 42, 0, Math.PI * 2);
-        ctx.strokeStyle = "black";
-        ctx.lineWidth = 5;
-        ctx.setLineDash([]);
-        ctx.stroke();
-        ctx.closePath();
-      }
+      const node = getLocation(pathNode[1], pathNode[0]);
+      ctx.beginPath();
+      ctx.arc(node.x + lineOffset, node.y + lineOffset, 42, 0, Math.PI * 2);
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 5;
+      ctx.setLineDash([]);
+      ctx.stroke();
+      ctx.closePath();
     }
   }, []);
 
