@@ -105,7 +105,6 @@ function MapCanvas(props: {
       ctx.drawImage(bossImg, 3 * 160, 365 + (nodes.length - 1 - 16) * 170);
     };
 
-    const nodeCoordinates = new Map();
     const getLocation = (i: number, j: number) => {
       const x = 200 + j * 160;
       const y = 600 + (nodes.length - 1 - i) * 160; // Invert y-axis for canvas
@@ -117,7 +116,6 @@ function MapCanvas(props: {
         const node = nodes[i][j];
         const img = getImgForNode(node.type);
         const { x, y } = getLocation(i, j);
-        nodeCoordinates.set(`${j},${i}`, { x: x, y: y });
         img.onload = () => {
           ctx.drawImage(img, x, y);
         };
