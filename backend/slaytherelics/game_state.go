@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"encoding/base64"
+	"encoding/ascii85"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -114,9 +114,18 @@ func compressJson(data any) (_ string, err error) {
 		return "", fmt.Errorf("failed to close gzip: %w", err)
 	}
 
-	// base64 encode the compressed data
-	res := base64.StdEncoding.EncodeToString(buf.Bytes())
-	return res, nil
+	// ascii 85 encoding
+	var b85Buf bytes.Buffer
+	b85 := ascii85.NewEncoder(&b85Buf)
+	_, err = b85.Write(buf.Bytes())
+	if err != nil {
+		return "", fmt.Errorf("failed to write b85 %w", err)
+	}
+	err = b85.Close()
+	if err != nil {
+		return "", fmt.Errorf("failed to close b85: %w", err)
+	}
+	return "<~" + b85Buf.String() + "~>", nil
 }
 
 func (gs *GameStateManager) send(ctx context.Context, userId string, data any) (err error) {

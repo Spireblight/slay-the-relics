@@ -172,14 +172,13 @@ export function CardGrid(props: {
         top: "6.018%",
         height: "93.982%",
         zIndex: 10,
-        overflow: "scroll",
+        overflowY: "scroll",
         backgroundColor: "rgba(0,0,0,0.9)",
       }}
     >
       <div
-        className={"grid grid-cols-5 grid-flow-row-dense"}
+        className={"grid grid-cols-5 grid-flow-row-dense gap-2 w-2/3"}
         style={{
-          maxWidth: "fit-content",
           zIndex: 10,
         }}
       >

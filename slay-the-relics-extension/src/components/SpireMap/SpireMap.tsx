@@ -152,7 +152,7 @@ function MapCanvas(props: {
         "h-full w-full absolute spire-map-container flex justify-center items-start z-8"
       }
     >
-      <canvas ref={canvasRef} className={"spire-map"}></canvas>
+      <canvas ref={canvasRef} className={"spire-map w-[70%]"}></canvas>
     </div>
   );
 }

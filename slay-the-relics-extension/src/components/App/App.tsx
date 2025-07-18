@@ -5,6 +5,8 @@ import { HitBox, PowerTipBlock, Tip } from "../Tip/Tip";
 import { DeckView } from "../Deck/Deck";
 import PotionBar from "../Potion/Potion";
 import SpireMap from "../SpireMap/SpireMap";
+import { decode } from "base85";
+import { inflate } from "pako";
 
 interface MapNode {
   type: string;
@@ -75,15 +77,12 @@ export default class App extends Component<never, AppState> {
     };
   }
 
-  async decomp(s: string) {
-    // Using Node Buffer for encoder
-    const str = Buffer.from(s, "base64");
-    const cs = new DecompressionStream("gzip");
-    const writer = cs.writable.getWriter();
-    await writer.write(str);
-    await writer.close();
-    const arr = await new Response(cs.readable).arrayBuffer();
-    return Buffer.from(arr).toString("utf-8");
+  decomp(s: string): string {
+    const decodedBytes = decode(s, "ascii85");
+    if (decodedBytes === false) {
+      throw new Error("failed to decode b85 string");
+    }
+    return inflate(decodedBytes, { to: "string" });
   }
 
   async fetchState() {
@@ -108,16 +107,19 @@ export default class App extends Component<never, AppState> {
         ([_, val]) => val !== null && val !== undefined,
       ),
     );
-    this.setState((prev) => ({
-      ...prev,
-      ...filtered,
-    }));
+
+    this.setState((prev) => {
+      return {
+        ...prev,
+        ...filtered,
+      };
+    });
   }
 
   async handleMessage(body: string) {
     let jsString = "";
     try {
-      jsString = await this.decomp(body);
+      jsString = this.decomp(body);
     } catch (e) {
       console.error("Failed to decompress incoming message", e);
       throw e;
@@ -178,6 +180,7 @@ export default class App extends Component<never, AppState> {
   render() {
     const styles: CSSProperties = {
       background: import.meta.env.PROD ? "transparent" : "darkgrey",
+      // background: "transparent",
     };
     return (
       <div className={"App"} style={styles}>
@@ -208,7 +211,7 @@ export default class App extends Component<never, AppState> {
                 0,
               ).convertToHb()}
               tips={t.tips}
-              offset={66}
+              offset={60}
             />
           ))}
         </div>
