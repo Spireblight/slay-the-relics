@@ -11,7 +11,8 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    "sourceRoot": "./src"
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]

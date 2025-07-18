@@ -74,16 +74,17 @@ func (a *API) getGameStateHandler(c *gin.Context) {
 	_, span := o11y.Tracer.Start(c.Request.Context(), "api: get game state")
 	defer o11y.End(&span, &err)
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	channel := c.Param("channel-id")
 	if channel == "" {
 		c.JSON(400, gin.H{"error": "channel-id parameter is required"})
 		return
 	}
+
 	gameState, ok := a.gameStateManager.GetGameState(channel)
 	if !ok {
 		c.JSON(404, gin.H{"error": "game state not found for the specified channel"})
 		return
 	}
-	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	c.JSON(200, gameState)
 }

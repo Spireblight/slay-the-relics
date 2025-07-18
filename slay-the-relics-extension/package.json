@@ -20,10 +20,11 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build && cd dist && zip -r ../build.zip *",
-    "preview": "vite preview",
+    "build": "NODE_ENV=production vite build && cd dist && zip -r ../build.zip *",
+    "preview": "yarn build && vite preview",
     "test": "echo 'Testing is not configured for Vite yet.'",
-    "pretty": "prettier --write ."
+    "pretty": "prettier --write .",
+    "lint": "yarn pretty && yarn eslint"
   },
   "eslintConfig": {
     "extends": [

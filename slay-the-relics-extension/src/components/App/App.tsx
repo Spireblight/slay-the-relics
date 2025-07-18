@@ -37,7 +37,7 @@ class NumHitBox {
   }
 }
 
-interface AppState {
+interface AppState extends Record<string, unknown> {
   gameStateIndex: number;
   channel: string;
 
@@ -82,14 +82,8 @@ export default class App extends Component<never, AppState> {
     const writer = cs.writable.getWriter();
     await writer.write(str);
     await writer.close();
-    return await new Response(cs.readable).arrayBuffer().then(
-      // Resolve Function
-      (arr) => Buffer.from(arr).toString("utf8"),
-      // Reject Function
-      async () => {
-        throw new Error(await Promise.reject(await writer.closed));
-      },
-    );
+    const arr = await new Response(cs.readable).arrayBuffer();
+    return Buffer.from(arr).toString("utf-8");
   }
 
   async fetchState() {
@@ -101,77 +95,74 @@ export default class App extends Component<never, AppState> {
       API_BASE_URL + "/api/v2/game-state/" + this.state.channel,
     );
     if (resp.ok) {
-      this.setState((await resp.json()) as AppState);
+      const js: AppState = (await resp.json()) as AppState;
+      this.setState(js);
       return;
     }
-    console.error("failed to fetch with code: ", resp.status);
+  }
+
+  setStateUpdate(js: AppState) {
+    // Only include keys with non-null values
+    const filtered = Object.fromEntries(
+      Object.entries(js).filter(
+        ([_, val]) => val !== null && val !== undefined,
+      ),
+    );
+    this.setState((prev) => ({
+      ...prev,
+      ...filtered,
+    }));
   }
 
   async handleMessage(body: string) {
-    const jsString = await this.decomp(body);
-    const js = JSON.parse(jsString);
+    let jsString = "";
+    try {
+      jsString = await this.decomp(body);
+    } catch (e) {
+      console.error("Failed to decompress incoming message", e);
+      throw e;
+    }
+
+    const js = JSON.parse(jsString) as AppState;
 
     const index = js["gameStateIndex"];
     if (index === 0 || this.state.gameStateIndex + 1 === index) {
-      this.setState((prev) => {
-        return {
-          gameStateIndex: js["gameStateIndex"],
-          channel: js["channel"],
-          character:
-            js["character"] === null ? prev.character : js["character"],
-          relics: js["relics"] === null ? prev.relics : js["relics"],
-          baseRelicStats:
-            js["baseRelicStats"] === null
-              ? prev.baseRelicStats
-              : js["baseRelicStats"],
-          deck: js["deck"] === null ? prev.deck : js["deck"],
-          potions: js["potions"] === null ? prev.potions : js["potions"],
-          additionalTips:
-            js["additionalTips"] === null
-              ? prev.additionalTips
-              : js["additionalTips"],
-          mapNodes: js["mapNodes"] === null ? prev.mapNodes : js["mapNodes"],
-          mapPath: js["mapPath"] === null ? prev.mapPath : js["mapPath"],
-        };
-      });
+      this.setStateUpdate(js);
       return;
     }
+    if (this.state.gameStateIndex >= index) {
+      // our game state is ahead, do nothing
+      return;
+    }
+
     console.warn("index out of sync: ", this.state.gameStateIndex, " ", index);
     await this.fetchState();
   }
 
-  componentDidMount() {
+  initialLoad(channel: string) {
     this.setState(
-      (prev) => ({ ...prev, channel: "59817220" }),
-      () => this.fetchState(),
+      (prev) => ({ ...prev, channel }),
+      () => {
+        this.fetchState().catch((err) => {
+          console.error(err);
+        });
+      },
     );
+  }
+
+  componentDidMount() {
+    this.initialLoad("59817220");
 
     if (this.twitch) {
       this.twitch.onAuthorized((auth) => {
         const channel = auth.channelId;
-        this.setState((prevState) => ({
-          ...prevState,
-          channel: channel,
-        }));
-        this.fetchState().then(
-          () => {
-            console.log("finished initial fetch");
-          },
-          (e) => {
-            throw new Error("failed initial fetch", e);
-          },
-        );
+        this.initialLoad(channel);
       });
 
       this.twitch.listen("broadcast", (_, __, body) => {
-        this.handleMessage(body).then(
-          () => {
-            console.log("processed message");
-          },
-          (e) => {
-            throw new Error("failed to process message: ", e);
-          },
-        );
+        this.handleMessage(body).catch((err) => {
+          console.error(err);
+        });
       });
     }
   }
@@ -186,7 +177,7 @@ export default class App extends Component<never, AppState> {
 
   render() {
     const styles: CSSProperties = {
-      background: this.twitch === null ? "darkgrey" : "transparent",
+      background: import.meta.env.PROD ? "transparent" : "darkgrey",
     };
     return (
       <div className={"App"} style={styles}>
@@ -205,6 +196,7 @@ export default class App extends Component<never, AppState> {
         <div>
           {this.state.additionalTips.map((t, i) => (
             <PowerTipBlock
+              noExpand={true}
               character={this.state.character}
               key={"additional-tips-" + i}
               magGlass={false}

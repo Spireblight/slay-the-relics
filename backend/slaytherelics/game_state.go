@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"reflect"
 
@@ -53,6 +52,10 @@ type GameState struct {
 	AdditionalTips []TipsBox     `json:"additionalTips"`
 	MapNodes       [][]MapNode   `json:"mapNodes"`
 	MapPath        [][]int       `json:"mapPath"`
+
+	DrawPile    []string `json:"drawPile"`
+	DiscardPile []string `json:"discardPile"`
+	ExhaustPile []string `json:"exhaustPile"`
 }
 
 type GameStateUpdate struct {
@@ -67,6 +70,10 @@ type GameStateUpdate struct {
 	AdditionalTips *[]TipsBox     `json:"additionalTips"`
 	MapNodes       *[][]MapNode   `json:"mapNodes"`
 	MapPath        *[][]int       `json:"mapPath"`
+
+	DrawPile    *[]string `json:"drawPile"`
+	DiscardPile *[]string `json:"discardPile"`
+	ExhaustPile *[]string `json:"exhaustPile"`
 }
 
 type GameStateManager struct {
@@ -96,17 +103,20 @@ func compressJson(data any) (_ string, err error) {
 		return "", fmt.Errorf("failed to marshal data to JSON: %w", err)
 	}
 	var buf bytes.Buffer
-	gz := gzip.NewWriter(&buf)
-	defer func() {
-		if e := gz.Close(); e != nil {
-			err = errors.Join(err, fmt.Errorf("failed to close gzip: %w", e))
-		}
-	}()
-	if _, err := gz.Write(js); err != nil {
+	w, err := gzip.NewWriterLevel(&buf, gzip.BestCompression)
+	if err != nil {
+		return "", fmt.Errorf("failed to create gzip writer: %w", err)
+	}
+	if _, err := w.Write(js); err != nil {
 		return "", fmt.Errorf("failed to compress data to JSON: %w", err)
 	}
+	if err := w.Close(); err != nil {
+		return "", fmt.Errorf("failed to close gzip: %w", err)
+	}
+
 	// base64 encode the compressed data
-	return base64.StdEncoding.EncodeToString(buf.Bytes()), nil
+	res := base64.StdEncoding.EncodeToString(buf.Bytes())
+	return res, nil
 }
 
 func (gs *GameStateManager) send(ctx context.Context, userId string, data any) (err error) {
@@ -186,8 +196,9 @@ func (gs *GameStateManager) ReceiveUpdate(ctx context.Context, userId string, up
 		gs.GameStates[userId] = update
 		return gs.broadcastUpdate(ctx, userId, nil, update)
 	}
+	err := gs.broadcastUpdate(ctx, userId, &current, update)
 	gs.GameStates[userId] = update
-	return gs.broadcastUpdate(ctx, userId, &current, update)
+	return err
 }
 
 func (gs *GameStateManager) GetGameState(userId string) (GameState, bool) {

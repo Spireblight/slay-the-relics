@@ -165,7 +165,9 @@ export function Hitbox(props: {
   if (props.magGlass) {
     classes += " mag-glass";
   }
-  // classes += " outline";
+  if (import.meta.env.DEV) {
+    classes += " outline";
+  }
   const style: CSSProperties = {
     left: props.hitbox.x,
     top: props.hitbox.y,
@@ -273,7 +275,7 @@ export function PowerTipBlock(props: {
     return (
       <Tooltip
         style={{ background: "transparent", zIndex: 30 }}
-        id={props.hitbox as string}
+        id={props.hitbox}
         offset={props.offset}
         place={props.place}
       >
@@ -285,7 +287,7 @@ export function PowerTipBlock(props: {
   return (
     <Hitbox
       magGlass={props.magGlass}
-      hitbox={props.hitbox as HitBox}
+      hitbox={props.hitbox}
       offset={props.offset}
       place={props.place}
     >

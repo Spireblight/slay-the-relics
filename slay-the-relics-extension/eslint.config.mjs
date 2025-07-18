@@ -6,8 +6,34 @@ import markdown from "@eslint/markdown";
 import css from "@eslint/css";
 import { defineConfig, globalIgnores } from "eslint/config";
 
+const tslintConfig = tseslint.config(
+  tseslint.configs.recommendedTypeChecked,
+  {
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "warn", // or "error"
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
+    },
+  },
+  {
+    files: ["**/*.md", "**/*.css", "eslint.config.mjs", "vite.config.mts"],
+    extends: [tseslint.configs.disableTypeChecked],
+  },
+);
 export default defineConfig([
-  globalIgnores(["node_modules", "dist"]),
+  globalIgnores(["node_modules", "dist", "**/*.go"]),
   {
     files: ["**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
     plugins: { js },
@@ -22,7 +48,7 @@ export default defineConfig([
     ...pluginReact.configs.flat["jsx-runtime"],
     files: ["**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
   },
-  ...tseslint.configs.recommended,
+  ...tslintConfig,
   {
     files: ["**/*.md"],
     plugins: { markdown },
