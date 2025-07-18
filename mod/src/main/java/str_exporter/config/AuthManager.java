@@ -33,7 +33,7 @@ public class AuthManager {
         return base64Encoder.encodeToString(randomBytes);
     }
 
-    public void updateAuth() {
+    public void updateAuth(Runnable callback) {
         Thread worker = new Thread(() -> {
             if (this.inProgress.get()) {
                 return;
@@ -44,6 +44,7 @@ public class AuthManager {
                 User user = verifyUser(state);
                 config.setUser(user.user);
                 config.setOathToken(user.token);
+                callback.run();
             } catch (IOException | URISyntaxException | InterruptedException e) {
                 logger.error(e);
             } finally {
@@ -57,9 +58,14 @@ public class AuthManager {
         AuthHttpServer serv = new AuthHttpServer(state);
         serv.start();
 
-        if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-            Desktop.getDesktop().browse(new URI("http://localhost:49000"));
-        }
+        logger.info("Desktop.isDesktopSupported(): " + Desktop.isDesktopSupported());
+        logger.info("Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)): " +
+                Desktop.getDesktop().isSupported(Desktop.Action.BROWSE));
+
+        Desktop.getDesktop().browse(new URI("http://localhost:49000"));
+//        if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+//            Desktop.getDesktop().browse(new URI("http://localhost:49000"));
+//        }
 
         String token = "";
         while (token.isEmpty()) {
