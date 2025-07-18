@@ -19,9 +19,16 @@ type API struct {
 
 	deckLists map[string]string
 	deckLock  *sync.RWMutex
+
+	gameStateManager *slaytherelics.GameStateManager
 }
 
-func New(t *client.Twitch, u *slaytherelics.Users, b *slaytherelics.Broadcaster) (*API, error) {
+func New(
+	t *client.Twitch,
+	u *slaytherelics.Users,
+	b *slaytherelics.Broadcaster,
+	g *slaytherelics.GameStateManager,
+) (*API, error) {
 	r := gin.Default()
 	r.Use(o11y.Middleware)
 
@@ -33,18 +40,21 @@ func New(t *client.Twitch, u *slaytherelics.Users, b *slaytherelics.Broadcaster)
 	api := &API{
 		Router: r,
 
-		twitch:      t,
-		users:       u,
-		broadcaster: b,
-		deckLists:   make(map[string]string),
-		deckLock:    &sync.RWMutex{},
+		twitch:           t,
+		users:            u,
+		broadcaster:      b,
+		gameStateManager: g,
+		deckLists:        make(map[string]string),
+		deckLock:         &sync.RWMutex{},
 	}
 
 	r.POST("/", api.postOldMessageHandler)
 	r.POST("/api/v1/auth", api.Auth)
-	r.POST("/api/v1/login", api.Login)
 	r.POST("/api/v1/message", api.postMessageHandler)
 	r.GET("/deck/:name", api.getDeckHandler)
-	r.GET("/players", api.getPlayersHandler)
+
+	r.POST("/api/v1/login", api.Login)
+	r.POST("/api/v2/game-state", api.postGameStateHandler)
+	r.GET("/api/v2/game-state/:channel-id", api.getGameStateHandler)
 	return api, nil
 }

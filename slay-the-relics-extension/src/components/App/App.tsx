@@ -1,4 +1,4 @@
-import { Component } from "react";
+import { Component, CSSProperties } from "react";
 import "./App.css";
 import { RelicBar } from "../Relic/Relic";
 import { HitBox, PowerTipBlock, Tip } from "../Tip/Tip";
@@ -6,161 +6,52 @@ import { DeckView } from "../Deck/Deck";
 import PotionBar from "../Potion/Potion";
 import SpireMap from "../SpireMap/SpireMap";
 
-const nodes = [
-  [
-    { type: "*", parents: [] },
-    { type: "*", parents: [] },
-    { type: "*", parents: [] },
-    { type: "M", parents: [] },
-    { type: "M", parents: [] },
-    { type: "*", parents: [] },
-    { type: "*", parents: [] },
-  ],
-  [
-    { type: "*", parents: [] },
-    { type: "*", parents: [] },
-    { type: "M", parents: [3] },
-    { type: "?", parents: [3] },
-    { type: "*", parents: [] },
-    { type: "M", parents: [4] },
-    { type: "*", parents: [] },
-  ],
-  [
-    { type: "*", parents: [] },
-    { type: "*", parents: [] },
-    { type: "M", parents: [2] },
-    { type: "?", parents: [3] },
-    { type: "M", parents: [3, 5] },
-    { type: "?", parents: [5] },
-    { type: "$", parents: [5] },
-  ],
-  [
-    { type: "*", parents: [] },
-    { type: "*", parents: [] },
-    { type: "?", parents: [2, 3] },
-    { type: "M", parents: [4] },
-    { type: "*", parents: [] },
-    { type: "?", parents: [5, 6] },
-    { type: "*", parents: [] },
-  ],
-  [
-    { type: "*", parents: [] },
-    { type: "M", parents: [2] },
-    { type: "*", parents: [] },
-    { type: "$", parents: [2] },
-    { type: "M", parents: [3] },
-    { type: "M", parents: [5] },
-    { type: "*", parents: [] },
-  ],
-  [
-    { type: "R", parents: [1] },
-    { type: "*", parents: [] },
-    { type: "*", parents: [] },
-    { type: "*", parents: [] },
-    { type: "R", parents: [3, 4, 5] },
-    { type: "*", parents: [] },
-    { type: "E", parents: [5] },
-  ],
-  [
-    { type: "E", parents: [0] },
-    { type: "*", parents: [] },
-    { type: "*", parents: [] },
-    { type: "E", parents: [4] },
-    { type: "?", parents: [4] },
-    { type: "M", parents: [4] },
-    { type: "R", parents: [6] },
-  ],
-  [
-    { type: "R", parents: [0] },
-    { type: "*", parents: [] },
-    { type: "*", parents: [] },
-    { type: "*", parents: [] },
-    { type: "R", parents: [3, 4] },
-    { type: "E", parents: [5, 6] },
-    { type: "*", parents: [] },
-  ],
-  [
-    { type: "T", parents: [0] },
-    { type: "*", parents: [] },
-    { type: "*", parents: [] },
-    { type: "T", parents: [4] },
-    { type: "T", parents: [4] },
-    { type: "T", parents: [4] },
-    { type: "T", parents: [5] },
-  ],
-  [
-    { type: "*", parents: [] },
-    { type: "?", parents: [0] },
-    { type: "?", parents: [3] },
-    { type: "M", parents: [4] },
-    { type: "M", parents: [5] },
-    { type: "R", parents: [6] },
-    { type: "*", parents: [] },
-  ],
-  [
-    { type: "R", parents: [1] },
-    { type: "*", parents: [] },
-    { type: "E", parents: [2, 3] },
-    { type: "*", parents: [] },
-    { type: "M", parents: [4, 5] },
-    { type: "?", parents: [5] },
-    { type: "*", parents: [] },
-  ],
-  [
-    { type: "*", parents: [] },
-    { type: "?", parents: [0, 2] },
-    { type: "*", parents: [] },
-    { type: "M", parents: [2] },
-    { type: "E", parents: [4] },
-    { type: "*", parents: [] },
-    { type: "E", parents: [5] },
-  ],
-  [
-    { type: "$", parents: [1] },
-    { type: "*", parents: [] },
-    { type: "M", parents: [3] },
-    { type: "?", parents: [4] },
-    { type: "M", parents: [4] },
-    { type: "*", parents: [] },
-    { type: "M", parents: [6] },
-  ],
-  [
-    { type: "M", parents: [0] },
-    { type: "?", parents: [0] },
-    { type: "*", parents: [] },
-    { type: "M", parents: [2] },
-    { type: "M", parents: [3, 4] },
-    { type: "M", parents: [6] },
-    { type: "*", parents: [] },
-  ],
-  [
-    { type: "R", parents: [0, 1] },
-    { type: "*", parents: [] },
-    { type: "*", parents: [] },
-    { type: "*", parents: [] },
-    { type: "R", parents: [3, 4] },
-    { type: "R", parents: [4] },
-    { type: "R", parents: [5] },
-  ],
-];
+interface MapNode {
+  type: string;
+  parents: number[];
+}
 
-const path = [
-  [3, 0],
-  [3, 1],
-  [4, 2],
-];
+class NumHitBox {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  z: number | string;
+
+  constructor(x: number, y: number, w: number, h: number, z: number) {
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+    this.z = z;
+  }
+
+  convertToHb(): HitBox {
+    return {
+      x: this.x + "%",
+      y: this.y + "%",
+      w: this.w + "%",
+      h: this.h + "%",
+      z: this.z,
+    };
+  }
+}
 
 interface AppState {
-  character: string;
+  gameStateIndex: number;
   channel: string;
+
+  character: string;
   relics: string[];
   baseRelicStats: Record<number, (string | number)[]>;
   deck: string[];
   potions: string[];
-  additionalTips: { tips: Tip[]; hitbox: HitBox }[];
-  mapNodes: { type: string; parents: number[] }[][];
+  additionalTips: { tips: Tip[]; hitbox: NumHitBox }[];
+  mapNodes: MapNode[][];
   mapPath: number[][];
 }
+
+const API_BASE_URL = "http://localhost:8888";
 
 export default class App extends Component<never, AppState> {
   private readonly twitch: typeof Twitch.ext | null;
@@ -171,6 +62,7 @@ export default class App extends Component<never, AppState> {
     //if the extension is running on twitch or dev rig, set the shorthand here. otherwise, set to null.
     this.twitch = window.Twitch ? window.Twitch.ext : null;
     this.state = {
+      gameStateIndex: 0,
       relics: [],
       character: "",
       channel: "",
@@ -183,7 +75,77 @@ export default class App extends Component<never, AppState> {
     };
   }
 
+  async decomp(s: string) {
+    // Using Node Buffer for encoder
+    const str = Buffer.from(s, "base64");
+    const cs = new DecompressionStream("gzip");
+    const writer = cs.writable.getWriter();
+    await writer.write(str);
+    await writer.close();
+    return await new Response(cs.readable).arrayBuffer().then(
+      // Resolve Function
+      (arr) => Buffer.from(arr).toString("utf8"),
+      // Reject Function
+      async () => {
+        throw new Error(await Promise.reject(await writer.closed));
+      },
+    );
+  }
+
+  async fetchState() {
+    if (this.state.channel === "") {
+      console.warn("empty channel id");
+      return;
+    }
+    const resp = await fetch(
+      API_BASE_URL + "/api/v2/game-state/" + this.state.channel,
+    );
+    if (resp.ok) {
+      this.setState((await resp.json()) as AppState);
+      return;
+    }
+    console.error("failed to fetch with code: ", resp.status);
+  }
+
+  async handleMessage(body: string) {
+    const jsString = await this.decomp(body);
+    const js = JSON.parse(jsString);
+
+    const index = js["gameStateIndex"];
+    if (index === 0 || this.state.gameStateIndex + 1 === index) {
+      this.setState((prev) => {
+        return {
+          gameStateIndex: js["gameStateIndex"],
+          channel: js["channel"],
+          character:
+            js["character"] === null ? prev.character : js["character"],
+          relics: js["relics"] === null ? prev.relics : js["relics"],
+          baseRelicStats:
+            js["baseRelicStats"] === null
+              ? prev.baseRelicStats
+              : js["baseRelicStats"],
+          deck: js["deck"] === null ? prev.deck : js["deck"],
+          potions: js["potions"] === null ? prev.potions : js["potions"],
+          additionalTips:
+            js["additionalTips"] === null
+              ? prev.additionalTips
+              : js["additionalTips"],
+          mapNodes: js["mapNodes"] === null ? prev.mapNodes : js["mapNodes"],
+          mapPath: js["mapPath"] === null ? prev.mapPath : js["mapPath"],
+        };
+      });
+      return;
+    }
+    console.warn("index out of sync: ", this.state.gameStateIndex, " ", index);
+    await this.fetchState();
+  }
+
   componentDidMount() {
+    this.setState(
+      (prev) => ({ ...prev, channel: "59817220" }),
+      () => this.fetchState(),
+    );
+
     if (this.twitch) {
       this.twitch.onAuthorized((auth) => {
         const channel = auth.channelId;
@@ -191,121 +153,27 @@ export default class App extends Component<never, AppState> {
           ...prevState,
           channel: channel,
         }));
+        this.fetchState().then(
+          () => {
+            console.log("finished initial fetch");
+          },
+          (e) => {
+            throw new Error("failed initial fetch", e);
+          },
+        );
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      this.twitch.listen("broadcast", (target, contentType, body) => {
-        // now that you've got a listener, do something with the result...
-        // do something...
+      this.twitch.listen("broadcast", (_, __, body) => {
+        this.handleMessage(body).then(
+          () => {
+            console.log("processed message");
+          },
+          (e) => {
+            throw new Error("failed to process message: ", e);
+          },
+        );
       });
     }
-
-    this.setState((prev) => ({ ...prev, character: "ironclad" }));
-    this.setState((prevState) => ({
-      ...prevState,
-      relics: [
-        "Akabeko",
-        "Tiny House",
-        "Sacred Bark",
-        "Bottled Flame",
-        "Happy Flower",
-        "Sundial",
-        "Cursed Key",
-      ],
-    }));
-    this.setState((prevState) => ({
-      ...prevState,
-      baseRelicStats: { 3: ["#yFiend #yFire"] },
-    }));
-
-    this.setState((prevState) => ({
-      ...prevState,
-      deck: [
-        "Wraith Form v2",
-        "Predator",
-        "Glass Knife",
-        "Dagger Throw",
-        "Backstab",
-        "Grand Finale",
-        "Deflect",
-        "Tools of the Trade",
-        "Accuracy",
-        "Poisoned Stab+",
-        "Heel Hook",
-        "Slice",
-        "Noxious Fumes",
-        "Prepared",
-        "Phantasmal Killer",
-        "Endless Agony",
-        "Poisoned Stab",
-        "Blur",
-        "Predator",
-        "Calculated Gamble",
-        "Wraith Form v2",
-        "Predator",
-        "Glass Knife+",
-        "Dagger Throw",
-        "Backstab",
-        "Grand Finale",
-        "Deflect",
-        "Tools of the Trade",
-        "Accuracy",
-        "Poisoned Stab",
-        "Heel Hook",
-        "Slice",
-        "Noxious Fumes",
-        "Prepared",
-        "Phantasmal Killer+",
-        "Endless Agony",
-        "Poisoned Stab",
-        "Blur",
-        "Predator",
-        "Calculated Gamble",
-      ],
-    }));
-
-    this.setState((prevState) => ({
-      ...prevState,
-      potions: ["", "Energy Potion", "", "Weak Potion"],
-    }));
-
-    const playerHitbox: HitBox = {
-      x: "19.06%",
-      y: "43.15%",
-      w: "11.46%",
-      h: "33.52%",
-      z: 1,
-    };
-    const playerTips: Tip[] = [
-      new Tip("tip 1", "description 1", null),
-      new Tip("tip 1", Array(100).fill("a").join(" "), null),
-      new Tip("tip 2", "description 2", null),
-      new Tip("tip 3", "description 3", null),
-      new Tip("tip 4", "description 4", null),
-      new Tip("tip 5", "description 5", null),
-      new Tip("tip 6", "description 6", null),
-      new Tip("tip 1", Array(100).fill("a").join(" "), null),
-      new Tip("tip 2", "description 2", null),
-      new Tip("tip 3", "description 3", null),
-      new Tip("tip 4", "description 4", null),
-      new Tip("tip 5", "description 5", null),
-      new Tip("tip 6", "description 6", null),
-    ];
-    this.setState((prevState) => ({
-      ...prevState,
-      additionalTips: [
-        {
-          hitbox: playerHitbox,
-          tips: playerTips,
-        },
-      ],
-    }));
-
-    this.setState((prevState) => ({
-      ...prevState,
-      mapNodes: nodes,
-      mapPath: path,
-    }));
   }
 
   componentWillUnmount() {
@@ -317,8 +185,11 @@ export default class App extends Component<never, AppState> {
   }
 
   render() {
+    const styles: CSSProperties = {
+      background: this.twitch === null ? "darkgrey" : "transparent",
+    };
     return (
-      <div className={"App"}>
+      <div className={"App"} style={styles}>
         <SpireMap nodes={this.state.mapNodes} path={this.state.mapPath} />
         <RelicBar
           relics={this.state.relics}
@@ -337,7 +208,13 @@ export default class App extends Component<never, AppState> {
               character={this.state.character}
               key={"additional-tips-" + i}
               magGlass={false}
-              hitbox={t.hitbox}
+              hitbox={new NumHitBox(
+                t.hitbox.x,
+                t.hitbox.y,
+                t.hitbox.w,
+                t.hitbox.h,
+                0,
+              ).convertToHb()}
               tips={t.tips}
               offset={66}
             />

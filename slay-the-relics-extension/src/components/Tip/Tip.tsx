@@ -27,29 +27,29 @@ export class Tip {
   }
 }
 
-function EnergyOrbElement(props: { character: string; key: string }) {
+function EnergyOrbElement(props: { character: string; keyP: string }) {
   switch (props.character) {
     case "silent":
       return (
-        <span key={props.key}>
+        <span key={props.keyP}>
           <img src={orbTheSilent} alt={"Orb"} className={"inline-block"} />
         </span>
       );
     case "defect":
       return (
-        <span key={props.key}>
+        <span key={props.keyP}>
           <img src={orbDefect} alt={"Orb"} className={"inline-block"} />;
         </span>
       );
     case "watcher":
       return (
-        <span key={props.key}>
+        <span key={props.keyP}>
           <img src={orbWatcher} alt={"Orb"} className={"inline-block"} />;
         </span>
       );
     default:
       return (
-        <span key={props.key}>
+        <span key={props.keyP}>
           <img src={orbIronclad} alt={"Orb"} className={"inline-block"} />
         </span>
       );
@@ -61,21 +61,21 @@ function TipPartElement(props: {
   index: number;
   character: string;
 }) {
-  const { part, index } = props;
-  const key = "tip-part-" + index;
+  const part = props.part;
+  const key = "tip-part-" + props.index;
 
   if (part === "NL") {
     return <br key={key} />;
   } else if (part === "[E]") {
-    return <EnergyOrbElement character={props.character} key={key} />;
+    return <EnergyOrbElement character={props.character} keyP={key} />;
   } else if (part === "[R]") {
-    return <EnergyOrbElement character={"ironclad"} key={key} />;
+    return <EnergyOrbElement character={"ironclad"} keyP={key} />;
   } else if (part === "[G]") {
-    return <EnergyOrbElement character={"silent"} key={key} />;
+    return <EnergyOrbElement character={"silent"} keyP={key} />;
   } else if (part === "[B]") {
-    return <EnergyOrbElement character={"defect"} key={key} />;
+    return <EnergyOrbElement character={"defect"} keyP={key} />;
   } else if (part === "[W]") {
-    return <EnergyOrbElement character={"watcher"} key={key} />;
+    return <EnergyOrbElement character={"watcher"} keyP={key} />;
   } else if (part.startsWith("#y")) {
     return (
       <span key={key} className={"text-yellow"}>
@@ -165,7 +165,7 @@ export function Hitbox(props: {
   if (props.magGlass) {
     classes += " mag-glass";
   }
-  classes += " outline";
+  // classes += " outline";
   const style: CSSProperties = {
     left: props.hitbox.x,
     top: props.hitbox.y,

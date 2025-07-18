@@ -63,9 +63,13 @@ func initialize(ctx context.Context, cfg config.Config) (_ *api.API, cancel func
 	if err != nil {
 		return nil, cancel, err
 	}
+	gameStateManager, err := slaytherelics.NewGameStateManager(twitchClient)
+	if err != nil {
+		return nil, cancel, err
+	}
 
 	span.AddEvent("starting server")
-	a, err := api.New(twitchClient, users, broadcaster)
+	a, err := api.New(twitchClient, users, broadcaster, gameStateManager)
 	return a, cancel, err
 }
 
