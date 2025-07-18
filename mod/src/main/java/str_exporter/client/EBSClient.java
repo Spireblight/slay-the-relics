@@ -34,12 +34,20 @@ public class EBSClient {
         doRequest("POST", "/api/v1/message", message, String.class);
     }
 
+    public void postGameState(String gs) throws IOException {
+        doRequest("POST", "/api/v2/game-state", gs, HashMap.class);
+    }
+
     private <T> T doRequest(String method, String path, String body, Type outputType) throws IOException {
         URL url = new URL(config.getApiUrl() + path);
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.setRequestMethod(method);
         con.setRequestProperty("Content-Type", "application/json");
         con.setRequestProperty("Accept", "application/json");
+        if (config.areCredentialsValid()) {
+            con.setRequestProperty("Authorization", "Bearer " + config.getOathToken());
+            con.setRequestProperty("User-ID", config.getUser());
+        }
         con.setDoOutput(true);
 
         OutputStream os = con.getOutputStream();
