@@ -175,7 +175,7 @@ export function CardGrid(props: {
         height: "93.982%",
         zIndex: 10,
         overflowY: "scroll",
-        backgroundColor: "rgba(0,0,0,0.9)",
+        backgroundColor: "rgba(0,0,0,0.85)",
       }}
     >
       <div

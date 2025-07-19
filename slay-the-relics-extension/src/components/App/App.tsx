@@ -43,6 +43,7 @@ interface AppState extends Record<string, unknown> {
   channel: string;
 
   character: string;
+  boss: string;
   relics: string[];
   baseRelicStats: Record<number, (string | number)[]>;
   deck: string[];
@@ -70,6 +71,7 @@ export default class App extends Component<never, AppState> {
     this.state = {
       relics: [],
       character: "",
+      boss: "",
       channel: "",
       additionalTips: [],
       deck: [],
@@ -192,7 +194,11 @@ export default class App extends Component<never, AppState> {
     };
     return (
       <div className={"App"} style={styles}>
-        <SpireMap nodes={this.state.mapNodes} path={this.state.mapPath} />
+        <SpireMap
+          boss={this.state.boss}
+          nodes={this.state.mapNodes}
+          path={this.state.mapPath}
+        />
         <RelicBar
           relics={this.state.relics}
           character={this.state.character}

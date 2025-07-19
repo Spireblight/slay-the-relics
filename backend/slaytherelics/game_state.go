@@ -45,6 +45,7 @@ type GameState struct {
 	Channel string `json:"channel"`
 
 	Character      string        `json:"character"`
+	Boss           string        `json:"boss"`
 	Relics         []string      `json:"relics"`
 	BaseRelicStats map[int][]any `json:"baseRelicStats"`
 	Deck           []string      `json:"deck"`
@@ -63,6 +64,7 @@ type GameStateUpdate struct {
 	Channel string `json:"channel"`
 
 	Character      *string        `json:"character"`
+	Boss           *string        `json:"boss"`
 	Relics         *[]string      `json:"relics"`
 	BaseRelicStats *map[int][]any `json:"baseRelicStats"`
 	Deck           *[]string      `json:"deck"`
@@ -150,6 +152,7 @@ func (gs *GameStateManager) send(ctx context.Context, userId string, data any) (
 	return nil
 }
 
+//nolint:funlen
 func (gs *GameStateManager) broadcastUpdate(ctx context.Context,
 	userId string, prev *GameState, update GameState) (err error) {
 	ctx, span := o11y.Tracer.Start(ctx, "game_state: broadcast game state update")
@@ -163,6 +166,7 @@ func (gs *GameStateManager) broadcastUpdate(ctx context.Context,
 		Index:          update.Index,
 		Channel:        update.Channel,
 		Character:      nil,
+		Boss:           nil,
 		Relics:         nil,
 		BaseRelicStats: nil,
 		Deck:           nil,
@@ -176,6 +180,9 @@ func (gs *GameStateManager) broadcastUpdate(ctx context.Context,
 	}
 	if prev.Character != update.Character {
 		updateValue.Character = &update.Character
+	}
+	if prev.Boss != update.Boss {
+		updateValue.Boss = &update.Boss
 	}
 	if !reflect.DeepEqual(prev.Relics, update.Relics) {
 		updateValue.Relics = &update.Relics

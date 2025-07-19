@@ -1,5 +1,6 @@
 import "./SpireMap.css";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ReturnButton } from "../Buttons/Buttons";
 
 const scalingFactor = 0.7;
 
@@ -32,15 +33,16 @@ function getImgForNode(node: string): HTMLImageElement {
   return img;
 }
 
-function getBossImage(): HTMLImageElement {
+function getBossImage(boss: string): HTMLImageElement {
   const img = new Image();
-  img.src = "/img/map/boss/automaton.png";
+  img.src = `/img/map/boss/${boss}.png`;
   return img;
 }
 
 export default function SpireMap(props: {
   nodes: { type: string; parents: number[] }[][];
   path: number[][];
+  boss: string;
 }) {
   const [showMap, setShowMap] = useState(false);
   const handleKeyDown = useCallback(
@@ -60,15 +62,20 @@ export default function SpireMap(props: {
 
   return (
     <div>
-      <button
-        className={"button-border"}
-        id={"map_button"}
-        onClick={() => {
-          setShowMap((prev) => !prev);
-        }}
-      ></button>
+      {props.nodes.length > 0 && (
+        <button
+          className={"button-border"}
+          id={"map_button"}
+          onClick={() => {
+            setShowMap((prev) => !prev);
+          }}
+        ></button>
+      )}
       {showMap && props.nodes.length > 0 && (
-        <MapCanvas nodes={props.nodes} path={props.path} />
+        <MapCanvas boss={props.boss} nodes={props.nodes} path={props.path} />
+      )}
+      {showMap && props.nodes.length > 0 && (
+        <ReturnButton onClick={() => setShowMap(false)} text={"Close Map"} />
       )}
     </div>
   );
@@ -77,6 +84,7 @@ export default function SpireMap(props: {
 function MapCanvas(props: {
   nodes: { type: string; parents: number[] }[][];
   path: number[][];
+  boss: string;
 }) {
   const nodes = props.nodes;
   const path = props.path;
@@ -92,7 +100,7 @@ function MapCanvas(props: {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.scale(scalingFactor, scalingFactor);
 
-    const bossImg = getBossImage();
+    const bossImg = getBossImage(props.boss);
     bossImg.onload = () => {
       ctx.drawImage(bossImg, 3 * 160, 365 + (nodes.length - 1 - 16) * 170);
     };
