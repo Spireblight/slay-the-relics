@@ -9,8 +9,8 @@ Please report any issues or suggestions in the #slay-the-relics channel.
 ## Requesting Access
 
 If you want to test the Slay the Relics beta, please request access in the #slay-the-relics channel
-on the Discord server.
-Both viewers and streamers will need to request access.
+on the Discord server. Please provide your Twitch username. Both viewers and streamers will need to
+request access.
 
 ## Streamers
 
