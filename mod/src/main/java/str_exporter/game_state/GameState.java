@@ -2,6 +2,7 @@ package str_exporter.game_state;
 
 
 import com.megacrit.cardcrawl.cards.AbstractCard;
+import com.megacrit.cardcrawl.cards.CardGroup;
 import com.megacrit.cardcrawl.characters.AbstractPlayer;
 import com.megacrit.cardcrawl.core.CardCrawlGame;
 import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
@@ -9,6 +10,8 @@ import com.megacrit.cardcrawl.relics.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static str_exporter.game_state.TipsBox.isInCombat;
 
 public class GameState {
     public int gameStateIndex = 0;
@@ -18,6 +21,9 @@ public class GameState {
     public List<String> relics;
     public Map<Integer, List<Object>> baseRelicStats;
     public List<String> deck;
+    public List<String> drawPile;
+    public List<String> discardPile;
+    public List<String> exhaustPile;
     public List<String> potions;
     public List<TipsBox> additionalTips;
     public List<ArrayList<MapNode>> mapNodes;
@@ -39,6 +45,9 @@ public class GameState {
         this.additionalTips = new ArrayList<>();
         this.mapNodes = new ArrayList<>();
         this.mapPath = new ArrayList<>();
+        this.drawPile = new ArrayList<>();
+        this.discardPile = new ArrayList<>();
+        this.exhaustPile = new ArrayList<>();
     }
 
 
@@ -99,6 +108,7 @@ public class GameState {
             this.mapPath.add(cord);
         }
     }
+
 
     public void poll() {
         boolean inRun = CardCrawlGame.isInARun() && CardCrawlGame.dungeon != null && AbstractDungeon.player != null;
@@ -169,6 +179,40 @@ public class GameState {
                         .map(GameState::normalCardName)
                         .filter(Objects::nonNull)
                         .collect(Collectors.toList());
+
+        if (isInCombat()) {
+            this.discardPile =
+                    player.discardPile.group.stream()
+                            .map(GameState::normalCardName)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList());
+
+            CardGroup drawPileCopy = new CardGroup(CardGroup.CardGroupType.UNSPECIFIED);
+            CardGroup exhaustPileCopy = new CardGroup(CardGroup.CardGroupType.UNSPECIFIED);
+            player.drawPile.group.forEach(drawPileCopy::addToBottom);
+            player.exhaustPile.group.forEach(exhaustPileCopy::addToBottom);
+            if (!player.hasRelic("Frozen Eye")) {
+                drawPileCopy.sortAlphabetically(true);
+                drawPileCopy.sortByRarityPlusStatusCardType(true);
+                exhaustPileCopy.sortAlphabetically(true);
+                exhaustPileCopy.sortByRarityPlusStatusCardType(true);
+            }
+            this.drawPile =
+                    drawPileCopy.group.stream()
+                            .map(GameState::normalCardName)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList());
+            this.exhaustPile = exhaustPileCopy.group.stream()
+                    .map(GameState::normalCardName)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+        } else {
+            this.discardPile = new ArrayList<>();
+            this.exhaustPile = new ArrayList<>();
+            this.drawPile = new ArrayList<>();
+        }
+
+
         this.potions = player.potions.stream().map(p -> p.ID).collect(Collectors.toList());
         this.additionalTips = TipsBox.allTips();
         this.mapNodes = makeMap();
