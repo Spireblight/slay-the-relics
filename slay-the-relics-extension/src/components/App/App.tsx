@@ -56,7 +56,9 @@ interface AppState extends Record<string, unknown> {
   mapPath: number[][];
 }
 
-const API_BASE_URL = "http://localhost:8888";
+const API_BASE_URL = import.meta.env.PROD
+  ? "https://slay-the-relics.baalorlord.tv"
+  : "http://localhost:8888";
 
 export default class App extends Component<never, AppState> {
   private readonly twitch: typeof Twitch.ext | null;
@@ -163,7 +165,7 @@ export default class App extends Component<never, AppState> {
   }
 
   componentDidMount() {
-    this.initialLoad("59817220");
+    // this.initialLoad("59817220");
 
     if (this.twitch) {
       this.twitch.onAuthorized((auth) => {
