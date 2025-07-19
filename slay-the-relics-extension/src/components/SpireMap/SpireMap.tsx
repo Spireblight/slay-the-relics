@@ -8,25 +8,25 @@ function getImgForNode(node: string): HTMLImageElement {
   const img = new Image();
   switch (node) {
     case "M":
-      img.src = "/img/map/monster.png";
+      img.src = "./img/map/monster.png";
       break;
     case "?":
-      img.src = "/img/map/event.png";
+      img.src = "./img/map/event.png";
       break;
     case "R":
-      img.src = "/img/map/rest.png";
+      img.src = "./img/map/rest.png";
       break;
     case "E":
-      img.src = "/img/map/elite.png";
+      img.src = "./img/map/elite.png";
       break;
     case "$":
-      img.src = "/img/map/shop.png";
+      img.src = "./img/map/shop.png";
       break;
     case "T":
-      img.src = "/img/map/chest.png";
+      img.src = "./img/map/chest.png";
       break;
     default:
-      img.src = "/img/map/empty.png";
+      img.src = "./img/map/empty.png";
       break;
   }
 
@@ -35,7 +35,7 @@ function getImgForNode(node: string): HTMLImageElement {
 
 function getBossImage(boss: string): HTMLImageElement {
   const img = new Image();
-  img.src = `/img/map/boss/${boss}.png`;
+  img.src = `./img/map/boss/${boss}.png`;
   return img;
 }
 

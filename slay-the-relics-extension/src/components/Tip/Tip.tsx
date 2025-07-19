@@ -29,7 +29,7 @@ function EnergyOrbElement(props: { character: string; keyP: string }) {
       return (
         <span key={props.keyP}>
           <img
-            src={"/img/orbs/orbTheSilent.png"}
+            src={"./img/orbs/orbTheSilent.png"}
             alt={"Orb"}
             className={"inline-block energy-orb-img"}
           />
@@ -39,7 +39,7 @@ function EnergyOrbElement(props: { character: string; keyP: string }) {
       return (
         <span key={props.keyP}>
           <img
-            src={"/img/orbs/orbDefect.png"}
+            src={"./img/orbs/orbDefect.png"}
             alt={"Orb"}
             className={"inline-block energy-orb-img"}
           />
@@ -50,7 +50,7 @@ function EnergyOrbElement(props: { character: string; keyP: string }) {
       return (
         <span key={props.keyP}>
           <img
-            src={"/img/orbs/orbWatcher.png"}
+            src={"./img/orbs/orbWatcher.png"}
             alt={"Orb"}
             className={"inline-block energy-orb-img"}
           />
@@ -61,7 +61,7 @@ function EnergyOrbElement(props: { character: string; keyP: string }) {
       return (
         <span key={props.keyP}>
           <img
-            src={"/img/orbs/orbIronclad.png"}
+            src={"./img/orbs/orbIronclad.png"}
             alt={"Orb"}
             className={"inline-block energy-orb-img"}
           />
@@ -165,7 +165,7 @@ export function PowerTip(props: { tip: Tip; character: string }) {
         {props.tip.img && (
           <img
             className={"powertip-img inline-block"}
-            src={"/img/" + props.tip.img + ".png"}
+            src={"./img/" + props.tip.img + ".png"}
             alt={""}
           />
         )}

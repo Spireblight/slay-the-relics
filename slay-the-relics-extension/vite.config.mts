@@ -17,6 +17,7 @@ export default defineConfig({
     outDir: "dist",
     emptyOutDir: true,
   },
+  base: "./",
   server: {
     open: "/video_overlay.html",
     port: 8080,
