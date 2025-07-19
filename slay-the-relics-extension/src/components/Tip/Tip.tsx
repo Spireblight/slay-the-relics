@@ -32,25 +32,43 @@ function EnergyOrbElement(props: { character: string; keyP: string }) {
     case "silent":
       return (
         <span key={props.keyP}>
-          <img src={orbTheSilent} alt={"Orb"} className={"inline-block"} />
+          <img
+            src={orbTheSilent}
+            alt={"Orb"}
+            className={"inline-block energy-orb-img"}
+          />
         </span>
       );
     case "defect":
       return (
         <span key={props.keyP}>
-          <img src={orbDefect} alt={"Orb"} className={"inline-block"} />;
+          <img
+            src={orbDefect}
+            alt={"Orb"}
+            className={"inline-block energy-orb-img"}
+          />
+          ;
         </span>
       );
     case "watcher":
       return (
         <span key={props.keyP}>
-          <img src={orbWatcher} alt={"Orb"} className={"inline-block"} />;
+          <img
+            src={orbWatcher}
+            alt={"Orb"}
+            className={"inline-block energy-orb-img"}
+          />
+          ;
         </span>
       );
     default:
       return (
         <span key={props.keyP}>
-          <img src={orbIronclad} alt={"Orb"} className={"inline-block"} />
+          <img
+            src={orbIronclad}
+            alt={"Orb"}
+            className={"inline-block energy-orb-img"}
+          />
         </span>
       );
   }
