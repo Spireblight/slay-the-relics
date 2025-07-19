@@ -18,6 +18,7 @@ public class GameState {
     public String channel;
 
     public String character;
+    public String boss;
     public List<String> relics;
     public Map<Integer, List<Object>> baseRelicStats;
     public List<String> deck;
@@ -38,6 +39,7 @@ public class GameState {
     public void resetState() {
         this.gameStateIndex = 0;
         this.character = "";
+        this.boss = "";
         this.relics = new ArrayList<>();
         this.baseRelicStats = new HashMap<>();
         this.deck = new ArrayList<>();
@@ -110,6 +112,33 @@ public class GameState {
     }
 
 
+    private static String getBossName() {
+        String key = AbstractDungeon.bossKey;
+        switch (key) {
+            case "The Guardian":
+                return "guardian";
+            case "Hexaghost":
+                return "hexaghost";
+            case "Slime Boss":
+                return "slime";
+            case "Collector":
+                return "collector";
+            case "Automaton":
+                return "automaton";
+            case "Champ":
+                return "champ";
+            case "Awakened One":
+                return "awakened";
+            case "Time Eater":
+                return "timeeater";
+            case "Donu and Deca":
+                return "donu";
+            case "The Heart":
+                return "heart";
+        }
+        return "";
+    }
+
     public void poll() {
         boolean inRun = CardCrawlGame.isInARun() && CardCrawlGame.dungeon != null && AbstractDungeon.player != null;
         AbstractPlayer player = AbstractDungeon.player;
@@ -132,7 +161,7 @@ public class GameState {
                 this.character = "watcher";
                 break;
         }
-
+        this.boss = getBossName();
         this.relics = new ArrayList<>();
         this.baseRelicStats = new HashMap<>();
         for (int i = 0; i < player.relics.size(); ++i) {
@@ -202,10 +231,11 @@ public class GameState {
                             .map(GameState::normalCardName)
                             .filter(Objects::nonNull)
                             .collect(Collectors.toList());
-            this.exhaustPile = exhaustPileCopy.group.stream()
-                    .map(GameState::normalCardName)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
+            this.exhaustPile =
+                    exhaustPileCopy.group.stream()
+                            .map(GameState::normalCardName)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList());
         } else {
             this.discardPile = new ArrayList<>();
             this.exhaustPile = new ArrayList<>();
