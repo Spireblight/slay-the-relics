@@ -142,8 +142,8 @@ div.powertip-header {
 }
 
 .card-view-card {
-  width: var(--card-view-card-width);
-  height: var(--card-view-card-height);
+  width: 36%;
+  aspect-ratio: 12.361 / 15.926;
   background-size: cover;
 }
 
@@ -202,13 +202,13 @@ div.powertip-header {
 
 #card_view_checkbox {
   position: absolute;
-  width: 13.594%;
-  height: 4.907%;
-  left: 43.229%;
-  top: 89.296%;
-  background: no-repeat;
+  aspect-ratio: 261/53;
+  width: 22.594%;
+  left: 40.229%;
+  top: 91.296%;
+  background-repeat: no-repeat;
   background-size: cover;
-  z-index: 30;
+  z-index: 31;
 }
 
 .card-view-checkbox-unchecked {

@@ -40,7 +40,6 @@ class NumHitBox {
 }
 
 interface AppState extends Record<string, unknown> {
-  gameStateIndex: number;
   channel: string;
 
   character: string;
@@ -57,14 +56,15 @@ const API_BASE_URL = "http://localhost:8888";
 
 export default class App extends Component<never, AppState> {
   private readonly twitch: typeof Twitch.ext | null;
+  private gameStateIndex: number;
 
   constructor(props: never) {
     super(props);
 
     //if the extension is running on twitch or dev rig, set the shorthand here. otherwise, set to null.
     this.twitch = window.Twitch ? window.Twitch.ext : null;
+    this.gameStateIndex = 0;
     this.state = {
-      gameStateIndex: 0,
       relics: [],
       character: "",
       channel: "",
@@ -94,8 +94,9 @@ export default class App extends Component<never, AppState> {
       API_BASE_URL + "/api/v2/game-state/" + this.state.channel,
     );
     if (resp.ok) {
-      const js: AppState = (await resp.json()) as AppState;
-      this.setState(js);
+      const js = (await resp.json()) as Record<string, unknown>;
+      this.gameStateIndex = js["gameStateIndex"] as number;
+      this.setState(js as AppState);
       return;
     }
   }
@@ -125,19 +126,20 @@ export default class App extends Component<never, AppState> {
       throw e;
     }
 
-    const js = JSON.parse(jsString) as AppState;
+    const js = JSON.parse(jsString) as Record<string, unknown>;
 
-    const index = js["gameStateIndex"];
-    if (index === 0 || this.state.gameStateIndex + 1 === index) {
-      this.setStateUpdate(js);
+    const index = js["gameStateIndex"] as number;
+    if (index === 0 || this.gameStateIndex + 1 === index) {
+      this.gameStateIndex = index;
+      this.setStateUpdate(js as AppState);
       return;
     }
-    if (this.state.gameStateIndex >= index) {
+    if (this.gameStateIndex >= index) {
       // our game state is ahead, do nothing
       return;
     }
 
-    console.warn("index out of sync: ", this.state.gameStateIndex, " ", index);
+    console.warn("index out of sync: ", this.gameStateIndex, " ", index);
     await this.fetchState();
   }
 
