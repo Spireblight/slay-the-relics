@@ -46,6 +46,9 @@ interface AppState extends Record<string, unknown> {
   relics: string[];
   baseRelicStats: Record<number, (string | number)[]>;
   deck: string[];
+  drawPile: string[];
+  discardPile: string[];
+  exhaustPile: string[];
   potions: string[];
   additionalTips: { tips: Tip[]; hitbox: NumHitBox }[];
   mapNodes: MapNode[][];
@@ -73,6 +76,9 @@ export default class App extends Component<never, AppState> {
       potions: [],
       mapNodes: [],
       mapPath: [],
+      drawPile: [],
+      discardPile: [],
+      exhaustPile: [],
       baseRelicStats: {},
     };
   }
@@ -197,7 +203,26 @@ export default class App extends Component<never, AppState> {
           relics={this.state.relics}
           character={this.state.character}
         />
-        <DeckView cards={this.state.deck} character={this.state.character} />
+        <DeckView
+          cards={this.state.deck}
+          character={this.state.character}
+          what={"deck"}
+        />
+        <DeckView
+          cards={this.state.drawPile}
+          character={this.state.character}
+          what={"draw"}
+        />
+        <DeckView
+          cards={this.state.discardPile}
+          character={this.state.character}
+          what={"discard"}
+        />
+        <DeckView
+          cards={this.state.exhaustPile}
+          character={this.state.character}
+          what={"exhaust"}
+        />
         <div>
           {this.state.additionalTips.map((t, i) => (
             <PowerTipBlock

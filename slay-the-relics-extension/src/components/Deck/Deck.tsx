@@ -9,6 +9,9 @@ import {
 } from "react";
 import { CardsLoc } from "../tmp";
 import { KeywordTips, PowerTipBlock } from "../Tip/Tip";
+import { ReturnButton } from "../Buttons/Buttons";
+
+type DeckType = "deck" | "draw" | "discard" | "exhaust";
 
 function formatForSlaytabase(val: string): string {
   return val
@@ -122,9 +125,8 @@ export function CardView(props: {
 
   return (
     <div
-      id={"card_view"}
       className={
-        "absolute justify-center items-center w-screen h-screen " +
+        "absolute justify-center items-center w-screen h-screen card-view " +
         props.display
       }
     >
@@ -205,12 +207,33 @@ export function DeckButton(props: {
   setDeckViewMode: Dispatch<SetStateAction<string>>;
   setCardViewMode: Dispatch<SetStateAction<string>>;
   resetCardView: () => void;
+  what: DeckType;
 }) {
+  const locationStyle: CSSProperties = {
+    display: props.cardCount ? "block" : "none",
+  };
+  switch (props.what) {
+    case "deck":
+      locationStyle.top = "0%";
+      locationStyle.right = "4.322%";
+      break;
+    case "draw":
+      locationStyle.top = "89%";
+      locationStyle.left = "2.322%";
+      break;
+    case "discard":
+      locationStyle.top = "89%";
+      locationStyle.left = "94.322%";
+      break;
+    case "exhaust":
+      locationStyle.top = "78.5%";
+      locationStyle.left = "94.56%";
+      break;
+  }
+
   return (
     <button
-      style={{
-        display: props.cardCount ? "block" : "none",
-      }}
+      style={locationStyle}
       className={"button-border"}
       id={"deck_button"}
       onClick={() => {
@@ -226,7 +249,11 @@ export function DeckButton(props: {
   );
 }
 
-export function DeckView(props: { cards: string[]; character: string }) {
+export function DeckView(props: {
+  cards: string[];
+  character: string;
+  what: DeckType;
+}) {
   const [deckViewMode, setDeckViewMode] = useState("hidden");
   const [cardViewMode, setCardViewMode] = useState("hidden");
   const [cardIndex, setCardIndex] = useState(0);
@@ -282,9 +309,35 @@ export function DeckView(props: { cards: string[]; character: string }) {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
+  let closeText = "Close Deck";
+  switch (props.what) {
+    case "deck":
+      closeText = "Close Deck";
+      break;
+    case "draw":
+      closeText = "Close Draw Pile";
+      break;
+    case "discard":
+      closeText = "Close Discard Pile";
+      break;
+    case "exhaust":
+      closeText = "Close Exhaust Pile";
+      break;
+  }
   return (
     <div>
+      {deckViewMode === "flex" && (
+        <ReturnButton
+          text={closeText}
+          onClick={() => {
+            setDeckViewMode("hidden");
+            setCardViewMode("hidden");
+            resetCardView();
+          }}
+        />
+      )}
       <DeckButton
+        what={props.what}
         cardCount={props.cards.length}
         deckViewMode={deckViewMode}
         setDeckViewMode={setDeckViewMode}

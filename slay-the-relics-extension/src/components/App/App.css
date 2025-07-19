@@ -117,14 +117,31 @@ div.powertip-header {
   position: absolute;
   width: 3.438%;
   height: 8%;
-  top: 0%;
-  right: 4.322%; /*.053*/
   z-index: 9;
   background-size: contain;
   background-position-y: -0.046rem;
   /* border: 1px solid rgba(255,255,255,0.0); */
   box-sizing: border-box;
   background-repeat: no-repeat;
+}
+
+.return_btn {
+  position: absolute;
+  left: 0%;
+  top: 76.35%;
+  width: 14.323%;
+  height: 9.259%;
+  background-size: cover;
+  background-image: url("../../img/ui/btn_return_base.png");
+  background-repeat: no-repeat;
+  z-index: 30;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.return_btn:hover {
+  background-image: url("../../img/ui/btn_return_hover.png");
 }
 
 #map_button {
@@ -147,7 +164,7 @@ div.powertip-header {
   background-size: cover;
 }
 
-#card_view {
+.card-view {
   z-index: 20;
   background-color: rgba(0, 0, 0, 0.9);
 }

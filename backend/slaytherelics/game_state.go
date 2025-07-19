@@ -170,6 +170,9 @@ func (gs *GameStateManager) broadcastUpdate(ctx context.Context,
 		AdditionalTips: nil,
 		MapNodes:       nil,
 		MapPath:        nil,
+		DiscardPile:    nil,
+		DrawPile:       nil,
+		ExhaustPile:    nil,
 	}
 	if prev.Character != update.Character {
 		updateValue.Character = &update.Character
@@ -182,6 +185,15 @@ func (gs *GameStateManager) broadcastUpdate(ctx context.Context,
 	}
 	if !reflect.DeepEqual(prev.Deck, update.Deck) {
 		updateValue.Deck = &update.Deck
+	}
+	if !reflect.DeepEqual(prev.DrawPile, update.DrawPile) {
+		updateValue.DrawPile = &update.DrawPile
+	}
+	if !reflect.DeepEqual(prev.DiscardPile, update.DiscardPile) {
+		updateValue.DiscardPile = &update.DiscardPile
+	}
+	if !reflect.DeepEqual(prev.ExhaustPile, update.ExhaustPile) {
+		updateValue.ExhaustPile = &update.ExhaustPile
 	}
 	if !reflect.DeepEqual(prev.Potions, update.Potions) {
 		updateValue.Potions = &update.Potions
