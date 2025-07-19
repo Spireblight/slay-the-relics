@@ -1,7 +1,7 @@
-import { CSSProperties, ReactNode, useId } from "react";
+import { CSSProperties, ReactNode, useContext, useId } from "react";
 
 import { PlacesType, Tooltip } from "react-tooltip";
-import { KeywordsLoc } from "../tmp";
+import { Keywords, LocalizationContext } from "../Localization/Localization";
 
 export type HitBox = {
   x: string;
@@ -212,13 +212,13 @@ export function Hitbox(props: {
   );
 }
 
-export function LookupKeyword(raw: string) {
+export function LookupKeyword(raw: string, keywords: Keywords) {
   let key = raw.toLowerCase().replaceAll(".", "").replaceAll(",", "");
   if (key.startsWith("#")) {
     key = key.substring(2);
   }
 
-  for (const [k, v] of Object.entries(KeywordsLoc)) {
+  for (const [k, v] of Object.entries(keywords)) {
     if (k.toLowerCase() === key) {
       return k;
     }
@@ -232,11 +232,11 @@ export function LookupKeyword(raw: string) {
   return null;
 }
 
-export function KeywordTips(paragraph: string): Tip[] {
+export function KeywordTips(paragraph: string, keywords: Keywords): Tip[] {
   const keywordKeys: string[] = [];
   const parts = paragraph.split(" ");
   parts.forEach((part) => {
-    const keyword = LookupKeyword(part);
+    const keyword = LookupKeyword(part, keywords);
     if (keyword && !keywordKeys.includes(keyword)) {
       keywordKeys.push(keyword);
     }
@@ -246,18 +246,18 @@ export function KeywordTips(paragraph: string): Tip[] {
     str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 
   return keywordKeys.map((key) => {
-    const keyword = KeywordsLoc[key];
+    const keyword = keywords[key];
     return new Tip(capitalize(key), keyword.DESCRIPTION, "");
   });
 }
 
-function expandTips(tips: Tip[]): Tip[] {
+function expandTips(tips: Tip[], keywords: Keywords): Tip[] {
   let paragraphs = "";
 
   tips.forEach((tip) => {
     paragraphs += tip.description + " ";
   });
-  const keywordTips = KeywordTips(paragraphs);
+  const keywordTips = KeywordTips(paragraphs, keywords);
 
   return tips.concat(keywordTips);
 }
@@ -271,11 +271,12 @@ export function PowerTipBlock(props: {
   place?: PlacesType;
   noExpand?: boolean;
 }) {
+  const keywords = useContext(LocalizationContext).keywords;
   let allTips = [];
   if (props.noExpand) {
     allTips = props.tips;
   } else {
-    allTips = expandTips(props.tips);
+    allTips = expandTips(props.tips, keywords);
   }
 
   const tooltipBlock = (
@@ -325,7 +326,8 @@ export function PowerTipStrip(props: {
   offset?: number;
   place?: PlacesType;
 }) {
-  const allTips = expandTips(props.tips);
+  const keywords = useContext(LocalizationContext).keywords;
+  const allTips = expandTips(props.tips, keywords);
   return (
     <Hitbox
       magGlass={props.magGlass}

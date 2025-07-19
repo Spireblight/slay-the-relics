@@ -1,13 +1,16 @@
 import { PowerTipStrip, Tip } from "../Tip/Tip";
-import { PotionsLoc } from "../tmp";
+import { LocalizationContext, Potions } from "../Localization/Localization";
+import { useContext } from "react";
 
 const potionX = 33.3; // should come from the game PotionX / Settings.Width * 100
 const POTION_HITBOX_WIDTH = 2.916; // %
 
-function getPotionTips(potion: string, hasBark: boolean): Tip[] {
-  // This function should return an array of Tip objects based on the potion name
-  // For now, we will return a dummy array
-  const potionLoc = PotionsLoc[potion || "Potion Slot"];
+function getPotionTips(
+  potion: string,
+  hasBark: boolean,
+  potionsLoc: Potions,
+): Tip[] {
+  const potionLoc = potionsLoc[potion || "Potion Slot"];
   if (!potionLoc) {
     return [new Tip(potion, "unknown potion", null)];
   }
@@ -27,6 +30,7 @@ export default function PotionBar(props: {
 }) {
   const hasBark =
     props.relics.includes("Sacred Bark") || props.relics.includes("SacredBark");
+  const potionsLoc = useContext(LocalizationContext).potions;
   return (
     <div>
       {props.potions.map((potion, i) => {
@@ -43,7 +47,7 @@ export default function PotionBar(props: {
               w: "2.916%",
               h: "5.556%",
             }}
-            tips={getPotionTips(potion, hasBark)}
+            tips={getPotionTips(potion, hasBark, potionsLoc)}
           />
         );
       })}

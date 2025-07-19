@@ -3,13 +3,14 @@ import {
   Dispatch,
   SetStateAction,
   useCallback,
+  useContext,
   useEffect,
   useId,
   useState,
 } from "react";
-import { CardsLoc } from "../tmp";
 import { KeywordTips, PowerTipBlock } from "../Tip/Tip";
 import { ReturnButton } from "../Buttons/Buttons";
+import { Cards, LocalizationContext } from "../Localization/Localization";
 
 type DeckType = "deck" | "draw" | "discard" | "exhaust";
 
@@ -27,11 +28,11 @@ function slaytabaseUrlForCard(card: string): string {
   return `https://raw.githubusercontent.com/OceanUwU/slaytabase/refs/heads/main/docs/slay%20the%20spire/cards/${formattedCard}.png`;
 }
 
-function lookupCard(name: string): string {
+function lookupCard(name: string, cardsLoc: Cards): string {
   const normalName = name.replaceAll("+", "");
   const upgraded = name.includes("+");
 
-  const cardLoc = CardsLoc[normalName];
+  const cardLoc = cardsLoc[normalName];
   if (!cardLoc) {
     return "";
   }
@@ -52,12 +53,13 @@ export function Card(props: {
   if (props.name.includes("+")) {
     backgroundPosition = "100% 0%";
   }
+  const loc = useContext(LocalizationContext);
 
   const cardStyle: CSSProperties = {
     backgroundImage: `url(${slaytabaseUrlForCard(props.name)})`,
     backgroundPosition: backgroundPosition,
   };
-  const tips = KeywordTips(lookupCard(props.name));
+  const tips = KeywordTips(lookupCard(props.name, loc.cards), loc.keywords);
   const tooltipId = useId();
   return (
     <div

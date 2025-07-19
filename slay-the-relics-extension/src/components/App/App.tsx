@@ -7,6 +7,11 @@ import PotionBar from "../Potion/Potion";
 import SpireMap from "../SpireMap/SpireMap";
 import { decode } from "base85";
 import { inflate } from "pako";
+import {
+  fetchLocalizationData,
+  LocalizationContext,
+  LocalizationData,
+} from "../Localization/Localization";
 
 interface MapNode {
   type: string;
@@ -39,7 +44,7 @@ class NumHitBox {
   }
 }
 
-interface AppState extends Record<string, unknown> {
+interface RunState extends Record<string, unknown> {
   channel: string;
 
   character: string;
@@ -56,9 +61,15 @@ interface AppState extends Record<string, unknown> {
   mapPath: number[][];
 }
 
-const API_BASE_URL = import.meta.env.PROD
-  ? "https://slay-the-relics.baalorlord.tv"
-  : "http://localhost:8888";
+interface AppState {
+  runState: RunState;
+  localization: LocalizationData;
+}
+
+// const API_BASE_URL = import.meta.env.PROD
+//   ? "https://slay-the-relics.baalorlord.tv"
+//   : "http://localhost:8888";
+const API_BASE_URL = "https://slay-the-relics.baalorlord.tv";
 
 export default class App extends Component<never, AppState> {
   private readonly twitch: typeof Twitch.ext | null;
@@ -71,19 +82,27 @@ export default class App extends Component<never, AppState> {
     this.twitch = window.Twitch ? window.Twitch.ext : null;
     this.gameStateIndex = 0;
     this.state = {
-      relics: [],
-      character: "",
-      boss: "",
-      channel: "",
-      additionalTips: [],
-      deck: [],
-      potions: [],
-      mapNodes: [],
-      mapPath: [],
-      drawPile: [],
-      discardPile: [],
-      exhaustPile: [],
-      baseRelicStats: {},
+      localization: {
+        cards: {},
+        keywords: {},
+        relics: {},
+        potions: {},
+      },
+      runState: {
+        relics: [],
+        character: "",
+        boss: "",
+        channel: "",
+        additionalTips: [],
+        deck: [],
+        potions: [],
+        mapNodes: [],
+        mapPath: [],
+        drawPile: [],
+        discardPile: [],
+        exhaustPile: [],
+        baseRelicStats: {},
+      },
     };
   }
 
@@ -95,23 +114,32 @@ export default class App extends Component<never, AppState> {
     return inflate(decodedBytes, { to: "string" });
   }
 
+  setRunState(runState: RunState) {
+    this.setState((prev) => {
+      return {
+        ...prev,
+        runState: runState,
+      };
+    });
+  }
+
   async fetchState() {
-    if (this.state.channel === "") {
+    if (this.state.runState.channel === "") {
       console.warn("empty channel id");
       return;
     }
     const resp = await fetch(
-      API_BASE_URL + "/api/v2/game-state/" + this.state.channel,
+      API_BASE_URL + "/api/v2/game-state/" + this.state.runState.channel,
     );
     if (resp.ok) {
       const js = (await resp.json()) as Record<string, unknown>;
       this.gameStateIndex = js["gameStateIndex"] as number;
-      this.setState(js as AppState);
+      this.setRunState(js as RunState);
       return;
     }
   }
 
-  setStateUpdate(js: AppState) {
+  setStateUpdate(js: RunState) {
     // Only include keys with non-null values
     const filtered = Object.fromEntries(
       Object.entries(js).filter(
@@ -122,7 +150,10 @@ export default class App extends Component<never, AppState> {
     this.setState((prev) => {
       return {
         ...prev,
-        ...filtered,
+        runState: {
+          ...prev.runState,
+          ...filtered,
+        },
       };
     });
   }
@@ -141,7 +172,7 @@ export default class App extends Component<never, AppState> {
     const index = js["gameStateIndex"] as number;
     if (index === 0 || this.gameStateIndex + 1 === index) {
       this.gameStateIndex = index;
-      this.setStateUpdate(js as AppState);
+      this.setStateUpdate(js as RunState);
       return;
     }
     if (this.gameStateIndex >= index) {
@@ -153,13 +184,22 @@ export default class App extends Component<never, AppState> {
     await this.fetchState();
   }
 
-  initialLoad(channel: string) {
+  async initialLoad(channel: string) {
+    const loc = await fetchLocalizationData();
     this.setState(
-      (prev) => ({ ...prev, channel }),
+      (prev) => ({ ...prev, localization: loc }),
       () => {
-        this.fetchState().catch((err) => {
-          console.error(err);
-        });
+        this.setState(
+          (prev) => ({
+            ...prev,
+            runState: { ...prev.runState, channel: channel },
+          }),
+          () => {
+            this.fetchState().catch((err) => {
+              console.error(err);
+            });
+          },
+        );
       },
     );
   }
@@ -170,7 +210,9 @@ export default class App extends Component<never, AppState> {
     if (this.twitch) {
       this.twitch.onAuthorized((auth) => {
         const channel = auth.channelId;
-        this.initialLoad(channel);
+        this.initialLoad(channel).catch((err) =>
+          console.error("Failed to load initial state", err),
+        );
       });
 
       this.twitch.listen("broadcast", (_, __, body) => {
@@ -195,62 +237,64 @@ export default class App extends Component<never, AppState> {
       // background: "transparent",
     };
     return (
-      <div className={"App"} style={styles}>
-        <SpireMap
-          boss={this.state.boss}
-          nodes={this.state.mapNodes}
-          path={this.state.mapPath}
-        />
-        <RelicBar
-          relics={this.state.relics}
-          character={this.state.character}
-          relicParams={this.state.baseRelicStats}
-        />
-        <PotionBar
-          potions={this.state.potions}
-          relics={this.state.relics}
-          character={this.state.character}
-        />
-        <DeckView
-          cards={this.state.deck}
-          character={this.state.character}
-          what={"deck"}
-        />
-        <DeckView
-          cards={this.state.drawPile}
-          character={this.state.character}
-          what={"draw"}
-        />
-        <DeckView
-          cards={this.state.discardPile}
-          character={this.state.character}
-          what={"discard"}
-        />
-        <DeckView
-          cards={this.state.exhaustPile}
-          character={this.state.character}
-          what={"exhaust"}
-        />
-        <div>
-          {this.state.additionalTips.map((t, i) => (
-            <PowerTipBlock
-              noExpand={true}
-              character={this.state.character}
-              key={"additional-tips-" + i}
-              magGlass={false}
-              hitbox={new NumHitBox(
-                t.hitbox.x,
-                t.hitbox.y,
-                t.hitbox.w,
-                t.hitbox.h,
-                0,
-              ).convertToHb()}
-              tips={t.tips}
-              offset={60}
-            />
-          ))}
+      <LocalizationContext value={this.state.localization}>
+        <div className={"App"} style={styles}>
+          <SpireMap
+            boss={this.state.runState.boss}
+            nodes={this.state.runState.mapNodes}
+            path={this.state.runState.mapPath}
+          />
+          <RelicBar
+            relics={this.state.runState.relics}
+            character={this.state.runState.character}
+            relicParams={this.state.runState.baseRelicStats}
+          />
+          <PotionBar
+            potions={this.state.runState.potions}
+            relics={this.state.runState.relics}
+            character={this.state.runState.character}
+          />
+          <DeckView
+            cards={this.state.runState.deck}
+            character={this.state.runState.character}
+            what={"deck"}
+          />
+          <DeckView
+            cards={this.state.runState.drawPile}
+            character={this.state.runState.character}
+            what={"draw"}
+          />
+          <DeckView
+            cards={this.state.runState.discardPile}
+            character={this.state.runState.character}
+            what={"discard"}
+          />
+          <DeckView
+            cards={this.state.runState.exhaustPile}
+            character={this.state.runState.character}
+            what={"exhaust"}
+          />
+          <div>
+            {this.state.runState.additionalTips.map((t, i) => (
+              <PowerTipBlock
+                noExpand={true}
+                character={this.state.runState.character}
+                key={"additional-tips-" + i}
+                magGlass={false}
+                hitbox={new NumHitBox(
+                  t.hitbox.x,
+                  t.hitbox.y,
+                  t.hitbox.w,
+                  t.hitbox.h,
+                  0,
+                ).convertToHb()}
+                tips={t.tips}
+                offset={60}
+              />
+            ))}
+          </div>
         </div>
-      </div>
+      </LocalizationContext>
     );
   }
 }

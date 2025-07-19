@@ -1,5 +1,6 @@
 import { HitBox, PowerTipStrip, Tip } from "../Tip/Tip";
-import { RelicsLoc } from "../tmp";
+import { LocalizationContext, Relics } from "../Localization/Localization";
+import { useContext } from "react";
 
 const RELIC_HITBOX_WIDTH = 3.75; //%
 const RELIC_HITBOX_LEFT = 1.458; //%
@@ -27,8 +28,9 @@ export class RelicProp {
 export function LookupRelic(
   relic: string,
   relicParams: (string | number)[],
+  relicsLoc: Relics,
 ): RelicProp {
-  const relicLoc = RelicsLoc[relic];
+  const relicLoc = relicsLoc[relic];
   if (relicLoc === undefined || relicLoc === null) {
     return new RelicProp(relic, relic, []);
   }
@@ -75,6 +77,7 @@ export function RelicBar(props: {
   relicParams: Record<number, (string | number)[]>;
 }) {
   const multiPage = props.relics.length > RELIC_PER_PAGE ? 1 : 0;
+  const relicsLoc = useContext(LocalizationContext).relics;
   return (
     <div id={"relic-bar"}>
       {props.relics.slice(0, RELIC_PER_PAGE).map((relic, i) => {
@@ -95,7 +98,7 @@ export function RelicBar(props: {
             character={props.character}
             key={"relic-bar-" + i}
             hitbox={hitbox}
-            relic={LookupRelic(relic, relicParams)}
+            relic={LookupRelic(relic, relicParams, relicsLoc)}
           />
         );
       })}
