@@ -1,9 +1,5 @@
 import { CSSProperties, ReactNode, useId } from "react";
 
-import orbIronclad from "../../img/orbs/orbIronclad.png";
-import orbTheSilent from "../../img/orbs/orbTheSilent.png";
-import orbDefect from "../../img/orbs/orbDefect.png";
-import orbWatcher from "../../img/orbs/orbWatcher.png";
 import { PlacesType, Tooltip } from "react-tooltip";
 import { KeywordsLoc } from "../tmp";
 
@@ -33,7 +29,7 @@ function EnergyOrbElement(props: { character: string; keyP: string }) {
       return (
         <span key={props.keyP}>
           <img
-            src={orbTheSilent}
+            src={"/img/orbs/orbTheSilent.png"}
             alt={"Orb"}
             className={"inline-block energy-orb-img"}
           />
@@ -43,7 +39,7 @@ function EnergyOrbElement(props: { character: string; keyP: string }) {
       return (
         <span key={props.keyP}>
           <img
-            src={orbDefect}
+            src={"/img/orbs/orbDefect.png"}
             alt={"Orb"}
             className={"inline-block energy-orb-img"}
           />
@@ -54,7 +50,7 @@ function EnergyOrbElement(props: { character: string; keyP: string }) {
       return (
         <span key={props.keyP}>
           <img
-            src={orbWatcher}
+            src={"/img/orbs/orbWatcher.png"}
             alt={"Orb"}
             className={"inline-block energy-orb-img"}
           />
@@ -65,7 +61,7 @@ function EnergyOrbElement(props: { character: string; keyP: string }) {
       return (
         <span key={props.keyP}>
           <img
-            src={orbIronclad}
+            src={"/img/orbs/orbIronclad.png"}
             alt={"Orb"}
             className={"inline-block energy-orb-img"}
           />
@@ -166,6 +162,13 @@ export function PowerTip(props: { tip: Tip; character: string }) {
     <div className={"powertip powertip-shadow"}>
       <div className={"powertip-header outline-black " + headerImgClass}>
         {props.tip.header}
+        {props.tip.img && (
+          <img
+            className={"powertip-img inline-block"}
+            src={"/img/" + props.tip.img + ".png"}
+            alt={""}
+          />
+        )}
       </div>
       <TipBody character={props.character} raw={props.tip.description} />
     </div>

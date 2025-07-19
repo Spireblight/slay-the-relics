@@ -28,7 +28,7 @@ div.hitbox {
 
 .mag-glass {
   cursor:
-    url(../../img/ui/magGlass2.png) 24 25,
+    url("/img/ui/magGlass2.png") 24 25,
     auto;
 }
 
@@ -132,7 +132,7 @@ div.powertip-header {
   width: 14.323%;
   height: 9.259%;
   background-size: cover;
-  background-image: url("../../img/ui/btn_return_base.png");
+  background-image: url("/img/ui/btn_return_base.png");
   background-repeat: no-repeat;
   z-index: 30;
   text-align: center;
@@ -141,7 +141,7 @@ div.powertip-header {
 }
 
 .return_btn:hover {
-  background-image: url("../../img/ui/btn_return_hover.png");
+  background-image: url("/img/ui/btn_return_hover.png");
 }
 
 #map_button {
@@ -175,14 +175,14 @@ div.powertip-header {
   height: 14.815%;
   left: 24.74%;
   top: 40.13%;
-  background-image: url(../../img/ui/btn_prev_base.png);
+  background-image: url("/img/ui/btn_prev_base.png");
   background-repeat: no-repeat;
   background-size: cover;
   z-index: 30;
 }
 
 #card_view_prev_btn:hover {
-  background-image: url(../../img/ui/btn_prev_hover.png);
+  background-image: url("/img/ui/btn_prev_hover.png");
 }
 
 #card_view_next_btn {
@@ -191,30 +191,30 @@ div.powertip-header {
   height: 14.815%;
   left: 67.813%;
   top: 40.13%;
-  background-image: url(../../img/ui/btn_next_base.png);
+  background-image: url("/img/ui/btn_next_base.png");
   background-repeat: no-repeat;
   background-size: cover;
   z-index: 30;
 }
 
 #card_view_next_btn:hover {
-  background-image: url(../../img/ui/btn_next_hover.png);
+  background-image: url("/img/ui/btn_next_hover.png");
 }
 
 #card_view_prev_btn.card-view-prev-btn-pressed1 {
-  background-image: url(../../img/ui/btn_prev_base.png);
+  background-image: url("/img/ui/btn_prev_base.png");
 }
 
 #card_view_prev_btn.card-view-prev-btn-pressed2 {
-  background-image: url(../../img/ui/btn_prev_hover.png);
+  background-image: url("/img/ui/btn_prev_hover.png");
 }
 
 #card_view_next_btn.card-view-next-btn-pressed1 {
-  background-image: url(../../img/ui/btn_next_base.png);
+  background-image: url("/img/ui/btn_next_base.png");
 }
 
 #card_view_next_btn.card-view-next-btn-pressed2 {
-  background-image: url(../../img/ui/btn_next_hover.png);
+  background-image: url("/img/ui/btn_next_hover.png");
 }
 
 #card_view_checkbox {
@@ -229,19 +229,19 @@ div.powertip-header {
 }
 
 .card-view-checkbox-unchecked {
-  background-image: url(../../img/ui/checkbox_upgrade.png);
+  background-image: url("/img/ui/checkbox_upgrade.png");
 }
 
 .card-view-checkbox-unchecked:hover {
-  background-image: url(../../img/ui/checkbox_upgrade_hover.png);
+  background-image: url("/img/ui/checkbox_upgrade_hover.png");
 }
 
 .card-view-checkbox-checked {
-  background-image: url(../../img/ui/checkbox_upgrade_checked.png);
+  background-image: url("/img/ui/checkbox_upgrade_checked.png");
 }
 
 .card-view-checkbox-checked:hover {
-  background-image: url(../../img/ui/checkbox_upgrade_checked_hover.png);
+  background-image: url("/img/ui/checkbox_upgrade_checked_hover.png");
 }
 
 .text-white {

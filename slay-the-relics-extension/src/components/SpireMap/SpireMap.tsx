@@ -1,13 +1,5 @@
 import "./SpireMap.css";
 import { useCallback, useEffect, useRef, useState } from "react";
-import empty from "../../img/map/empty.png";
-import monster from "../../img/map/monster.png";
-import event from "../../img/map/event.png";
-import rest from "../../img/map/rest.png";
-import elite from "../../img/map/elite.png";
-import shop from "../../img/map/shop.png";
-import chest from "../../img/map/chest.png";
-import automaton from "../../img/map/boss/automaton.png";
 
 const scalingFactor = 0.7;
 
@@ -15,25 +7,25 @@ function getImgForNode(node: string): HTMLImageElement {
   const img = new Image();
   switch (node) {
     case "M":
-      img.src = monster;
+      img.src = "/img/map/monster.png";
       break;
     case "?":
-      img.src = event;
+      img.src = "/img/map/event.png";
       break;
     case "R":
-      img.src = rest;
+      img.src = "/img/map/rest.png";
       break;
     case "E":
-      img.src = elite;
+      img.src = "/img/map/elite.png";
       break;
     case "$":
-      img.src = shop;
+      img.src = "/img/map/shop.png";
       break;
     case "T":
-      img.src = chest;
+      img.src = "/img/map/chest.png";
       break;
     default:
-      img.src = empty;
+      img.src = "/img/map/empty.png";
       break;
   }
 
@@ -42,7 +34,7 @@ function getImgForNode(node: string): HTMLImageElement {
 
 function getBossImage(): HTMLImageElement {
   const img = new Image();
-  img.src = automaton;
+  img.src = "/img/map/boss/automaton.png";
   return img;
 }
 
