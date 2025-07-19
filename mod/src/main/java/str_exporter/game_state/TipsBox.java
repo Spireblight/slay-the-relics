@@ -7,6 +7,7 @@ import com.megacrit.cardcrawl.helpers.Hitbox;
 import com.megacrit.cardcrawl.helpers.PowerTip;
 import com.megacrit.cardcrawl.monsters.AbstractMonster;
 import com.megacrit.cardcrawl.powers.AbstractPower;
+import com.megacrit.cardcrawl.rooms.AbstractRoom;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,15 +22,22 @@ public class TipsBox {
         this.hitbox = hitbox;
     }
 
+    public static boolean isInCombat() {
+        AbstractRoom room = AbstractDungeon.getCurrRoom();
+        return room != null && room.phase == AbstractRoom.RoomPhase.COMBAT;
+    }
+
     public static List<TipsBox> allTips() {
         ArrayList<TipsBox> tips = new ArrayList<>();
 
-        TipsBox player = playerTipsBox();
-        tips.add(player);
+        if (isInCombat()) {
+            TipsBox player = playerTipsBox();
+            tips.add(player);
+            getMonsters().forEach(monster -> {
+                tips.add(monsterTipsBox(monster));
+            });
+        }
 
-        getMonsters().forEach(monster -> {
-            tips.add(monsterTipsBox(monster));
-        });
         return tips.stream().filter(t -> !t.tips.isEmpty()).collect(Collectors.toList());
     }
 
