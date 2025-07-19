@@ -26,7 +26,7 @@
     "preview": "yarn build && vite preview",
     "test": "echo 'Testing is not configured for Vite yet.'",
     "pretty": "prettier --write .",
-    "lint": "yarn pretty && yarn eslint"
+    "lint": "yarn pretty && yarn tsc -b && yarn eslint"
   },
   "eslintConfig": {
     "extends": [
