@@ -66,10 +66,9 @@ interface AppState {
   localization: LocalizationData;
 }
 
-// const API_BASE_URL = import.meta.env.PROD
-//   ? "https://slay-the-relics.baalorlord.tv"
-//   : "http://localhost:8888";
-const API_BASE_URL = "https://slay-the-relics.baalorlord.tv";
+const API_BASE_URL = import.meta.env.PROD
+  ? "https://slay-the-relics.baalorlord.tv"
+  : "http://localhost:8888";
 
 export default class App extends Component<never, AppState> {
   private readonly twitch: typeof Twitch.ext | null;
