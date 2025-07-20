@@ -37,5 +37,5 @@ request access.
     - Discard pile view
     - Exhaust pile view
 - **Not implemented yet**:
-    - 3rd party mod integration (Relic stats, Streak tracker, etc.)
+    - 3rd party mod integration (Streak tracker, etc.)
     - Custom contend mod support (e.g. custom relics, cards, etc.)
