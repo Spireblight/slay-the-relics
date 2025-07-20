@@ -7,6 +7,7 @@ import com.megacrit.cardcrawl.characters.AbstractPlayer;
 import com.megacrit.cardcrawl.core.CardCrawlGame;
 import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
 import com.megacrit.cardcrawl.relics.*;
+import str_exporter.game_state.integrations.Integrations;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -21,6 +22,7 @@ public class GameState {
     public String boss;
     public List<String> relics;
     public Map<Integer, List<Object>> baseRelicStats;
+    public List<Tip> relicTips = new ArrayList<>();
     public List<String> deck;
     public List<String> drawPile;
     public List<String> discardPile;
@@ -41,6 +43,7 @@ public class GameState {
         this.character = "";
         this.boss = "";
         this.relics = new ArrayList<>();
+        this.relicTips = new ArrayList<>();
         this.baseRelicStats = new HashMap<>();
         this.deck = new ArrayList<>();
         this.potions = new ArrayList<>();
@@ -165,6 +168,9 @@ public class GameState {
         this.relics = new ArrayList<>();
         this.baseRelicStats = new HashMap<>();
         for (int i = 0; i < player.relics.size(); ++i) {
+            if (i > 25) { // Limit to 25 relics
+                break;
+            }
             AbstractRelic relic = player.relics.get(i);
             this.relics.add(relic.relicId);
 
@@ -203,6 +209,7 @@ public class GameState {
             }
         }
 
+        this.relicTips = Integrations.relicStatsIntegration.relicTips(this.relics);
         this.deck =
                 player.masterDeck.group.stream()
                         .map(GameState::normalCardName)
@@ -253,7 +260,9 @@ public class GameState {
     private ArrayList<ArrayList<MapNode>> makeMap() {
         ArrayList<ArrayList<MapNode>> map = new ArrayList<>();
 //        ArrayList<ArrayList<ArrayList<Integer>>> edges = new ArrayList<>();
-
+        if (AbstractDungeon.map == null) {
+            return map;
+        }
         AbstractDungeon.map.forEach(n -> {
             ArrayList<MapNode> floor = new ArrayList<>();
             n.forEach(node -> {
