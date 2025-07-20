@@ -168,7 +168,13 @@ export default class App extends Component<never, AppState> {
       throw e;
     }
 
-    const js = JSON.parse(jsString) as Record<string, unknown>;
+    let js: Record<string, unknown> = {};
+    try {
+      js = JSON.parse(jsString) as Record<string, unknown>;
+    } catch (e) {
+      console.error("Failed to parse incoming message", jsString);
+      throw e;
+    }
 
     const index = js["gameStateIndex"] as number;
     if (index === 0 || this.gameStateIndex + 1 === index) {
