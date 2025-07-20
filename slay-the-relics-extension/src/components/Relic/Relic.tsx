@@ -29,6 +29,7 @@ export function LookupRelic(
   relic: string,
   relicParams: (string | number)[],
   relicsLoc: Relics,
+  relicTip: Tip | null,
 ): RelicProp {
   const relicLoc = relicsLoc[relic];
   if (relicLoc === undefined || relicLoc === null) {
@@ -52,7 +53,7 @@ export function LookupRelic(
   }
 
   const description = descriptionParts.join("");
-  return new RelicProp(relic, description, []);
+  return new RelicProp(relic, description, relicTip === null ? [] : [relicTip]);
 }
 
 export function Relic(props: {
@@ -75,6 +76,7 @@ export function RelicBar(props: {
   character: string;
   relics: string[];
   relicParams: Record<number, (string | number)[]>;
+  relicTips: Tip[];
 }) {
   const multiPage = props.relics.length > RELIC_PER_PAGE ? 1 : 0;
   const relicsLoc = useContext(LocalizationContext).relics;
@@ -93,12 +95,24 @@ export function RelicBar(props: {
           h: 8.666 + "%",
         };
         const relicParams = props.relicParams[i] || [];
+        const lookupRelicTip = (i: number) => {
+          if (props.relicTips.length > i) {
+            return props.relicTips[i];
+          }
+          return null;
+        };
+
         return (
           <Relic
             character={props.character}
             key={"relic-bar-" + i}
             hitbox={hitbox}
-            relic={LookupRelic(relic, relicParams, relicsLoc)}
+            relic={LookupRelic(
+              relic,
+              relicParams,
+              relicsLoc,
+              lookupRelicTip(i),
+            )}
           />
         );
       })}

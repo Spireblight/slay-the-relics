@@ -51,6 +51,7 @@ interface RunState extends Record<string, unknown> {
   boss: string;
   relics: string[];
   baseRelicStats: Record<number, (string | number)[]>;
+  relicTips: Tip[];
   deck: string[];
   drawPile: string[];
   discardPile: string[];
@@ -93,6 +94,7 @@ export default class App extends Component<never, AppState> {
         boss: "",
         channel: "",
         additionalTips: [],
+        relicTips: [],
         deck: [],
         potions: [],
         mapNodes: [],
@@ -246,6 +248,7 @@ export default class App extends Component<never, AppState> {
             relics={this.state.runState.relics}
             character={this.state.runState.character}
             relicParams={this.state.runState.baseRelicStats}
+            relicTips={this.state.runState.relicTips}
           />
           <PotionBar
             potions={this.state.runState.potions}

@@ -48,6 +48,7 @@ type GameState struct {
 	Boss           string        `json:"boss"`
 	Relics         []string      `json:"relics"`
 	BaseRelicStats map[int][]any `json:"baseRelicStats"`
+	RelicTips      []Tip         `json:"relicTips"`
 	Deck           []string      `json:"deck"`
 	Potions        []string      `json:"potions"`
 	AdditionalTips []TipsBox     `json:"additionalTips"`
@@ -67,6 +68,7 @@ type GameStateUpdate struct {
 	Boss           *string        `json:"boss"`
 	Relics         *[]string      `json:"relics"`
 	BaseRelicStats *map[int][]any `json:"baseRelicStats"`
+	RelicTips      *[]Tip         `json:"relicTips"`
 	Deck           *[]string      `json:"deck"`
 	Potions        *[]string      `json:"potions"`
 	AdditionalTips *[]TipsBox     `json:"additionalTips"`
@@ -168,6 +170,7 @@ func (gs *GameStateManager) broadcastUpdate(ctx context.Context,
 		Character:      nil,
 		Boss:           nil,
 		Relics:         nil,
+		RelicTips:      nil,
 		BaseRelicStats: nil,
 		Deck:           nil,
 		Potions:        nil,
@@ -189,6 +192,9 @@ func (gs *GameStateManager) broadcastUpdate(ctx context.Context,
 	}
 	if !reflect.DeepEqual(prev.BaseRelicStats, update.BaseRelicStats) {
 		updateValue.BaseRelicStats = &update.BaseRelicStats
+	}
+	if !reflect.DeepEqual(prev.RelicTips, update.RelicTips) {
+		updateValue.RelicTips = &update.RelicTips
 	}
 	if !reflect.DeepEqual(prev.Deck, update.Deck) {
 		updateValue.Deck = &update.Deck
