@@ -96,6 +96,9 @@ export function RelicBar(props: {
         };
         const relicParams = props.relicParams[i] || [];
         const lookupRelicTip = (i: number) => {
+          if (!props.relicTips) {
+            return null;
+          }
           if (props.relicTips.length > i) {
             return props.relicTips[i];
           }
