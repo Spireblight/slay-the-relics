@@ -23,10 +23,10 @@ public class GameState {
     public List<String> relics;
     public Map<Integer, List<Object>> baseRelicStats;
     public List<Tip> relicTips = new ArrayList<>();
-    public List<String> deck;
-    public List<String> drawPile;
-    public List<String> discardPile;
-    public List<String> exhaustPile;
+    public List<Object> deck;
+    public List<Object> drawPile;
+    public List<Object> discardPile;
+    public List<Object> exhaustPile;
     public List<String> potions;
     public List<TipsBox> additionalTips;
     public List<ArrayList<MapNode>> mapNodes;
@@ -142,6 +142,18 @@ public class GameState {
         return "";
     }
 
+    private static List<Object> cardGroupToCardData(CardGroup group) {
+        return group.group.stream().filter(Objects::nonNull).map(card -> {
+            String name = normalCardName(card);
+            if (Objects.equals(card.cardID, "Genetic Algorithm")) {
+                return new ArrayList<>(Arrays.asList(name, card.baseBlock));
+            } else if (Objects.equals(card.cardID, "RitualDagger")) {
+                return new ArrayList<>(Arrays.asList(name, card.baseDamage));
+            }
+            return name;
+        }).collect(Collectors.toList());
+    }
+
     public void poll() {
         boolean inRun = CardCrawlGame.isInARun() && CardCrawlGame.dungeon != null && AbstractDungeon.player != null;
         AbstractPlayer player = AbstractDungeon.player;
@@ -210,18 +222,10 @@ public class GameState {
         }
 
         this.relicTips = Integrations.relicStatsIntegration.relicTips(this.relics);
-        this.deck =
-                player.masterDeck.group.stream()
-                        .map(GameState::normalCardName)
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toList());
+        this.deck = cardGroupToCardData(player.masterDeck);
 
         if (isInCombat()) {
-            this.discardPile =
-                    player.discardPile.group.stream()
-                            .map(GameState::normalCardName)
-                            .filter(Objects::nonNull)
-                            .collect(Collectors.toList());
+            this.discardPile = cardGroupToCardData(player.discardPile);
 
             CardGroup drawPileCopy = new CardGroup(CardGroup.CardGroupType.UNSPECIFIED);
             CardGroup exhaustPileCopy = new CardGroup(CardGroup.CardGroupType.UNSPECIFIED);
@@ -233,22 +237,13 @@ public class GameState {
                 exhaustPileCopy.sortAlphabetically(true);
                 exhaustPileCopy.sortByRarityPlusStatusCardType(true);
             }
-            this.drawPile =
-                    drawPileCopy.group.stream()
-                            .map(GameState::normalCardName)
-                            .filter(Objects::nonNull)
-                            .collect(Collectors.toList());
-            this.exhaustPile =
-                    exhaustPileCopy.group.stream()
-                            .map(GameState::normalCardName)
-                            .filter(Objects::nonNull)
-                            .collect(Collectors.toList());
+            this.drawPile = cardGroupToCardData(drawPileCopy);
+            this.exhaustPile = cardGroupToCardData(exhaustPileCopy);
         } else {
             this.discardPile = new ArrayList<>();
             this.exhaustPile = new ArrayList<>();
             this.drawPile = new ArrayList<>();
         }
-
 
         this.potions = player.potions.stream().map(p -> p.ID).collect(Collectors.toList());
         this.additionalTips = TipsBox.allTips();
