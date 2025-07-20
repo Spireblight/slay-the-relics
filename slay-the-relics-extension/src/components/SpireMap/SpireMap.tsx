@@ -137,8 +137,8 @@ function MapCanvas(props: {
       const node = getLocation(pathNode[1], pathNode[0]);
       ctx.beginPath();
       ctx.arc(node.x + lineOffset, node.y + lineOffset, 42, 0, Math.PI * 2);
-      ctx.strokeStyle = "black";
-      ctx.lineWidth = 5;
+      ctx.strokeStyle = "#3972C6";
+      ctx.lineWidth = 7;
       ctx.setLineDash([]);
       ctx.stroke();
       ctx.closePath();
