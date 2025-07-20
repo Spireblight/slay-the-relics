@@ -1,14 +1,17 @@
 # Slay the Relics beta testing Guide
 
-## Discord
+## Feedback
 
-https://discord.gg/744R7j74
-
-Please report any issues or suggestions in the #slay-the-relics channel.
+- Discord: https://discord.gg/744R7j74
+- **Currently tacked issues**: https://github.com/orgs/Spireblight/projects/3/views/1
+- **If your suggestion or issue is not listed above**: Please report in
+  the [#slay-the-relics](https://discord.com/channels/963138132264509490/1113514045434249227)
+  channel.
 
 ## Requesting Access
 
-If you want to test the Slay the Relics beta, please request access in the #slay-the-relics channel
+If you want to test the Slay the Relics beta, please request access in
+the [#slay-the-relics](https://discord.com/channels/963138132264509490/1113514045434249227) channel
 on the Discord server. Please provide your Twitch username. Both viewers and streamers will need to
 request access.
 
