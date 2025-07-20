@@ -16,6 +16,19 @@ import (
 	"github.com/MaT1g3R/slaytherelics/o11y"
 )
 
+type CardData any
+
+func CardName(c CardData) string {
+	switch v := c.(type) {
+	case string:
+		return v
+	case []any:
+		return v[0].(string)
+	default:
+		return fmt.Sprintf("%v", v)
+	}
+}
+
 type HitBox struct {
 	X float64 `json:"x"`
 	Y float64 `json:"y"`
@@ -49,15 +62,15 @@ type GameState struct {
 	Relics         []string      `json:"relics"`
 	BaseRelicStats map[int][]any `json:"baseRelicStats"`
 	RelicTips      []Tip         `json:"relicTips"`
-	Deck           []string      `json:"deck"`
+	Deck           []CardData    `json:"deck"`
 	Potions        []string      `json:"potions"`
 	AdditionalTips []TipsBox     `json:"additionalTips"`
 	MapNodes       [][]MapNode   `json:"mapNodes"`
 	MapPath        [][]int       `json:"mapPath"`
 
-	DrawPile    []string `json:"drawPile"`
-	DiscardPile []string `json:"discardPile"`
-	ExhaustPile []string `json:"exhaustPile"`
+	DrawPile    []CardData `json:"drawPile"`
+	DiscardPile []CardData `json:"discardPile"`
+	ExhaustPile []CardData `json:"exhaustPile"`
 }
 
 type GameStateUpdate struct {
@@ -69,15 +82,15 @@ type GameStateUpdate struct {
 	Relics         *[]string      `json:"relics"`
 	BaseRelicStats *map[int][]any `json:"baseRelicStats"`
 	RelicTips      *[]Tip         `json:"relicTips"`
-	Deck           *[]string      `json:"deck"`
+	Deck           *[]CardData    `json:"deck"`
 	Potions        *[]string      `json:"potions"`
 	AdditionalTips *[]TipsBox     `json:"additionalTips"`
 	MapNodes       *[][]MapNode   `json:"mapNodes"`
 	MapPath        *[][]int       `json:"mapPath"`
 
-	DrawPile    *[]string `json:"drawPile"`
-	DiscardPile *[]string `json:"discardPile"`
-	ExhaustPile *[]string `json:"exhaustPile"`
+	DrawPile    *[]CardData `json:"drawPile"`
+	DiscardPile *[]CardData `json:"discardPile"`
+	ExhaustPile *[]CardData `json:"exhaustPile"`
 }
 
 type GameStateManager struct {

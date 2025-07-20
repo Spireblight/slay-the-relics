@@ -134,10 +134,14 @@ function TipPartElement(props: {
     );
 }
 
-function TipBody(props: { character: string; raw: string }) {
+export function TipBody(props: {
+  character: string;
+  raw: string;
+  className?: string;
+}) {
   const parts = props.raw.split(" ");
   return (
-    <div>
+    <div className={props.className ? props.className : ""}>
       {parts.map((part, index) => {
         return (
           <span key={"tip-body-span-" + index}>

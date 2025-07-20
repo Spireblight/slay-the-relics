@@ -8,11 +8,35 @@ import {
   useId,
   useState,
 } from "react";
-import { KeywordTips, PowerTipBlock } from "../Tip/Tip";
+import { KeywordTips, PowerTipBlock, TipBody } from "../Tip/Tip";
 import { ReturnButton } from "../Buttons/Buttons";
 import { Cards, LocalizationContext } from "../Localization/Localization";
 
 type DeckType = "deck" | "draw" | "discard" | "exhaust";
+
+export type CardData = string | [string, number];
+
+function cardName(card: CardData): string {
+  if (typeof card === "string") {
+    return card;
+  }
+  return card[0];
+}
+
+function cardValue(card: CardData): number {
+  if (typeof card === "string") {
+    return 0;
+  }
+  return card[1];
+}
+
+function withCardName(card: CardData, fn: (n: string) => string): CardData {
+  const newName: string = fn(cardName(card));
+  if (typeof card === "string") {
+    return newName;
+  }
+  return [newName, card[1]];
+}
 
 function formatForSlaytabase(val: string): string {
   return val
@@ -44,30 +68,83 @@ function lookupCard(name: string, cardsLoc: Cards): string {
 }
 
 export function Card(props: {
-  name: string;
+  data: CardData;
   character: string;
   onClick: () => void;
   additionalClasses: string;
 }) {
+  const name = cardName(props.data);
+  const upgraded = name.includes("+");
+  const slaytabaseName = formatForSlaytabase(name);
+
   let backgroundPosition = "0% 0%";
-  if (props.name.includes("+")) {
+  if (upgraded) {
     backgroundPosition = "100% 0%";
   }
   const loc = useContext(LocalizationContext);
 
   const cardStyle: CSSProperties = {
-    backgroundImage: `url(${slaytabaseUrlForCard(props.name)})`,
+    backgroundImage: `url(${slaytabaseUrlForCard(name)})`,
     backgroundPosition: backgroundPosition,
   };
-  const tips = KeywordTips(lookupCard(props.name, loc.cards), loc.keywords);
+
+  const description = lookupCard(name, loc.cards);
+  const tips = KeywordTips(description, loc.keywords);
   const tooltipId = useId();
+
+  let addDescription = "";
+  switch (slaytabaseName) {
+    case "geneticalgorithm":
+      if (upgraded) {
+        addDescription = description.replaceAll("!M!", "#g3");
+      } else {
+        addDescription = description.replaceAll("!M!", "2");
+      }
+      addDescription = addDescription.replaceAll(
+        "!B!",
+        cardValue(props.data).toString(10),
+      );
+      break;
+    case "ritualdagger":
+      if (upgraded) {
+        addDescription = description.replaceAll("!M!", "#g5");
+      } else {
+        addDescription = description.replaceAll("!M!", "3");
+      }
+      addDescription = addDescription.replaceAll(
+        "!D!",
+        cardValue(props.data).toString(10),
+      );
+      break;
+  }
+  addDescription = addDescription
+    .replaceAll("Block", "#yBlock")
+    .replaceAll("Exhaust", "#yExhaust")
+    .replaceAll("Fatal", "#yFatal");
+
   return (
     <div
       style={cardStyle}
-      className={props.additionalClasses}
+      className={props.additionalClasses + " flex items-end justify-center"}
       onClick={props.onClick}
       data-tooltip-id={tooltipId}
     >
+      {addDescription && (
+        <div
+          className={"w-[66%] h-[34%]"}
+          style={{
+            backgroundColor: "#404040",
+            marginBottom: "8.1%",
+            textAlign: "center",
+          }}
+        >
+          <TipBody
+            className={"card-text"}
+            character={props.character}
+            raw={addDescription}
+          />
+        </div>
+      )}
       <PowerTipBlock
         magGlass={false}
         hitbox={tooltipId}
@@ -81,7 +158,7 @@ export function Card(props: {
 }
 
 export function CardView(props: {
-  cards: string[];
+  cards: CardData[];
   selectedIndex: number;
   setSelectedIndex: Dispatch<SetStateAction<number>>;
   display: string;
@@ -96,7 +173,9 @@ export function CardView(props: {
 
   const card = props.cards[props.selectedIndex];
   const isUpgrade = (i: number) => {
-    return props.upgradeChecked.get(i) ?? props.cards[i].includes("+");
+    return (
+      props.upgradeChecked.get(i) ?? cardName(props.cards[i]).includes("+")
+    );
   };
   const toggleUpgrade = (i: number) => {
     props.setUpgradeChecked((prev) => {
@@ -151,11 +230,11 @@ export function CardView(props: {
         className={"flex flex-col w-[40%] h-full items-center justify-center"}
       >
         <Card
-          name={
-            isUpgrade(props.selectedIndex)
-              ? card + "+"
-              : card.replaceAll("+", "")
-          }
+          data={withCardName(card, (name) => {
+            return isUpgrade(props.selectedIndex)
+              ? name + "+"
+              : name.replaceAll("+", "");
+          })}
           character={props.character}
           additionalClasses={"card-view-card"}
           onClick={closeCard}
@@ -189,7 +268,7 @@ export function CardView(props: {
 }
 
 export function CardGrid(props: {
-  cards: string[];
+  cards: CardData[];
   deckViewMode: string;
   setCardIndex: Dispatch<SetStateAction<number>>;
   setCardViewMode: Dispatch<SetStateAction<string>>;
@@ -215,7 +294,7 @@ export function CardGrid(props: {
         {props.cards.map((card, i) => (
           <Card
             key={"card-" + i}
-            name={card}
+            data={card}
             additionalClasses={"deck-card"}
             character={props.character}
             onClick={() => {
@@ -278,7 +357,7 @@ export function DeckButton(props: {
 }
 
 export function DeckView(props: {
-  cards: string[];
+  cards: CardData[];
   character: string;
   what: DeckType;
   enableCardView?: boolean;

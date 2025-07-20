@@ -38,6 +38,8 @@ div.powertip {
   background-color: rgb(34, 42, 43);
   font-family: "Kreon", serif;
   font-weight: 400;
+  font-size: 1.019rem;
+  text-shadow: 0.139rem 0.139rem 0px rgba(0, 0, 0, 0.3);
   line-height: 1.17;
   border: 0.324rem solid;
   border-radius: 0.63rem; /*0.694rem;*/
@@ -49,8 +51,6 @@ div.powertip {
   border-bottom-color: rgb(51, 66, 70);
   width: 14.583rem;
   padding: 0px 0.509rem 0.417rem;
-  font-size: 1.019rem;
-  text-shadow: 0.139rem 0.139rem 0px rgba(0, 0, 0, 0.3);
   margin-bottom: 0.278rem;
 }
 
@@ -142,6 +142,18 @@ div.powertip-header {
 
 .return_btn:hover {
   background-image: url("/img/ui/btn_return_hover.png");
+}
+
+.card-text {
+  line-height: 1.05;
+  font-family: "Kreon", serif;
+  font-size: 0.9vw;
+  font-weight: 400;
+  text-shadow: 0.139em 0.139rem 0px rgba(0, 0, 0, 0.3);
+}
+
+.card-view .card-text {
+  font-size: 2.5vw;
 }
 
 #map_button {
