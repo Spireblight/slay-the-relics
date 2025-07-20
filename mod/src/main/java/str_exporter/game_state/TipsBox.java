@@ -32,6 +32,9 @@ public class TipsBox {
     }
 
     public static boolean isInCombat() {
+        if (AbstractDungeon.currMapNode == null) {
+            return false;
+        }
         AbstractRoom room = AbstractDungeon.getCurrRoom();
         return room != null && room.phase == AbstractRoom.RoomPhase.COMBAT;
     }

@@ -14,6 +14,7 @@ import str_exporter.config.AuthManager;
 import str_exporter.config.Config;
 import str_exporter.game_state.GameState;
 import str_exporter.game_state.GameStateManager;
+import str_exporter.game_state.integrations.Integrations;
 
 import java.io.IOException;
 
@@ -28,6 +29,7 @@ public class SlayTheRelicsExporter implements StartGameSubscriber, PostInitializ
     private int tmpDelay = 0;
     private GameState gameState;
     private final GameStateManager gameStateManager;
+    private Integrations integrations;
 
     public SlayTheRelicsExporter() {
         logger.info("Slay The Relics Exporter initialized!");
@@ -55,6 +57,7 @@ public class SlayTheRelicsExporter implements StartGameSubscriber, PostInitializ
         this.gameState = new GameState(user);
         this.gameStateManager.setGameState(this.gameState);
     }
+
 
     @Override
     public void receivePostInitialize() {
@@ -109,6 +112,7 @@ public class SlayTheRelicsExporter implements StartGameSubscriber, PostInitializ
                 "This mod exports data to Slay the Relics Twitch extension. See the extension config on Twitch for setup instructions.",
                 settingsPanel);
 
+        this.integrations = new Integrations();
         this.gameStateManager.start();
     }
 
