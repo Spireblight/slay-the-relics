@@ -296,7 +296,7 @@ export function PowerTipBlock(props: {
   if (typeof props.hitbox === "string") {
     return (
       <Tooltip
-        style={{ background: "transparent", zIndex: 30 }}
+        style={{ background: "transparent", zIndex: 50 }}
         id={props.hitbox}
         offset={props.offset}
         place={props.place}

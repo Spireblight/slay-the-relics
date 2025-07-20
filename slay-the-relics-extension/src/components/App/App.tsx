@@ -267,6 +267,7 @@ export default class App extends Component<never, AppState> {
             cards={this.state.runState.deck}
             character={this.state.runState.character}
             what={"deck"}
+            enableCardView={true}
           />
           <DeckView
             cards={this.state.runState.drawPile}

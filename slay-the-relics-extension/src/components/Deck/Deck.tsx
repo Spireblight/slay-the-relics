@@ -74,6 +74,7 @@ export function Card(props: {
         tips={tips}
         character={props.character}
         noExpand={true}
+        place={"right-start"}
       />
     </div>
   );
@@ -113,51 +114,76 @@ export function CardView(props: {
   };
 
   const nextCard = () => {
-    if (props.selectedIndex === props.cards.length - 1) {
-      return;
-    }
     props.setSelectedIndex((i) => i + 1);
   };
   const prevCard = () => {
-    if (props.selectedIndex === 0) {
-      return;
-    }
     props.setSelectedIndex((i) => i - 1);
   };
+
+  const closeCard = () => {
+    props.setDisplay("hidden");
+    resetUpgrade(props.selectedIndex);
+  };
+
+  const prevBtnEnabled = props.selectedIndex > 0;
+  const nextBtnEnabled = props.selectedIndex < props.cards.length - 1;
 
   return (
     <div
       className={
-        "absolute justify-center items-center w-screen h-screen card-view " +
-        props.display
+        props.display +
+        " absolute w-full h-full justify-center items-center card-view"
       }
+      onClick={closeCard}
     >
-      {props.selectedIndex > 0 && (
-        <button onClick={prevCard} id={"card_view_prev_btn"}></button>
-      )}
-      {props.selectedIndex < props.cards.length - 1 && (
-        <button onClick={nextCard} id={"card_view_next_btn"}></button>
-      )}
-      <Card
-        name={
-          isUpgrade(props.selectedIndex) ? card + "+" : card.replaceAll("+", "")
-        }
-        character={props.character}
-        additionalClasses={"card-view-card"}
-        onClick={() => {
-          props.setDisplay("hidden");
-          resetUpgrade(props.selectedIndex);
+      <button
+        onClick={(event) => {
+          if (!prevBtnEnabled) {
+            return;
+          }
+          event.stopPropagation();
+          prevCard();
         }}
-      ></Card>
+        id={"card_view_prev_btn"}
+        className={prevBtnEnabled ? "prev_btn_enabled" : ""}
+      />
       <div
-        id={"card_view_checkbox"}
-        className={
-          isUpgrade(props.selectedIndex)
-            ? "card-view-checkbox-checked"
-            : "card-view-checkbox-unchecked"
-        }
-        onClick={() => toggleUpgrade(props.selectedIndex)}
-      ></div>
+        className={"flex flex-col w-[40%] h-full items-center justify-center"}
+      >
+        <Card
+          name={
+            isUpgrade(props.selectedIndex)
+              ? card + "+"
+              : card.replaceAll("+", "")
+          }
+          character={props.character}
+          additionalClasses={"card-view-card"}
+          onClick={closeCard}
+        />
+        <button
+          id={"card_view_checkbox"}
+          className={
+            isUpgrade(props.selectedIndex)
+              ? "card-view-checkbox-checked"
+              : "card-view-checkbox-unchecked"
+          }
+          onClick={(event) => {
+            event.stopPropagation();
+            toggleUpgrade(props.selectedIndex);
+          }}
+        />
+      </div>
+      <button
+        onClick={(event) => {
+          if (!nextBtnEnabled) {
+            return;
+          }
+          event.stopPropagation();
+          nextCard();
+        }}
+        id={"card_view_next_btn"}
+        className={nextBtnEnabled ? "next_btn_enabled" : ""}
+      />
     </div>
   );
 }
@@ -255,6 +281,7 @@ export function DeckView(props: {
   cards: string[];
   character: string;
   what: DeckType;
+  enableCardView?: boolean;
 }) {
   const [deckViewMode, setDeckViewMode] = useState("hidden");
   const [cardViewMode, setCardViewMode] = useState("hidden");
@@ -353,16 +380,18 @@ export function DeckView(props: {
         setCardIndex={setCardIndex}
         setCardViewMode={setCardViewMode}
       />
-      <CardView
-        character={props.character}
-        cards={props.cards}
-        selectedIndex={cardIndex}
-        setSelectedIndex={setCardIndex}
-        display={cardViewMode}
-        setDisplay={setCardViewMode}
-        upgradeChecked={upgradeChecked}
-        setUpgradeChecked={setUpgradeChecked}
-      />
+      {props.enableCardView && (
+        <CardView
+          character={props.character}
+          cards={props.cards}
+          selectedIndex={cardIndex}
+          setSelectedIndex={setCardIndex}
+          display={cardViewMode}
+          setDisplay={setCardViewMode}
+          upgradeChecked={upgradeChecked}
+          setUpgradeChecked={setUpgradeChecked}
+        />
+      )}
     </div>
   );
 }
