@@ -212,7 +212,9 @@ export default class App extends Component<never, AppState> {
   }
 
   componentDidMount() {
-    // this.initialLoad("59817220");
+    if (import.meta.env.DEV) {
+      void this.initialLoad("59817220");
+    }
     if (this.twitch) {
       this.twitch.onAuthorized((auth) => {
         const channel = auth.channelId;
