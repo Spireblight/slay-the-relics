@@ -31,6 +31,7 @@ public class SlayTheRelicsExporter implements StartGameSubscriber, PostInitializ
     private final GameStateManager gameStateManager;
     private Integrations integrations;
 
+
     public SlayTheRelicsExporter() {
         logger.info("Slay The Relics Exporter initialized!");
         BaseMod.subscribe(this);
@@ -124,6 +125,7 @@ public class SlayTheRelicsExporter implements StartGameSubscriber, PostInitializ
         } else {
             this.authManager.healthy.set(System.currentTimeMillis() - lastSuccessRequest < 2000);
         }
+        this.gameStateManager.postRender();
     }
 
     @Override

@@ -6,6 +6,9 @@ import str_exporter.client.EBSClient;
 import str_exporter.config.Config;
 
 import java.io.IOException;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static basemod.BaseMod.gson;
 
@@ -16,47 +19,61 @@ public class GameStateManager extends Thread {
     private final EBSClient ebsClient;
     private final Config config;
 
-    private boolean done = false;
+    private final BlockingQueue<String> queue;
+    private AtomicLong lastPolled = new AtomicLong(0);
+
+    private static int INTERVAL = 1000; // Default interval in milliseconds
 
     public GameStateManager(EBSClient ebsClient, Config config) {
         this.ebsClient = ebsClient;
         this.config = config;
+        this.queue = new LinkedBlockingDeque<>();
     }
 
     public void setGameState(GameState gameState) {
         this.gameState = gameState;
     }
 
-    public void setDone() {
-        this.done = true;
+
+    private void submit(String message) {
+        try {
+            this.queue.put(message);
+        } catch (InterruptedException e) {
+            logger.error("Failed to submit message to queue", e);
+        }
+    }
+
+    public void postRender() {
+        if (this.gameState != null) {
+            long currentTime = System.currentTimeMillis();
+            long lastPolled = this.lastPolled.get();
+            if (currentTime - lastPolled < INTERVAL && lastPolled != 0) {
+                return; // Skip if the delay has not passed
+            }
+            this.gameState.poll();
+            this.lastPolled.set(currentTime);
+            this.submit(gson.toJson(this.gameState));
+        }
     }
 
     @Override
     public void run() {
         logger.info("Starting GameStateManager");
-        while (!done) {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-
-            if (this.gameState == null) {
-                continue;
-            }
+        while (!Thread.currentThread().isInterrupted()) {
             if (!this.config.areCredentialsValid()) {
                 continue;
             }
 
+            String msg = "";
             try {
-                this.gameState.poll();
-            } catch (Exception e) {
-                logger.error("Failed to poll game state", e);
-                continue;
+                msg = this.queue.take();
+            } catch (InterruptedException e) {
+                logger.error("GameStateManager thread interrupted", e);
+                return;
             }
 
             try {
-                this.ebsClient.postGameState(gson.toJson(this.gameState));
+                this.ebsClient.postGameState(msg);
             } catch (IOException e) {
                 logger.error(e);
             }
