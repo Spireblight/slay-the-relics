@@ -47,9 +47,12 @@ function formatForSlaytabase(val: string): string {
     .toLowerCase();
 }
 
-function slaytabaseUrlForCard(card: string): string {
-  const formattedCard = encodeURI(formatForSlaytabase(card));
-  return `https://raw.githubusercontent.com/OceanUwU/slaytabase/refs/heads/main/docs/slay%20the%20spire/cards/${formattedCard}.png`;
+function slaytabaseUrlForCard(card: string, upgraded: boolean): string {
+  let formattedCard = encodeURI(formatForSlaytabase(card));
+  if (upgraded) {
+    formattedCard += "plus1";
+  }
+  return `https://raw.githubusercontent.com/Spireblight/STR-Backend/refs/heads/master/assets/sts1/card-images/${formattedCard}.png`;
 }
 
 function lookupCard(name: string, cardsLoc: Cards): string {
@@ -77,15 +80,10 @@ export function Card(props: {
   const upgraded = name.includes("+");
   const slaytabaseName = formatForSlaytabase(name);
 
-  let backgroundPosition = "0% 0%";
-  if (upgraded) {
-    backgroundPosition = "100% 0%";
-  }
   const loc = useContext(LocalizationContext);
 
   const cardStyle: CSSProperties = {
-    backgroundImage: `url(${slaytabaseUrlForCard(name)})`,
-    backgroundPosition: backgroundPosition,
+    backgroundImage: `url(${slaytabaseUrlForCard(name, upgraded)})`,
   };
 
   const description = lookupCard(name, loc.cards);
