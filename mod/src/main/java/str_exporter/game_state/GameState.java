@@ -254,23 +254,22 @@ public class GameState {
 
     private ArrayList<ArrayList<MapNode>> makeMap() {
         ArrayList<ArrayList<MapNode>> map = new ArrayList<>();
-//        ArrayList<ArrayList<ArrayList<Integer>>> edges = new ArrayList<>();
         if (AbstractDungeon.map == null) {
             return map;
         }
         AbstractDungeon.map.forEach(n -> {
             ArrayList<MapNode> floor = new ArrayList<>();
             n.forEach(node -> {
+                if (node == null) {
+                    return;
+                }
                 String nodeType = node.getRoomSymbol(true);
                 if (node.getEdges().isEmpty()) {
                     nodeType = "*";
                 }
-//                node.getEdges().forEach(edge -> {
-//                    ArrayList<ArrayList<Integer>> edgeCoords = new ArrayList<>();
-//                    edgeCoords.add(new ArrayList<>(Arrays.asList(edge.srcX, edge.srcY)));
-//                    edgeCoords.add(new ArrayList<>(Arrays.asList(edge.dstX, edge.dstY)));
-//                    edges.add(edgeCoords);
-//                });
+                if (node.hasEmeraldKey && Objects.equals(nodeType, "E")) {
+                    nodeType = "B";
+                }
                 MapNode newNode = new MapNode(nodeType, new ArrayList<>());
                 node.getParents().forEach(parent -> {
                     if (parent.getEdges().isEmpty()) {
@@ -283,24 +282,6 @@ public class GameState {
             map.add(floor);
         });
 
-//        edges.forEach(edge -> {
-//            int srcX = edge.get(0).get(0);
-//            int srcY = edge.get(0).get(1);
-//            int dstX = edge.get(1).get(0);
-//            int dstY = edge.get(1).get(1);
-//
-//            if (dstY > map.size() - 1) {
-//                return;
-//            }
-//
-//            MapNode srcNode = map.get(srcY).get(srcX);
-//            MapNode dstNode = map.get(dstY).get(dstX);
-//
-//            if (srcNode != null && dstNode != null && dstY - srcY == 1) {
-//                dstNode.parents.add(srcX);
-//            }
-//
-//        });
         return map;
     }
 }
