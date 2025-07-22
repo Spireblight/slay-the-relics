@@ -106,7 +106,7 @@ function MapCanvas(props: {
     };
 
     const getLocation = (i: number, j: number) => {
-      const x = 200 + j * 160;
+      const x = 300 + j * 150;
       const y = 600 + (nodes.length - 1 - i) * 160; // Invert y-axis for canvas
       return { x: x, y: y };
     };
