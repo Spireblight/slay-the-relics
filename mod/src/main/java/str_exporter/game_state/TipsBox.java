@@ -2,6 +2,7 @@ package str_exporter.game_state;
 
 import basemod.ReflectionHacks;
 import com.badlogic.gdx.graphics.Texture;
+import com.megacrit.cardcrawl.characters.AbstractPlayer;
 import com.megacrit.cardcrawl.core.CardCrawlGame;
 import com.megacrit.cardcrawl.core.Settings;
 import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
@@ -83,9 +84,10 @@ public class TipsBox {
         ArrayList<TipsBox> tips = new ArrayList<>();
 
         if (isInCombat()) {
-            TipsBox player = playerTipsBox();
-            tips.add(player);
-            tips.addAll(orbTips());
+            if (AbstractDungeon.player != null) {
+                tips.add(playerTipsBox());
+                tips.addAll(orbTips());
+            }
             getMonsters().forEach(monster -> {
                 tips.add(monsterTipsBox(monster));
             });
@@ -207,9 +209,14 @@ public class TipsBox {
 
     private static TipsBox playerTipsBox() {
         ArrayList<Tip> tips = new ArrayList<>();
+        AbstractPlayer player = AbstractDungeon.player;
         HitBox box = buildHitbox(AbstractDungeon.player.hb);
 
-        for (AbstractPower power : AbstractDungeon.player.powers) {
+        if (!player.stance.ID.equals("Neutral")) {
+            tips.add(powerTip(new PowerTip(player.stance.name, player.stance.description)));
+        }
+
+        for (AbstractPower power : player.powers) {
             Tip tip = powerTip(power);
             if (tip != null) {
                 tips.add(tip);
