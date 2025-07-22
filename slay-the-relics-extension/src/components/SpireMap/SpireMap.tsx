@@ -25,6 +25,9 @@ function getImgForNode(node: string): HTMLImageElement {
     case "T":
       img.src = "./img/map/chest.png";
       break;
+    case "B":
+      img.src = "./img/map/elite-burn.png";
+      break;
     default:
       img.src = "./img/map/empty.png";
       break;
