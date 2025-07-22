@@ -3,6 +3,7 @@ package str_exporter.game_state;
 
 import com.megacrit.cardcrawl.cards.AbstractCard;
 import com.megacrit.cardcrawl.cards.CardGroup;
+import com.megacrit.cardcrawl.cards.red.SearingBlow;
 import com.megacrit.cardcrawl.characters.AbstractPlayer;
 import com.megacrit.cardcrawl.core.CardCrawlGame;
 import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
@@ -145,12 +146,16 @@ public class GameState {
     private static List<Object> cardGroupToCardData(CardGroup group) {
         return group.group.stream().filter(Objects::nonNull).map(card -> {
             String name = normalCardName(card);
-            if (Objects.equals(card.cardID, "Genetic Algorithm")) {
-                return new ArrayList<>(Arrays.asList(name, card.baseBlock));
-            } else if (Objects.equals(card.cardID, "RitualDagger")) {
-                return new ArrayList<>(Arrays.asList(name, card.baseDamage));
+            switch (card.cardID) {
+                case "Genetic Algorithm":
+                    return new ArrayList<>(Arrays.asList(name, card.baseBlock));
+                case "RitualDagger":
+                    return new ArrayList<>(Arrays.asList(name, card.baseDamage));
+                case "Searing Blow":
+                    return new ArrayList<>(Arrays.asList(name, card.timesUpgraded));
+                default:
+                    return name;
             }
-            return name;
         }).collect(Collectors.toList());
     }
 
@@ -180,9 +185,6 @@ public class GameState {
         this.relics = new ArrayList<>();
         this.baseRelicStats = new HashMap<>();
         for (int i = 0; i < player.relics.size(); ++i) {
-            if (i > 25) { // Limit to 25 relics
-                break;
-            }
             AbstractRelic relic = player.relics.get(i);
             this.relics.add(relic.relicId);
 
