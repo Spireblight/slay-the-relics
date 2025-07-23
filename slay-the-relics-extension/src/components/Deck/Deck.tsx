@@ -182,7 +182,7 @@ export function Card(props: {
         tips={tips}
         character={props.character}
         noExpand={true}
-        place={"right-start"}
+        // place={"right"}
       />
     </div>
   );

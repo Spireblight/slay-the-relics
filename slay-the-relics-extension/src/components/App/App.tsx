@@ -299,7 +299,6 @@ export default class App extends Component<never, AppState> {
                   0,
                 ).convertToHb()}
                 tips={t.tips}
-                offset={60}
               />
             ))}
           </div>
