@@ -91,6 +91,7 @@ export function Card(props: {
   const tooltipId = useId();
 
   let addDescription = "";
+  let addTitle = "";
   switch (slaytabaseName) {
     case "geneticalgorithm":
       if (upgraded) {
@@ -114,25 +115,57 @@ export function Card(props: {
         cardValue(props.data).toString(10),
       );
       break;
+    case "searingblow": {
+      const timesUpgraded = cardValue(props.data);
+      let damage = 12;
+      for (let i = 0; i < timesUpgraded; i++) {
+        damage += 4 + i;
+      }
+      addDescription = description.replaceAll("!D!", damage.toString(10));
+      addTitle = "Searing Blow";
+      if (timesUpgraded > 0) {
+        addTitle = `#gSearing #gBlow+${timesUpgraded}`;
+      }
+      break;
+    }
   }
   addDescription = addDescription
     .replaceAll("Block", "#yBlock")
     .replaceAll("Exhaust", "#yExhaust")
-    .replaceAll("Fatal", "#yFatal");
+    .replaceAll("Fatal", "#yFatal")
+    .replaceAll("Upgraded", "#yUpgraded");
 
   return (
     <div
       style={cardStyle}
-      className={props.additionalClasses + " flex items-end justify-center"}
+      className={
+        props.additionalClasses + " flex flex-col items-center relative"
+      }
       onClick={props.onClick}
       data-tooltip-id={tooltipId}
     >
+      {addTitle && (
+        <div
+          className={"w-[59%] h-[7%] absolute"}
+          style={{
+            top: "10%",
+            textAlign: "center",
+            backgroundColor: "#7cdde3",
+          }}
+        >
+          <TipBody
+            className={"card-title"}
+            character={props.character}
+            raw={addTitle}
+          />
+        </div>
+      )}
       {addDescription && (
         <div
-          className={"w-[66%] h-[34%]"}
+          className={"w-[66%] h-[34%] absolute"}
           style={{
             backgroundColor: "#404040",
-            marginBottom: "8.1%",
+            top: "59.5%",
             textAlign: "center",
           }}
         >

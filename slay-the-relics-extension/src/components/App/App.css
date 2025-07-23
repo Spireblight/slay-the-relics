@@ -152,7 +152,29 @@ div.powertip-header {
   text-shadow: 0.139em 0.139rem 0px rgba(0, 0, 0, 0.3);
 }
 
+.card-title {
+  line-height: 1.05;
+  font-family: "Kreon", serif;
+  font-size: 0.9vw;
+  font-weight: 600;
+  --outline-color: rgb(2, 2, 2);
+  text-shadow:
+    0.139em 0.139em 0px rgba(0, 0, 0, 0.3),
+    -1px -1px 0 var(--outline-color),
+    0 -1px 0 var(--outline-color),
+    1px -1px 0 var(--outline-color),
+    1px 0 0 var(--outline-color),
+    1px 1px 0 var(--outline-color),
+    0 1px 0 var(--outline-color),
+    -1px 1px 0 var(--outline-color),
+    -1px 0 0 var(--outline-color);
+}
+
 .card-view .card-text {
+  font-size: 2.5vw;
+}
+
+.card-view .card-title {
   font-size: 2.5vw;
 }
 
