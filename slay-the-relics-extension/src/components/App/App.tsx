@@ -303,12 +303,11 @@ export default class App extends Component<never, AppState> {
               />
             ))}
           </div>
+          <Tooltip
+            id={"root-tooltip"}
+            style={{ background: "transparent", zIndex: 500 }}
+          />
         </div>
-
-        <Tooltip
-          id={"root-tooltip"}
-          style={{ background: "transparent", zIndex: 500 }}
-        />
       </LocalizationContext>
     );
   }
