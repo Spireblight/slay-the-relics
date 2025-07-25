@@ -62,6 +62,7 @@ interface RunState extends Record<string, unknown> {
   staticTips: { tips: Tip[]; hitbox: NumHitBox }[];
   mapNodes: MapNode[][];
   mapPath: number[][];
+  bottles: number[];
 }
 
 interface AppState {
@@ -73,11 +74,14 @@ const API_BASE_URL = import.meta.env.PROD
   ? "https://slay-the-relics.baalorlord.tv"
   : "http://localhost:8888";
 
-export default class App extends Component<never, AppState> {
+/* eslint-disable @typescript-eslint/no-empty-object-type */
+interface AppProps {}
+
+export default class App extends Component<AppProps, AppState> {
   private readonly twitch: typeof Twitch.ext | null;
   private gameStateIndex: number;
 
-  constructor(props: never) {
+  constructor(props: AppProps) {
     super(props);
 
     //if the extension is running on twitch or dev rig, set the shorthand here. otherwise, set to null.
@@ -106,6 +110,7 @@ export default class App extends Component<never, AppState> {
         discardPile: [],
         exhaustPile: [],
         baseRelicStats: {},
+        bottles: [-1, -1, -1],
       },
     };
   }
@@ -267,6 +272,7 @@ export default class App extends Component<never, AppState> {
             character={this.state.runState.character}
           />
           <DeckView
+            bottles={this.state.runState.bottles}
             cards={this.state.runState.deck}
             character={this.state.runState.character}
             what={"deck"}

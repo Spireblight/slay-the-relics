@@ -68,6 +68,7 @@ type GameState struct {
 	StaticTips     []TipsBox     `json:"staticTips"`
 	MapNodes       [][]MapNode   `json:"mapNodes"`
 	MapPath        [][]int       `json:"mapPath"`
+	Bottles        []int         `json:"bottles"`
 
 	DrawPile    []CardData `json:"drawPile"`
 	DiscardPile []CardData `json:"discardPile"`
@@ -89,6 +90,7 @@ type GameStateUpdate struct {
 	StaticTips     *[]TipsBox     `json:"staticTips"`
 	MapNodes       *[][]MapNode   `json:"mapNodes"`
 	MapPath        *[][]int       `json:"mapPath"`
+	Bottles        *[]int         `json:"bottles"`
 
 	DrawPile    *[]CardData `json:"drawPile"`
 	DiscardPile *[]CardData `json:"discardPile"`
@@ -190,11 +192,13 @@ func (gs *GameStateManager) broadcastUpdate(ctx context.Context,
 		Deck:           nil,
 		Potions:        nil,
 		AdditionalTips: nil,
+		StaticTips:     nil,
 		MapNodes:       nil,
 		MapPath:        nil,
 		DiscardPile:    nil,
 		DrawPile:       nil,
 		ExhaustPile:    nil,
+		Bottles:        nil,
 	}
 	if prev.Character != update.Character {
 		updateValue.Character = &update.Character
@@ -237,6 +241,9 @@ func (gs *GameStateManager) broadcastUpdate(ctx context.Context,
 	}
 	if !reflect.DeepEqual(prev.MapPath, update.MapPath) {
 		updateValue.MapPath = &update.MapPath
+	}
+	if !reflect.DeepEqual(prev.Bottles, update.Bottles) {
+		updateValue.Bottles = &update.Bottles
 	}
 
 	return gs.send(ctx, userId, updateValue)

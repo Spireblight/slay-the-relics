@@ -14,6 +14,14 @@ import ReactDOMServer from "react-dom/server";
 import { PlacesType } from "react-tooltip";
 
 type DeckType = "deck" | "draw" | "discard" | "exhaust";
+type Bottle = "flame" | "lightning" | "tornado" | null;
+
+function BottleURL(bottle: Bottle): string | null {
+  if (bottle === null) {
+    return null;
+  }
+  return `./img/relics/bottled_${bottle}.png`;
+}
 
 export type CardData = string | [string, number];
 
@@ -73,6 +81,7 @@ function lookupCard(name: string, cardsLoc: Cards): string {
 
 export function Card(props: {
   data: CardData;
+  bottle: Bottle;
   character: string;
   onClick: () => void;
   additionalClasses: string;
@@ -80,6 +89,7 @@ export function Card(props: {
   const name = cardName(props.data);
   const upgraded = name.includes("+");
   const slaytabaseName = formatForSlaytabase(name);
+  const bottleURL = BottleURL(props.bottle);
 
   const loc = useContext(LocalizationContext);
 
@@ -158,6 +168,19 @@ export function Card(props: {
       data-tooltip-html={ReactDOMServer.renderToStaticMarkup(powerTipBlock)}
       data-tooltip-place={tooltipPlace}
     >
+      {bottleURL && (
+        <img
+          src={bottleURL}
+          style={{
+            position: "absolute",
+            right: "-3.3%",
+            top: "-1%",
+            width: "30%",
+            zIndex: 40,
+          }}
+          alt={`bottled ${props.bottle}`}
+        />
+      )}
       {addTitle && (
         <div
           className={"w-[59%] h-[7%] absolute"}
@@ -197,6 +220,7 @@ export function Card(props: {
 export function CardView(props: {
   cards: CardData[];
   selectedIndex: number;
+  bottles?: number[];
   setSelectedIndex: Dispatch<SetStateAction<number>>;
   display: string;
   setDisplay: Dispatch<SetStateAction<string>>;
@@ -244,6 +268,17 @@ export function CardView(props: {
   const prevBtnEnabled = props.selectedIndex > 0;
   const nextBtnEnabled = props.selectedIndex < props.cards.length - 1;
 
+  let bottle: Bottle = null;
+  if (props.bottles) {
+    if (props.bottles[0] === props.selectedIndex) {
+      bottle = "flame";
+    } else if (props.bottles[1] === props.selectedIndex) {
+      bottle = "lightning";
+    } else if (props.bottles[2] === props.selectedIndex) {
+      bottle = "tornado";
+    }
+  }
+
   return (
     <div
       className={
@@ -272,6 +307,7 @@ export function CardView(props: {
               ? name + "+"
               : name.replaceAll("+", "");
           })}
+          bottle={bottle}
           character={props.character}
           additionalClasses={"card-view-card"}
           onClick={closeCard}
@@ -306,6 +342,7 @@ export function CardView(props: {
 
 export function CardGrid(props: {
   cards: CardData[];
+  bottles?: number[];
   deckViewMode: string;
   setCardIndex: Dispatch<SetStateAction<number>>;
   setCardViewMode: Dispatch<SetStateAction<string>>;
@@ -328,18 +365,31 @@ export function CardGrid(props: {
           zIndex: 10,
         }}
       >
-        {props.cards.map((card, i) => (
-          <Card
-            key={"card-" + i}
-            data={card}
-            additionalClasses={"deck-card"}
-            character={props.character}
-            onClick={() => {
-              props.setCardIndex(i);
-              props.setCardViewMode("flex");
-            }}
-          />
-        ))}
+        {props.cards.map((card, i) => {
+          let bottle: Bottle = null;
+          if (props.bottles) {
+            if (props.bottles[0] === i) {
+              bottle = "flame";
+            } else if (props.bottles[1] === i) {
+              bottle = "lightning";
+            } else if (props.bottles[2] === i) {
+              bottle = "tornado";
+            }
+          }
+          return (
+            <Card
+              key={"card-" + i}
+              data={card}
+              bottle={bottle}
+              additionalClasses={"deck-card"}
+              character={props.character}
+              onClick={() => {
+                props.setCardIndex(i);
+                props.setCardViewMode("flex");
+              }}
+            />
+          );
+        })}
       </div>
     </div>
   );
@@ -395,6 +445,7 @@ export function DeckButton(props: {
 
 export function DeckView(props: {
   cards: CardData[];
+  bottles?: number[];
   character: string;
   what: DeckType;
   enableCardView?: boolean;
@@ -491,6 +542,7 @@ export function DeckView(props: {
       />
       <CardGrid
         cards={props.cards}
+        bottles={props.bottles}
         character={props.character}
         deckViewMode={deckViewMode}
         setCardIndex={setCardIndex}
@@ -498,6 +550,7 @@ export function DeckView(props: {
       />
       {props.enableCardView && (
         <CardView
+          bottles={props.bottles}
           character={props.character}
           cards={props.cards}
           selectedIndex={cardIndex}
