@@ -31,7 +31,7 @@ export function localizationURL(
   game: GameKind,
   kind: LocalizationKind,
 ): string {
-  return `https://raw.githubusercontent.com/Spireblight/STR-Backend/refs/heads/master/assets/${game}/localization/${kind}.json`;
+  return `https://raw.githubusercontent.com/Spireblight/slay-the-relics/refs/heads/master/assets/${game}/localization/${kind}.json`;
 }
 
 export interface LocalizationData extends Record<LocalizationKind, unknown> {

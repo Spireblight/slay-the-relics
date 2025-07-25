@@ -61,7 +61,8 @@ function slaytabaseUrlForCard(card: string, upgraded: boolean): string {
   if (upgraded) {
     formattedCard += "plus1";
   }
-  return `https://raw.githubusercontent.com/Spireblight/STR-Backend/refs/heads/master/assets/sts1/card-images/${formattedCard}.png`;
+
+  return `https://raw.githubusercontent.com/Spireblight/slay-the-relics/refs/heads/master/assets/sts1/card-images/${formattedCard}.png`;
 }
 
 function lookupCard(name: string, cardsLoc: Cards): string {
