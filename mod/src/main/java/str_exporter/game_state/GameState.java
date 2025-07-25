@@ -74,22 +74,13 @@ public class GameState {
         return name;
     }
 
-    private static String colouredCardName(AbstractCard card) {
+    private static String bottleCardName(AbstractCard card) {
         if (card == null) {
             return null;
         }
 
-        String name = normalCardName(card);
-        String[] parts = name.split(" ");
-        String colourString = "";
-        switch (card.rarity) {
-            case RARE:
-                colourString = "#y";
-                break;
-            case UNCOMMON:
-                colourString = "#b";
-                break;
-        }
+        String[] parts = card.toString().split(" ");
+        String colourString = "#y";
         StringBuilder sb = new StringBuilder();
         for (String part : parts) {
             sb.append(colourString).append(part).append(" ");
@@ -204,21 +195,21 @@ public class GameState {
             if (relic instanceof BottledFlame) {
                 bottledFlame = (BottledFlame) relic;
                 AbstractCard card = bottledFlame.card;
-                String name = colouredCardName(card);
+                String name = bottleCardName(card);
                 if (name != null) {
                     this.baseRelicStats.put(i, Collections.singletonList(name));
                 }
             } else if (relic instanceof BottledLightning) {
                 bottledLightning = (BottledLightning) relic;
                 AbstractCard card = bottledLightning.card;
-                String name = colouredCardName(card);
+                String name = bottleCardName(card);
                 if (name != null) {
                     this.baseRelicStats.put(i, Collections.singletonList(name));
                 }
             } else if (relic instanceof BottledTornado) {
                 bottledTornado = (BottledTornado) relic;
                 AbstractCard card = bottledTornado.card;
-                String name = colouredCardName(card);
+                String name = bottleCardName(card);
                 if (name != null) {
                     this.baseRelicStats.put(i, Collections.singletonList(name));
                 }
