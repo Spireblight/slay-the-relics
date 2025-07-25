@@ -12,6 +12,7 @@ import {
   LocalizationContext,
   LocalizationData,
 } from "../Localization/Localization";
+import { Tooltip } from "react-tooltip";
 
 interface MapNode {
   type: string;
@@ -303,6 +304,11 @@ export default class App extends Component<never, AppState> {
             ))}
           </div>
         </div>
+
+        <Tooltip
+          id={"root-tooltip"}
+          style={{ background: "transparent", zIndex: 500 }}
+        />
       </LocalizationContext>
     );
   }

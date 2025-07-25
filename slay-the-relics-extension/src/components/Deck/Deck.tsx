@@ -5,12 +5,12 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useId,
   useState,
 } from "react";
 import { KeywordTips, PowerTipBlock, TipBody } from "../Tip/Tip";
 import { ReturnButton } from "../Buttons/Buttons";
 import { Cards, LocalizationContext } from "../Localization/Localization";
+import ReactDOMServer from "react-dom/server";
 
 type DeckType = "deck" | "draw" | "discard" | "exhaust";
 
@@ -88,7 +88,6 @@ export function Card(props: {
 
   const description = lookupCard(name, loc.cards);
   const tips = KeywordTips(description, loc.keywords);
-  const tooltipId = useId();
 
   let addDescription = "";
   let addTitle = "";
@@ -135,6 +134,16 @@ export function Card(props: {
     .replaceAll("Fatal", "#yFatal")
     .replaceAll("Upgraded", "#yUpgraded");
 
+  const powerTipBlock = (
+    <PowerTipBlock
+      magGlass={false}
+      tips={tips}
+      character={props.character}
+      noExpand={true}
+      place={"right-end"}
+    />
+  );
+
   return (
     <div
       style={cardStyle}
@@ -142,7 +151,9 @@ export function Card(props: {
         props.additionalClasses + " flex flex-col items-center relative"
       }
       onClick={props.onClick}
-      data-tooltip-id={tooltipId}
+      data-tooltip-id={"root-tooltip"}
+      data-tooltip-html={ReactDOMServer.renderToStaticMarkup(powerTipBlock)}
+      data-tooltip-place={"right-end"}
     >
       {addTitle && (
         <div
@@ -176,14 +187,6 @@ export function Card(props: {
           />
         </div>
       )}
-      <PowerTipBlock
-        magGlass={false}
-        hitbox={tooltipId}
-        tips={tips}
-        character={props.character}
-        noExpand={true}
-        // place={"right"}
-      />
     </div>
   );
 }

@@ -1,7 +1,8 @@
-import { CSSProperties, ReactNode, useContext, useId } from "react";
+import { CSSProperties, ReactNode, useContext } from "react";
 
-import { PlacesType, Tooltip } from "react-tooltip";
+import { PlacesType } from "react-tooltip";
 import { Keywords, LocalizationContext } from "../Localization/Localization";
+import ReactDOMServer from "react-dom/server";
 
 export type HitBox = {
   x: string;
@@ -200,19 +201,16 @@ export function Hitbox(props: {
     height: props.hitbox.h,
     zIndex: props.hitbox.z,
   };
-  const tooltipID = useId();
 
   return (
-    <div className={classes} style={style} data-tooltip-id={tooltipID}>
-      <Tooltip
-        style={{ background: "transparent" }}
-        id={tooltipID}
-        offset={props.offset}
-        place={props.place}
-      >
-        {props.children}
-      </Tooltip>
-    </div>
+    <div
+      className={classes}
+      style={style}
+      data-tooltip-id={"root-tooltip"}
+      data-tooltip-html={ReactDOMServer.renderToStaticMarkup(props.children)}
+      data-tooltip-offset={props.offset}
+      data-tooltip-place={props.place}
+    ></div>
   );
 }
 
@@ -268,7 +266,7 @@ function expandTips(tips: Tip[], keywords: Keywords): Tip[] {
 
 export function PowerTipBlock(props: {
   magGlass: boolean;
-  hitbox: HitBox | string;
+  hitbox?: HitBox;
   tips: Tip[];
   character: string;
   offset?: number;
@@ -297,17 +295,8 @@ export function PowerTipBlock(props: {
     </div>
   );
 
-  if (typeof props.hitbox === "string") {
-    return (
-      <Tooltip
-        style={{ background: "transparent", zIndex: 50 }}
-        id={props.hitbox}
-        offset={props.offset}
-        place={props.place}
-      >
-        {tooltipBlock}
-      </Tooltip>
-    );
+  if (!props.hitbox) {
+    return tooltipBlock;
   }
 
   return (
