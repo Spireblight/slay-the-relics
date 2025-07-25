@@ -80,7 +80,7 @@ public class TipsBox {
         return "placeholder";
     }
 
-    public static List<TipsBox> allTips() {
+    public static List<TipsBox> allCombatTips() {
         ArrayList<TipsBox> tips = new ArrayList<>();
 
         if (isInCombat()) {
@@ -91,7 +91,14 @@ public class TipsBox {
             getMonsters().forEach(monster -> {
                 tips.add(monsterTipsBox(monster));
             });
-        } else if (isInAShop()) {
+        }
+        return tips.stream().filter(t -> !t.tips.isEmpty()).collect(Collectors.toList());
+    }
+
+    public static List<TipsBox> allStaticTips() {
+        ArrayList<TipsBox> tips = new ArrayList<>();
+
+        if (isInAShop()) {
             tips.addAll(shopTips());
         } else if (isDisplayingBossRelics()) {
             tips.addAll(bossRelicTips());

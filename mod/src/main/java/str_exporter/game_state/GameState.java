@@ -3,7 +3,6 @@ package str_exporter.game_state;
 
 import com.megacrit.cardcrawl.cards.AbstractCard;
 import com.megacrit.cardcrawl.cards.CardGroup;
-import com.megacrit.cardcrawl.cards.red.SearingBlow;
 import com.megacrit.cardcrawl.characters.AbstractPlayer;
 import com.megacrit.cardcrawl.core.CardCrawlGame;
 import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
@@ -30,6 +29,10 @@ public class GameState {
     public List<Object> exhaustPile;
     public List<String> potions;
     public List<TipsBox> additionalTips;
+    // this is rendered the exact same way as additional tips,
+    // but it's a separate field to save bytes sent to Twitch,
+    // as they are updated less often than additionalTips
+    public List<TipsBox> staticTips;
     public List<ArrayList<MapNode>> mapNodes;
     public List<List<Integer>> mapPath;
 
@@ -49,6 +52,7 @@ public class GameState {
         this.deck = new ArrayList<>();
         this.potions = new ArrayList<>();
         this.additionalTips = new ArrayList<>();
+        this.staticTips = new ArrayList<>();
         this.mapNodes = new ArrayList<>();
         this.mapPath = new ArrayList<>();
         this.drawPile = new ArrayList<>();
@@ -248,7 +252,8 @@ public class GameState {
         }
 
         this.potions = player.potions.stream().map(p -> p.ID).collect(Collectors.toList());
-        this.additionalTips = TipsBox.allTips();
+        this.additionalTips = TipsBox.allCombatTips();
+        this.staticTips = TipsBox.allStaticTips();
         this.mapNodes = makeMap();
         this.setPaths();
         this.gameStateIndex++;
