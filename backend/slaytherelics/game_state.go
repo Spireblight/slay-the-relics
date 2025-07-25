@@ -65,6 +65,7 @@ type GameState struct {
 	Deck           []CardData    `json:"deck"`
 	Potions        []string      `json:"potions"`
 	AdditionalTips []TipsBox     `json:"additionalTips"`
+	StaticTips     []TipsBox     `json:"staticTips"`
 	MapNodes       [][]MapNode   `json:"mapNodes"`
 	MapPath        [][]int       `json:"mapPath"`
 
@@ -85,6 +86,7 @@ type GameStateUpdate struct {
 	Deck           *[]CardData    `json:"deck"`
 	Potions        *[]string      `json:"potions"`
 	AdditionalTips *[]TipsBox     `json:"additionalTips"`
+	StaticTips     *[]TipsBox     `json:"staticTips"`
 	MapNodes       *[][]MapNode   `json:"mapNodes"`
 	MapPath        *[][]int       `json:"mapPath"`
 
@@ -226,6 +228,9 @@ func (gs *GameStateManager) broadcastUpdate(ctx context.Context,
 	}
 	if !reflect.DeepEqual(prev.AdditionalTips, update.AdditionalTips) {
 		updateValue.AdditionalTips = &update.AdditionalTips
+	}
+	if !reflect.DeepEqual(prev.StaticTips, update.StaticTips) {
+		updateValue.StaticTips = &update.StaticTips
 	}
 	if !reflect.DeepEqual(prev.MapNodes, update.MapNodes) {
 		updateValue.MapNodes = &update.MapNodes

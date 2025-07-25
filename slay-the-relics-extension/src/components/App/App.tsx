@@ -59,6 +59,7 @@ interface RunState extends Record<string, unknown> {
   exhaustPile: CardData[];
   potions: string[];
   additionalTips: { tips: Tip[]; hitbox: NumHitBox }[];
+  staticTips: { tips: Tip[]; hitbox: NumHitBox }[];
   mapNodes: MapNode[][];
   mapPath: number[][];
 }
@@ -95,6 +96,7 @@ export default class App extends Component<never, AppState> {
         boss: "",
         channel: "",
         additionalTips: [],
+        staticTips: [],
         relicTips: [],
         deck: [],
         potions: [],
@@ -286,22 +288,24 @@ export default class App extends Component<never, AppState> {
             what={"exhaust"}
           />
           <div>
-            {this.state.runState.additionalTips.map((t, i) => (
-              <PowerTipBlock
-                noExpand={true}
-                character={this.state.runState.character}
-                key={"additional-tips-" + i}
-                magGlass={false}
-                hitbox={new NumHitBox(
-                  t.hitbox.x,
-                  t.hitbox.y,
-                  t.hitbox.w,
-                  t.hitbox.h,
-                  0,
-                ).convertToHb()}
-                tips={t.tips}
-              />
-            ))}
+            {this.state.runState.additionalTips
+              .concat(this.state.runState.staticTips ?? [])
+              .map((t, i) => (
+                <PowerTipBlock
+                  noExpand={true}
+                  character={this.state.runState.character}
+                  key={"additional-tips-" + i}
+                  magGlass={false}
+                  hitbox={new NumHitBox(
+                    t.hitbox.x,
+                    t.hitbox.y,
+                    t.hitbox.w,
+                    t.hitbox.h,
+                    0,
+                  ).convertToHb()}
+                  tips={t.tips}
+                />
+              ))}
           </div>
           <Tooltip
             id={"root-tooltip"}
