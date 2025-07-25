@@ -35,6 +35,7 @@ public class GameState {
     public List<TipsBox> staticTips;
     public List<ArrayList<MapNode>> mapNodes;
     public List<List<Integer>> mapPath;
+    public List<Integer> bottles;
 
 
     public GameState(String channel) {
@@ -58,6 +59,7 @@ public class GameState {
         this.drawPile = new ArrayList<>();
         this.discardPile = new ArrayList<>();
         this.exhaustPile = new ArrayList<>();
+        this.bottles = Arrays.asList(-1, -1, -1);
     }
 
 
@@ -148,19 +150,21 @@ public class GameState {
     }
 
     private static List<Object> cardGroupToCardData(CardGroup group) {
-        return group.group.stream().filter(Objects::nonNull).map(card -> {
-            String name = normalCardName(card);
-            switch (card.cardID) {
-                case "Genetic Algorithm":
-                    return new ArrayList<>(Arrays.asList(name, card.baseBlock));
-                case "RitualDagger":
-                    return new ArrayList<>(Arrays.asList(name, card.baseDamage));
-                case "Searing Blow":
-                    return new ArrayList<>(Arrays.asList(name, card.timesUpgraded));
-                default:
-                    return name;
-            }
-        }).collect(Collectors.toList());
+        return group.group.stream().filter(Objects::nonNull).map(GameState::cardToData).collect(Collectors.toList());
+    }
+
+    private static Object cardToData(AbstractCard card) {
+        String name = normalCardName(card);
+        switch (card.cardID) {
+            case "Genetic Algorithm":
+                return new ArrayList<>(Arrays.asList(name, card.baseBlock));
+            case "RitualDagger":
+                return new ArrayList<>(Arrays.asList(name, card.baseDamage));
+            case "Searing Blow":
+                return new ArrayList<>(Arrays.asList(name, card.timesUpgraded));
+            default:
+                return name;
+        }
     }
 
     public void poll() {
@@ -188,24 +192,32 @@ public class GameState {
         this.boss = getBossName();
         this.relics = new ArrayList<>();
         this.baseRelicStats = new HashMap<>();
+
+        BottledFlame bottledFlame = null;
+        BottledLightning bottledLightning = null;
+        BottledTornado bottledTornado = null;
+
         for (int i = 0; i < player.relics.size(); ++i) {
             AbstractRelic relic = player.relics.get(i);
             this.relics.add(relic.relicId);
 
             if (relic instanceof BottledFlame) {
-                AbstractCard card = ((BottledFlame) relic).card;
+                bottledFlame = (BottledFlame) relic;
+                AbstractCard card = bottledFlame.card;
                 String name = colouredCardName(card);
                 if (name != null) {
                     this.baseRelicStats.put(i, Collections.singletonList(name));
                 }
             } else if (relic instanceof BottledLightning) {
-                AbstractCard card = ((BottledLightning) relic).card;
+                bottledLightning = (BottledLightning) relic;
+                AbstractCard card = bottledLightning.card;
                 String name = colouredCardName(card);
                 if (name != null) {
                     this.baseRelicStats.put(i, Collections.singletonList(name));
                 }
             } else if (relic instanceof BottledTornado) {
-                AbstractCard card = ((BottledTornado) relic).card;
+                bottledTornado = (BottledTornado) relic;
+                AbstractCard card = bottledTornado.card;
                 String name = colouredCardName(card);
                 if (name != null) {
                     this.baseRelicStats.put(i, Collections.singletonList(name));
@@ -228,7 +240,33 @@ public class GameState {
         }
 
         this.relicTips = Integrations.relicStatsIntegration.relicTips(this.relics);
-        this.deck = cardGroupToCardData(player.masterDeck);
+
+        List<AbstractCard> masterDeck;
+        if (player.masterDeck != null && player.masterDeck.group != null) {
+            masterDeck = player.masterDeck.group.stream()
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+        } else {
+            masterDeck = new ArrayList<>();
+        }
+
+        ArrayList<Object> deck = new ArrayList<>();
+        List<Integer> bottles = Arrays.asList(-1, -1, -1);
+
+        for (int i = 0; i < masterDeck.size(); ++i) {
+            AbstractCard card = masterDeck.get(i);
+            deck.add(cardToData(card));
+            if (bottledFlame != null && bottledFlame.card == card) {
+                bottles.set(0, i);
+            } else if (bottledLightning != null && bottledLightning.card == card) {
+                bottles.set(1, i);
+            } else if (bottledTornado != null && bottledTornado.card == card) {
+                bottles.set(2, i);
+            }
+        }
+        this.deck = deck;
+        this.bottles = bottles;
+
 
         if (isInCombat()) {
             this.discardPile = cardGroupToCardData(player.discardPile);
