@@ -11,6 +11,7 @@ import { KeywordTips, PowerTipBlock, TipBody } from "../Tip/Tip";
 import { ReturnButton } from "../Buttons/Buttons";
 import { Cards, LocalizationContext } from "../Localization/Localization";
 import ReactDOMServer from "react-dom/server";
+import { PlacesType } from "react-tooltip";
 
 type DeckType = "deck" | "draw" | "discard" | "exhaust";
 
@@ -134,13 +135,15 @@ export function Card(props: {
     .replaceAll("Fatal", "#yFatal")
     .replaceAll("Upgraded", "#yUpgraded");
 
+  const tooltipPlace: PlacesType = "right";
+
   const powerTipBlock = (
     <PowerTipBlock
       magGlass={false}
       tips={tips}
       character={props.character}
       noExpand={true}
-      place={"right-end"}
+      place={tooltipPlace}
     />
   );
 
@@ -153,7 +156,7 @@ export function Card(props: {
       onClick={props.onClick}
       data-tooltip-id={"root-tooltip"}
       data-tooltip-html={ReactDOMServer.renderToStaticMarkup(powerTipBlock)}
-      data-tooltip-place={"right-end"}
+      data-tooltip-place={tooltipPlace}
     >
       {addTitle && (
         <div
