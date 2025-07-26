@@ -12,16 +12,18 @@ import (
 	"github.com/MaT1g3R/slaytherelics/slaytherelics"
 )
 
-const bearerPrefix = "Bearer "
+const bearerPrefix = "Bearer"
 
 func extractBearerToken(header string) (string, error) {
 	if header == "" {
 		return "", fmt.Errorf("authorization header is missing")
 	}
-	if !strings.HasPrefix(header, bearerPrefix) {
+
+	tok := strings.Fields(header)
+	if len(tok) != 2 || !strings.EqualFold(tok[0], bearerPrefix) {
 		return "", fmt.Errorf("invalid authorization header format")
 	}
-	return strings.TrimPrefix(header, bearerPrefix), nil
+	return tok[1], nil
 }
 
 func (a *API) postGameStateHandler(c *gin.Context) {
