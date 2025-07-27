@@ -25,50 +25,33 @@ export class Tip {
 }
 
 function EnergyOrbElement(props: { character: string; keyP: string }) {
+  let img = "";
   switch (props.character) {
     case "silent":
-      return (
-        <span key={props.keyP}>
-          <img
-            src={"./img/orbs/orbTheSilent.png"}
-            alt={"Orb"}
-            className={"inline-block energy-orb-img"}
-          />
-        </span>
-      );
+      img = "orbTheSilent";
+      break;
     case "defect":
-      return (
-        <span key={props.keyP}>
-          <img
-            src={"./img/orbs/orbDefect.png"}
-            alt={"Orb"}
-            className={"inline-block energy-orb-img"}
-          />
-          ;
-        </span>
-      );
+      img = "orbDefect";
+      break;
     case "watcher":
-      return (
-        <span key={props.keyP}>
-          <img
-            src={"./img/orbs/orbWatcher.png"}
-            alt={"Orb"}
-            className={"inline-block energy-orb-img"}
-          />
-          ;
-        </span>
-      );
+      img = "orbWatcher";
+      break;
     default:
-      return (
-        <span key={props.keyP}>
-          <img
-            src={"./img/orbs/orbIronclad.png"}
-            alt={"Orb"}
-            className={"inline-block energy-orb-img"}
-          />
-        </span>
-      );
+      img = "orbIronclad";
+      break;
   }
+
+  // the span with a space after the img is intended
+  return (
+    <span key={props.keyP}>
+      <img
+        src={`./img/orbs/${img}.png`}
+        alt={"Orb"}
+        className={"inline-block energy-orb-img"}
+      />
+      <span> </span>
+    </span>
+  );
 }
 
 function TipPartElement(props: {
