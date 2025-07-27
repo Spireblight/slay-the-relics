@@ -361,10 +361,9 @@ export function CardGrid(props: {
       }}
     >
       <div
-        className={"grid grid-cols-5 grid-flow-row-dense gap-2 w-2/3"}
-        style={{
-          zIndex: 10,
-        }}
+        className={
+          "grid grid-cols-5 grid-flow-row gap-2 w-2/3 content-around z-10"
+        }
       >
         {props.cards.map((card, i) => {
           let bottle: Bottle = null;
