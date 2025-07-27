@@ -63,6 +63,7 @@ interface RunState extends Record<string, unknown> {
   mapNodes: MapNode[][];
   mapPath: number[][];
   bottles: number[];
+  potionX: number;
 }
 
 interface AppState {
@@ -111,6 +112,7 @@ export default class App extends Component<AppProps, AppState> {
         exhaustPile: [],
         baseRelicStats: {},
         bottles: [-1, -1, -1],
+        potionX: 33,
       },
     };
   }
@@ -270,6 +272,7 @@ export default class App extends Component<AppProps, AppState> {
             potions={this.state.runState.potions}
             relics={this.state.runState.relics}
             character={this.state.runState.character}
+            potionX={this.state.runState.potionX}
           />
           <DeckView
             bottles={this.state.runState.bottles}

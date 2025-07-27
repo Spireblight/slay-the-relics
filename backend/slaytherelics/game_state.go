@@ -69,6 +69,7 @@ type GameState struct {
 	MapNodes       [][]MapNode   `json:"mapNodes"`
 	MapPath        [][]int       `json:"mapPath"`
 	Bottles        []int         `json:"bottles"`
+	PotionX        float64       `json:"potionX"`
 
 	DrawPile    []CardData `json:"drawPile"`
 	DiscardPile []CardData `json:"discardPile"`
@@ -91,6 +92,7 @@ type GameStateUpdate struct {
 	MapNodes       *[][]MapNode   `json:"mapNodes"`
 	MapPath        *[][]int       `json:"mapPath"`
 	Bottles        *[]int         `json:"bottles"`
+	PotionX        *float64       `json:"potionX"`
 
 	DrawPile    *[]CardData `json:"drawPile"`
 	DiscardPile *[]CardData `json:"discardPile"`
@@ -171,7 +173,7 @@ func (gs *GameStateManager) send(ctx context.Context, userId string, data any) (
 	return nil
 }
 
-//nolint:funlen
+//nolint:funlen,gocyclo
 func (gs *GameStateManager) broadcastUpdate(ctx context.Context,
 	userId string, prev *GameState, update GameState) (err error) {
 	ctx, span := o11y.Tracer.Start(ctx, "game_state: broadcast game state update")
@@ -199,6 +201,7 @@ func (gs *GameStateManager) broadcastUpdate(ctx context.Context,
 		DrawPile:       nil,
 		ExhaustPile:    nil,
 		Bottles:        nil,
+		PotionX:        nil,
 	}
 	if prev.Character != update.Character {
 		updateValue.Character = &update.Character
@@ -244,6 +247,9 @@ func (gs *GameStateManager) broadcastUpdate(ctx context.Context,
 	}
 	if !reflect.DeepEqual(prev.Bottles, update.Bottles) {
 		updateValue.Bottles = &update.Bottles
+	}
+	if prev.PotionX != update.PotionX {
+		updateValue.PotionX = &update.PotionX
 	}
 
 	return gs.send(ctx, userId, updateValue)
