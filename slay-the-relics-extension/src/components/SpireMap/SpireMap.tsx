@@ -111,7 +111,13 @@ function MapCanvas(props: {
     const getLocation = (i: number, j: number) => {
       const x = 300 + j * 150;
       const y = 600 + (nodes.length - 1 - i) * 160; // Invert y-axis for canvas
-      return { x: x, y: y };
+      const res = { x: x, y: y, r: 42 };
+      if (i === 15) {
+        res.r = 222;
+        res.x = 300 + 2.5 * 150;
+        res.y = 600 - 2.5 * 150;
+      }
+      return res;
     };
     const lineOffset = 64;
     for (let i = 0; i < nodes.length; i++) {
@@ -139,7 +145,7 @@ function MapCanvas(props: {
     for (const pathNode of path) {
       const node = getLocation(pathNode[1], pathNode[0]);
       ctx.beginPath();
-      ctx.arc(node.x + lineOffset, node.y + lineOffset, 42, 0, Math.PI * 2);
+      ctx.arc(node.x + lineOffset, node.y + lineOffset, node.r, 0, Math.PI * 2);
       ctx.strokeStyle = "#3972C6";
       ctx.lineWidth = 7;
       ctx.setLineDash([]);

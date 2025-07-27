@@ -319,7 +319,6 @@ export default class App extends Component<AppProps, AppState> {
           <Tooltip
             id={"root-tooltip"}
             style={{ background: "transparent", zIndex: 500 }}
-            defaultIsOpen={true}
           />
         </div>
       </LocalizationContext>
