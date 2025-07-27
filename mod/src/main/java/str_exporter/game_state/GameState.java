@@ -5,8 +5,10 @@ import com.megacrit.cardcrawl.cards.AbstractCard;
 import com.megacrit.cardcrawl.cards.CardGroup;
 import com.megacrit.cardcrawl.characters.AbstractPlayer;
 import com.megacrit.cardcrawl.core.CardCrawlGame;
+import com.megacrit.cardcrawl.core.Settings;
 import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
 import com.megacrit.cardcrawl.relics.*;
+import com.megacrit.cardcrawl.ui.panels.TopPanel;
 import str_exporter.game_state.integrations.Integrations;
 
 import java.util.*;
@@ -36,6 +38,7 @@ public class GameState {
     public List<ArrayList<MapNode>> mapNodes;
     public List<List<Integer>> mapPath;
     public List<Integer> bottles;
+    public float potionX;
 
 
     public GameState(String channel) {
@@ -60,6 +63,7 @@ public class GameState {
         this.discardPile = new ArrayList<>();
         this.exhaustPile = new ArrayList<>();
         this.bottles = Arrays.asList(-1, -1, -1);
+        this.potionX = 33;
     }
 
 
@@ -234,9 +238,7 @@ public class GameState {
 
         List<AbstractCard> masterDeck;
         if (player.masterDeck != null && player.masterDeck.group != null) {
-            masterDeck = player.masterDeck.group.stream()
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
+            masterDeck = player.masterDeck.group.stream().filter(Objects::nonNull).collect(Collectors.toList());
         } else {
             masterDeck = new ArrayList<>();
         }
@@ -285,7 +287,20 @@ public class GameState {
         this.staticTips = TipsBox.allStaticTips();
         this.mapNodes = makeMap();
         this.setPaths();
+
+        this.potionX = getPotionX();
+
         this.gameStateIndex++;
+    }
+
+    private float getPotionX() {
+        if (TopPanel.potionX == 0) {
+            return 33;
+        }
+        if (Settings.WIDTH == 0) {
+            return 33;
+        }
+        return TopPanel.potionX / Settings.WIDTH * 100;
     }
 
     private ArrayList<ArrayList<MapNode>> makeMap() {
