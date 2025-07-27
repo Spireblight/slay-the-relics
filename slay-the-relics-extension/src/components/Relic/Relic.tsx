@@ -53,7 +53,8 @@ export function LookupRelic(
   }
 
   const description = descriptionParts.join("");
-  return new RelicProp(relic, description, relicTip === null ? [] : [relicTip]);
+  const name = relicLoc.NAME ?? relic;
+  return new RelicProp(name, description, relicTip === null ? [] : [relicTip]);
 }
 
 export function Relic(props: {
