@@ -98,6 +98,7 @@ function MapCanvas(props: {
     if (!ctx || !canvas) {
       return;
     }
+    const act4 = props.boss === "heart";
     canvas.width = 1400 * scalingFactor;
     canvas.height = 3150 * scalingFactor;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -105,14 +106,25 @@ function MapCanvas(props: {
 
     const bossImg = getBossImage(props.boss);
     bossImg.onload = () => {
-      ctx.drawImage(bossImg, 3 * 160, 365 + (nodes.length - 1 - 16) * 170);
+      let length = nodes.length;
+      if (act4) {
+        length = 15;
+      }
+      ctx.drawImage(bossImg, 3 * 160, 365 + (length - 1 - 16) * 170);
     };
 
+    let xOffset = 0;
+    let yOffset = 0;
+    if (act4) {
+      xOffset = -75;
+      yOffset = -350;
+    }
+
     const getLocation = (i: number, j: number) => {
-      const x = 300 + j * 150;
-      const y = 600 + (nodes.length - 1 - i) * 160; // Invert y-axis for canvas
+      const x = xOffset + 300 + j * 150;
+      const y = yOffset + 600 + (nodes.length - 1 - i) * 160; // Invert y-axis for canvas
       const res = { x: x, y: y, r: 42 };
-      if (i === nodes.length) {
+      if (i === nodes.length || (act4 && i === 3)) {
         res.r = 222;
         res.x = 300 + 2.5 * 150;
         res.y = 600 - 2.5 * 150;
@@ -128,7 +140,13 @@ function MapCanvas(props: {
         img.onload = () => {
           ctx.drawImage(img, x, y);
         };
-        for (const parent of node.parents) {
+
+        let parents = node.parents;
+        if (act4 && node.type !== "*" && i > 0) {
+          parents = [j];
+        }
+
+        for (const parent of parents) {
           const start = getLocation(i - 1, parent);
           ctx.beginPath();
 
