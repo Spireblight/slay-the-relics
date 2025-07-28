@@ -112,7 +112,7 @@ function MapCanvas(props: {
       const x = 300 + j * 150;
       const y = 600 + (nodes.length - 1 - i) * 160; // Invert y-axis for canvas
       const res = { x: x, y: y, r: 42 };
-      if (i === 15) {
+      if (i === nodes.length) {
         res.r = 222;
         res.x = 300 + 2.5 * 150;
         res.y = 600 - 2.5 * 150;
@@ -131,11 +131,23 @@ function MapCanvas(props: {
         for (const parent of node.parents) {
           const start = getLocation(i - 1, parent);
           ctx.beginPath();
-          ctx.moveTo(start.x + lineOffset, start.y + lineOffset); // Center the line on the node
-          ctx.lineTo(x + lineOffset, y + lineOffset); // Center the line on the node
+
+          const lineRatio = 0.27;
+          const s = { x: start.x + lineOffset, y: start.y + lineOffset };
+          const e = { x: x + lineOffset, y: y + lineOffset };
+
+          ctx.moveTo(
+            s.x + (e.x - s.x) * lineRatio,
+            s.y + (e.y - s.y) * lineRatio,
+          );
+          ctx.lineTo(
+            e.x - (e.x - s.x) * lineRatio,
+            e.y - (e.y - s.y) * lineRatio,
+          );
+
           ctx.lineWidth = 5;
           ctx.strokeStyle = "#453d3b";
-          ctx.setLineDash([15]);
+          ctx.setLineDash([10]);
           ctx.stroke();
           ctx.closePath();
         }
