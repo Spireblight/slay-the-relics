@@ -109,7 +109,7 @@ public class SlayTheRelicsExporter implements StartGameSubscriber, PostInitializ
 
         BaseMod.registerModBadge(ImageMaster.loadImage("SlayTheRelicsExporterResources/img/str_32x32.png"),
                 "Slay the Relics Exporter",
-                "LordAddy, vmService",
+                "vmService",
                 "This mod exports data to Slay the Relics Twitch extension. See the extension config on Twitch for setup instructions.",
                 settingsPanel);
 

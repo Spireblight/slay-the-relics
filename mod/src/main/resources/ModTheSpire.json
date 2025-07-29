@@ -1,7 +1,7 @@
 {
   "modid": "SlayTheRelicsExporter",
   "name": "Slay the Relics Exporter",
-  "author_list": ["LordAddy", "vmService"],
+  "author_list": ["vmService"],
   "description": "This mod exports data to Slay the Relics Twitch extension. \n\nThis mod in combination with the extension displays deck view and tooltips for viewers on stream for relics, potions, player/monster powers, orbs, even some custom tooltips from some mods. \nThe viewers just need to hover over the respective item just as if they were in the game themselves.\n\nSee the extension config on Twitch for setup instructions (search 'Slay the Relics').",
   "version": "3.0.0",
   "sts_version": "07-30-2020",
