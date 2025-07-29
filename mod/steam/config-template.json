@@ -1,0 +1,11 @@
+{
+  "steamPublishedID": "3048891690",
+  "title": "Slay the Relics Reborn",
+  "description": "",
+  "visibility": "public",
+  "changeNote": "v3.0.0 - Complete rewrite, see https://github.com/Spireblight/slay-the-relics/blob/master/docs/README.md",
+  "tags": [
+    "twitch",
+    "stream"
+  ]
+}

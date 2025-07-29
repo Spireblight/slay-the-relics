@@ -1,9 +1,7 @@
 # Slay the Relics
 
-<https://dashboard.twitch.tv/extensions/ebkycs9lir8pbic2r0b7wa6bg6n7ua-0.0.1>
-
-This is a continuation of the now defunct slay the relics extension
-(https://dashboard.twitch.tv/extensions/7dgfio8rek8dhju8628riism3fd11p-1.2.1) created by LordAddy.
+- [Extension](https://dashboard.twitch.tv/extensions/ebkycs9lir8pbic2r0b7wa6bg6n7ua)
+- [Source Code](https://github.com/Spireblight/slay-the-relics)
 
 ## Features
 
@@ -13,7 +11,7 @@ This is a continuation of the now defunct slay the relics extension
 
 ## Install
 
-- Install the twitch extension: <https://dashboard.twitch.tv/extensions/ebkycs9lir8pbic2r0b7wa6bg6n7ua-0.0.1>
+- Install the twitch extension: <https://dashboard.twitch.tv/extensions/ebkycs9lir8pbic2r0b7wa6bg6n7ua>
 
 - Subscribe to the mod on steam workshop: <https://steamcommunity.com/sharedfiles/filedetails/?id=3048891690>
 
@@ -60,4 +58,3 @@ If it is red, you can try to Connect with Twitch again.
 - What about the `SlayTheRelicsExporter.jar` in the `mods` folder?
 
   It is no longer used, you should delete it.
-
