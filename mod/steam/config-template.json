@@ -3,7 +3,7 @@
   "title": "Slay the Relics Reborn",
   "description": "",
   "visibility": "public",
-  "changeNote": "v3.0.0 - Complete rewrite, see https://github.com/Spireblight/slay-the-relics/blob/master/docs/README.md",
+  "changeNote": "v3.0.1 - Add some debug info",
   "tags": [
     "twitch",
     "stream"

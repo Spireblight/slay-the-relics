@@ -8,6 +8,7 @@ import str_exporter.config.Config;
 import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static basemod.BaseMod.gson;
@@ -20,9 +21,9 @@ public class GameStateManager extends Thread {
     private final Config config;
 
     private final BlockingQueue<String> queue;
-    private AtomicLong lastPolled = new AtomicLong(0);
+    private AtomicLong lastPolled = new AtomicLong(-1);
 
-    private static int INTERVAL = 1000; // Default interval in milliseconds
+    private static long INTERVAL = 1_000_000_000; // Default interval in nanoseconds
 
     public GameStateManager(EBSClient ebsClient, Config config) {
         this.ebsClient = ebsClient;
@@ -44,36 +45,44 @@ public class GameStateManager extends Thread {
     }
 
     public void postRender() {
-        if (this.gameState != null) {
-            long currentTime = System.currentTimeMillis();
-            long lastPolled = this.lastPolled.get();
-            if (currentTime - lastPolled < INTERVAL && lastPolled != 0) {
-                return; // Skip if the delay has not passed
-            }
-            this.gameState.poll();
-            this.lastPolled.set(currentTime);
-            this.submit(gson.toJson(this.gameState));
+        if (this.gameState == null) {
+            logger.warn("GameState is null");
+            return;
         }
+        if (!config.areCredentialsValid()) {
+            logger.warn("Credentials are not valid");
+            return;
+        }
+
+        long currentTime = System.nanoTime();
+        long lastPolled = this.lastPolled.get();
+        if (currentTime - lastPolled < INTERVAL && lastPolled != -1) {
+            return; // Skip if the delay has not passed
+        }
+        this.gameState.poll();
+        this.lastPolled.set(currentTime);
+        this.submit(gson.toJson(this.gameState));
     }
 
     @Override
     public void run() {
         logger.info("Starting GameStateManager");
         while (!Thread.currentThread().isInterrupted()) {
-            if (!this.config.areCredentialsValid()) {
-                continue;
-            }
-
             String msg = "";
             try {
-                msg = this.queue.take();
+                msg = this.queue.poll(1200, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 logger.error("GameStateManager thread interrupted", e);
                 return;
             }
 
             try {
-                this.ebsClient.postGameState(msg);
+                if (msg == null) {
+                    logger.warn("GameStateManager queue is empty");
+                } else {
+//                    logger.info("posting msg:\n{}", msg);
+                    this.ebsClient.postGameState(msg);
+                }
             } catch (IOException e) {
                 logger.error(e);
             }
