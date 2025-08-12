@@ -11,6 +11,7 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/MaT1g3R/slaytherelics/client"
 	"github.com/MaT1g3R/slaytherelics/o11y"
@@ -176,7 +177,10 @@ func (gs *GameStateManager) send(ctx context.Context, userId string, data any) (
 //nolint:funlen,gocyclo
 func (gs *GameStateManager) broadcastUpdate(ctx context.Context,
 	userId string, prev *GameState, update GameState) (err error) {
-	ctx, span := o11y.Tracer.Start(ctx, "game_state: broadcast game state update")
+	ctx, span := o11y.Tracer.Start(ctx, "game_state: broadcast game state update", trace.WithAttributes(
+		attribute.String("user_id", userId),
+		attribute.Int("gamestate_index", update.Index),
+	))
 	defer o11y.End(&span, &err)
 
 	if prev == nil {
