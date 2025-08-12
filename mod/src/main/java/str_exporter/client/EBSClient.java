@@ -48,22 +48,36 @@ public class EBSClient {
             con.setRequestProperty("Authorization", "Bearer " + config.getOathToken());
             con.setRequestProperty("User-ID", config.getUser());
         }
-        con.setDoOutput(true);
 
-        OutputStream os = con.getOutputStream();
         if (body != null && !body.isEmpty()) {
-            byte[] input = body.getBytes(StandardCharsets.UTF_8);
-            os.write(input, 0, input.length);
+            con.setDoOutput(true);
+            try (OutputStream os = con.getOutputStream()) {
+                os.write(body.getBytes(StandardCharsets.UTF_8));
+            }
         }
 
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(),
-                StandardCharsets.UTF_8))) {
-            if (con.getResponseCode() >= 200 && con.getResponseCode() < 300) {
+        int code = con.getResponseCode();
+        if (code >= 200 && code < 300) {
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8))) {
                 JsonReader reader = new JsonReader(br);
                 lastSuccessRequest.set(System.currentTimeMillis());
                 return config.gson.fromJson(reader, outputType);
             }
-            throw new IOException(method + " " + path + " failed: HTTP error code: " + con.getResponseCode());
         }
+
+        String errBody = "";
+        try {
+            if (con.getErrorStream() != null) {
+                try (BufferedReader br = new BufferedReader(new InputStreamReader(con.getErrorStream(), StandardCharsets.UTF_8))) {
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = br.readLine()) != null) sb.append(line).append('\n');
+                    errBody = sb.toString();
+                }
+            }
+        } catch (Exception ignore) {
+        }
+
+        throw new IOException(method + " " + path + " failed: HTTP " + code + (errBody.isEmpty() ? "" : ": " + errBody.trim()));
     }
 }
