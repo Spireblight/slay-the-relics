@@ -13,6 +13,7 @@ public class Config {
     private static final String DELAY_SETTINGS = "delay";
     private static final String OAUTH_SETTINGS = "oauth";
     private static final String USER_SETTINGS = "user";
+    private static final String MODDED_SETTINGS = "modded";
     public final Gson gson = new Gson();
     private final SpireConfig config;
 
@@ -20,6 +21,7 @@ public class Config {
         Properties strDefaultSettings = new Properties();
         strDefaultSettings.setProperty(DELAY_SETTINGS, "150");
         strDefaultSettings.setProperty(API_URL_SETTINGS, "https://slay-the-relics.baalorlord.tv");
+        strDefaultSettings.setProperty(MODDED_SETTINGS, "false");
 
         config = new SpireConfig("slayTheRelics", "slayTheRelicsExporterConfig", strDefaultSettings);
         config.load();
@@ -54,6 +56,15 @@ public class Config {
     public void setUser(String user) throws IOException {
         config.setString(USER_SETTINGS, user);
         config.save();
+    }
+
+    public void setModded(boolean modded) throws IOException {
+        config.setString(MODDED_SETTINGS, modded ? "true" : "false");
+        config.save();
+    }
+
+    public boolean getModded() {
+        return config.getString(MODDED_SETTINGS).equals("true");
     }
 
     public boolean areCredentialsValid() {

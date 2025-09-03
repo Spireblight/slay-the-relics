@@ -3,7 +3,7 @@
   "title": "Slay the Relics Reborn",
   "description": "",
   "visibility": "public",
-  "changeNote": "v3.0.1 - Add some debug info",
+  "changeNote": "v3.1.0 - Add experimental modded relic support",
   "tags": [
     "twitch",
     "stream"
