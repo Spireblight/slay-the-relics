@@ -4,8 +4,10 @@ import basemod.*;
 import basemod.interfaces.PostInitializeSubscriber;
 import basemod.interfaces.PostRenderSubscriber;
 import basemod.interfaces.StartGameSubscriber;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.evacipated.cardcrawl.modthespire.lib.SpireInitializer;
+import com.megacrit.cardcrawl.helpers.FontHelper;
 import com.megacrit.cardcrawl.helpers.ImageMaster;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -55,10 +57,9 @@ public class SlayTheRelicsExporter implements StartGameSubscriber, PostInitializ
     public void makeNewGameState() {
         String user = this.config.getUser();
         logger.info("makeNewGameState() called with user: {}", user);
-        this.gameState = new GameState(user);
+        this.gameState = new GameState(user, this.config);
         this.gameStateManager.setGameState(this.gameState);
     }
-
 
     @Override
     public void receivePostInitialize() {
@@ -98,12 +99,25 @@ public class SlayTheRelicsExporter implements StartGameSubscriber, PostInitializ
 
         ModStatusImage statusImage = new ModStatusImage(950f, 480f, authManager.healthy, authManager.inProgress);
 
+        ModLabeledToggleButton moddedRelicsSupport = new ModLabeledToggleButton(
+                "Enable Modded Relics Support (Experimental)",
+                400, 420, Color.WHITE, FontHelper.tipBodyFont,
+                config.getModded(), settingsPanel, (l) -> {
+        }, (me) -> {
+            try {
+                config.setModded(me.enabled);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
         settingsPanel.addUIElement(label1);
         settingsPanel.addUIElement(slider);
         settingsPanel.addUIElement(label2);
         settingsPanel.addUIElement(btn);
         settingsPanel.addUIElement(oauthBtn);
         settingsPanel.addUIElement(statusImage);
+        settingsPanel.addUIElement(moddedRelicsSupport);
 
         slider.setValue(config.getDelay() * 1.0f / slider.multiplier);
 

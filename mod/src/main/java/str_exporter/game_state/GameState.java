@@ -1,6 +1,7 @@
 package str_exporter.game_state;
 
 
+import basemod.Pair;
 import com.megacrit.cardcrawl.cards.AbstractCard;
 import com.megacrit.cardcrawl.cards.CardGroup;
 import com.megacrit.cardcrawl.characters.AbstractPlayer;
@@ -9,6 +10,7 @@ import com.megacrit.cardcrawl.core.Settings;
 import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
 import com.megacrit.cardcrawl.relics.*;
 import com.megacrit.cardcrawl.ui.panels.TopPanel;
+import str_exporter.config.Config;
 import str_exporter.game_state.integrations.Integrations;
 
 import java.util.*;
@@ -40,10 +42,12 @@ public class GameState {
     public List<Integer> bottles;
     public float potionX;
 
+    private transient final Config config;
 
-    public GameState(String channel) {
+    public GameState(String channel, Config config) {
         this.channel = channel;
         this.resetState();
+        this.config = config;
     }
 
     public void resetState() {
@@ -65,7 +69,6 @@ public class GameState {
         this.bottles = Arrays.asList(-1, -1, -1);
         this.potionX = 33;
     }
-
 
     private static String normalCardName(AbstractCard card) {
         if (card == null) {
@@ -162,6 +165,73 @@ public class GameState {
         }
     }
 
+    private void putBaseRelicStats(int i, List<Object> stats) {
+        if (config.getModded()) {
+            return;
+        }
+        this.baseRelicStats.put(i, stats);
+    }
+
+    private Pair<BottledFlame, Pair<BottledLightning, BottledTornado>> setRelics(AbstractPlayer player) {
+        this.relics = new ArrayList<>();
+        this.baseRelicStats = new HashMap<>();
+
+        BottledFlame bottledFlame = null;
+        BottledLightning bottledLightning = null;
+        BottledTornado bottledTornado = null;
+
+        for (int i = 0; i < player.relics.size(); ++i) {
+            AbstractRelic relic = player.relics.get(i);
+
+            if (!config.getModded()) {
+                this.relics.add(relic.relicId);
+            }
+
+            if (relic instanceof BottledFlame) {
+                bottledFlame = (BottledFlame) relic;
+                AbstractCard card = bottledFlame.card;
+                String name = bottleCardName(card);
+                if (name != null) {
+                    this.putBaseRelicStats(i, Collections.singletonList(name));
+                }
+            } else if (relic instanceof BottledLightning) {
+                bottledLightning = (BottledLightning) relic;
+                AbstractCard card = bottledLightning.card;
+                String name = bottleCardName(card);
+                if (name != null) {
+                    this.putBaseRelicStats(i, Collections.singletonList(name));
+                }
+            } else if (relic instanceof BottledTornado) {
+                bottledTornado = (BottledTornado) relic;
+                AbstractCard card = bottledTornado.card;
+                String name = bottleCardName(card);
+                if (name != null) {
+                    this.putBaseRelicStats(i, Collections.singletonList(name));
+                }
+            } else if (relic instanceof DuVuDoll) {
+                int curse = 0;
+                for (AbstractCard card : player.masterDeck.group) {
+                    if (card.rarity == AbstractCard.CardRarity.CURSE) {
+                        curse++;
+                    }
+                }
+                this.putBaseRelicStats(i, Collections.singletonList(curse));
+            } else if (relic instanceof Matryoshka) {
+                this.putBaseRelicStats(i, Collections.singletonList(relic.counter));
+            } else if (relic instanceof MawBank) {
+                this.putBaseRelicStats(i, Collections.singletonList(relic.usedUp ? 0 : 12));
+            } else if (relic instanceof Omamori) {
+                this.putBaseRelicStats(i, Collections.singletonList(relic.counter));
+            }
+        }
+
+        if (!config.getModded()) {
+            this.relicTips = Integrations.relicStatsIntegration.relicTips(this.relics);
+        }
+
+        return new Pair<>(bottledFlame, new Pair<>(bottledLightning, bottledTornado));
+    }
+
     public void poll() {
         boolean inRun = CardCrawlGame.isInARun() && CardCrawlGame.dungeon != null && AbstractDungeon.player != null;
         AbstractPlayer player = AbstractDungeon.player;
@@ -185,56 +255,7 @@ public class GameState {
                 break;
         }
         this.boss = getBossName();
-        this.relics = new ArrayList<>();
-        this.baseRelicStats = new HashMap<>();
 
-        BottledFlame bottledFlame = null;
-        BottledLightning bottledLightning = null;
-        BottledTornado bottledTornado = null;
-
-        for (int i = 0; i < player.relics.size(); ++i) {
-            AbstractRelic relic = player.relics.get(i);
-            this.relics.add(relic.relicId);
-
-            if (relic instanceof BottledFlame) {
-                bottledFlame = (BottledFlame) relic;
-                AbstractCard card = bottledFlame.card;
-                String name = bottleCardName(card);
-                if (name != null) {
-                    this.baseRelicStats.put(i, Collections.singletonList(name));
-                }
-            } else if (relic instanceof BottledLightning) {
-                bottledLightning = (BottledLightning) relic;
-                AbstractCard card = bottledLightning.card;
-                String name = bottleCardName(card);
-                if (name != null) {
-                    this.baseRelicStats.put(i, Collections.singletonList(name));
-                }
-            } else if (relic instanceof BottledTornado) {
-                bottledTornado = (BottledTornado) relic;
-                AbstractCard card = bottledTornado.card;
-                String name = bottleCardName(card);
-                if (name != null) {
-                    this.baseRelicStats.put(i, Collections.singletonList(name));
-                }
-            } else if (relic instanceof DuVuDoll) {
-                int curse = 0;
-                for (AbstractCard card : player.masterDeck.group) {
-                    if (card.rarity == AbstractCard.CardRarity.CURSE) {
-                        curse++;
-                    }
-                }
-                this.baseRelicStats.put(i, Collections.singletonList(curse));
-            } else if (relic instanceof Matryoshka) {
-                this.baseRelicStats.put(i, Collections.singletonList(relic.counter));
-            } else if (relic instanceof MawBank) {
-                this.baseRelicStats.put(i, Collections.singletonList(relic.usedUp ? 0 : 12));
-            } else if (relic instanceof Omamori) {
-                this.baseRelicStats.put(i, Collections.singletonList(relic.counter));
-            }
-        }
-
-        this.relicTips = Integrations.relicStatsIntegration.relicTips(this.relics);
 
         List<AbstractCard> masterDeck;
         if (player.masterDeck != null && player.masterDeck.group != null) {
@@ -242,6 +263,12 @@ public class GameState {
         } else {
             masterDeck = new ArrayList<>();
         }
+
+        Pair<BottledFlame, Pair<BottledLightning, BottledTornado>> b = setRelics(player);
+
+        BottledFlame bottledFlame = b.getKey();
+        BottledLightning bottledLightning = b.getValue().getKey();
+        BottledTornado bottledTornado = b.getValue().getValue();
 
         ArrayList<Object> deck = new ArrayList<>();
         List<Integer> bottles = Arrays.asList(-1, -1, -1);
@@ -257,9 +284,8 @@ public class GameState {
                 bottles.set(2, i);
             }
         }
-        this.deck = deck;
         this.bottles = bottles;
-
+        this.deck = deck;
 
         if (isInCombat()) {
             this.discardPile = cardGroupToCardData(player.discardPile);
@@ -284,7 +310,7 @@ public class GameState {
 
         this.potions = player.potions.stream().map(p -> p.ID).collect(Collectors.toList());
         this.additionalTips = TipsBox.allCombatTips();
-        this.staticTips = TipsBox.allStaticTips();
+        this.staticTips = TipsBox.allStaticTips(this.config.getModded());
         this.mapNodes = makeMap();
         this.setPaths();
 

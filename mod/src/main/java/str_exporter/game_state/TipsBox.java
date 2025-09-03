@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class TipsBox {
+    private static final int MAX_RELICS = 25;
     public final List<Tip> tips;
     public final HitBox hitbox;
 
@@ -41,19 +42,11 @@ public class TipsBox {
     }
 
     private static boolean isInAShop() {
-        return CardCrawlGame.isInARun() &&
-                CardCrawlGame.dungeon != null &&
-                AbstractDungeon.player != null &&
-                AbstractDungeon.currMapNode != null &&
-                AbstractDungeon.currMapNode.room instanceof ShopRoom;
+        return CardCrawlGame.isInARun() && CardCrawlGame.dungeon != null && AbstractDungeon.player != null && AbstractDungeon.currMapNode != null && AbstractDungeon.currMapNode.room instanceof ShopRoom;
     }
 
     private static boolean isDisplayingBossRelics() {
-        return CardCrawlGame.isInARun() &&
-                CardCrawlGame.dungeon != null &&
-                AbstractDungeon.player != null &&
-                AbstractDungeon.currMapNode != null &&
-                AbstractDungeon.screen == AbstractDungeon.CurrentScreen.BOSS_REWARD;
+        return CardCrawlGame.isInARun() && CardCrawlGame.dungeon != null && AbstractDungeon.player != null && AbstractDungeon.currMapNode != null && AbstractDungeon.screen == AbstractDungeon.CurrentScreen.BOSS_REWARD;
     }
 
     private static String getImageCode(Texture img) {
@@ -95,7 +88,7 @@ public class TipsBox {
         return tips.stream().filter(t -> !t.tips.isEmpty()).collect(Collectors.toList());
     }
 
-    public static List<TipsBox> allStaticTips() {
+    public static List<TipsBox> allStaticTips(boolean includeRelics) {
         ArrayList<TipsBox> tips = new ArrayList<>();
 
         if (isInAShop()) {
@@ -104,7 +97,30 @@ public class TipsBox {
             tips.addAll(bossRelicTips());
         }
 
+        if (includeRelics) {
+            tips.addAll(relicTips());
+        }
+
         return tips.stream().filter(t -> !t.tips.isEmpty()).collect(Collectors.toList());
+    }
+
+    private static List<TipsBox> relicTips() {
+        ArrayList<AbstractRelic> relics = new ArrayList<>();
+        ArrayList<TipsBox> boxes = new ArrayList<>();
+        if (CardCrawlGame.isInARun() && AbstractDungeon.player.relics != null) {
+            relics = AbstractDungeon.player.relics;
+        }
+
+        for (int i = 0; i < Math.min(relics.size(), MAX_RELICS); i++) {
+            AbstractRelic relic = relics.get(i);
+            List<Tip> tips = new ArrayList<>();
+            for (PowerTip powerTip : relic.tips) {
+                tips.add(powerTip(powerTip));
+            }
+            TipsBox box = new TipsBox(tips, buildHitbox(relic.hb));
+            boxes.add(box);
+        }
+        return boxes;
     }
 
     private static boolean instanceOfInvisiblePower(AbstractPower p) {
@@ -152,14 +168,8 @@ public class TipsBox {
     }
 
     private static List<TipsBox> shopTips() {
-        ArrayList<StorePotion>
-                potions =
-                ReflectionHacks.getPrivate(AbstractDungeon.shopScreen,
-                        AbstractDungeon.shopScreen.getClass(),
-                        "potions");
-        ArrayList<StoreRelic>
-                relics =
-                ReflectionHacks.getPrivate(AbstractDungeon.shopScreen, AbstractDungeon.shopScreen.getClass(), "relics");
+        ArrayList<StorePotion> potions = ReflectionHacks.getPrivate(AbstractDungeon.shopScreen, AbstractDungeon.shopScreen.getClass(), "potions");
+        ArrayList<StoreRelic> relics = ReflectionHacks.getPrivate(AbstractDungeon.shopScreen, AbstractDungeon.shopScreen.getClass(), "relics");
 
         if (potions == null) {
             potions = new ArrayList<>();
@@ -193,9 +203,7 @@ public class TipsBox {
         ArrayList<Tip> tips = new ArrayList<>();
         HitBox box = buildHitbox(monster.hb);
 
-        if (monster.intentAlphaTarget == 1.0F &&
-                !AbstractDungeon.player.hasRelic("Runic Dome") &&
-                monster.intent != AbstractMonster.Intent.NONE) {
+        if (monster.intentAlphaTarget == 1.0F && !AbstractDungeon.player.hasRelic("Runic Dome") && monster.intent != AbstractMonster.Intent.NONE) {
             PowerTip intentTip = ReflectionHacks.getPrivate(monster, AbstractMonster.class, "intentTip");
 
             if (intentTip != null) {
@@ -240,8 +248,6 @@ public class TipsBox {
         if (AbstractDungeon.getMonsters().monsters == null) {
             return new ArrayList<>();
         }
-        return AbstractDungeon.getMonsters().monsters.stream()
-                .filter(m -> !m.isDying && !m.isDeadOrEscaped())
-                .collect(Collectors.toList());
+        return AbstractDungeon.getMonsters().monsters.stream().filter(m -> !m.isDying && !m.isDeadOrEscaped()).collect(Collectors.toList());
     }
 }
