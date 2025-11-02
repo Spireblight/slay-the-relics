@@ -5,7 +5,7 @@ import "sync"
 // SyncMap is a type safe version of sync.Map. While similar to sync.Map itself this should
 // generally not be used by non-specialized code, it is at least strongly typed and reduces
 // the number of footguns when interacting with it.
-type SyncMap[KeyType any, ValueType any] sync.Map
+type SyncMap[KeyType comparable, ValueType any] sync.Map
 
 // Load returns the value stored associated with key, if one exists. Otherwise it returns
 // the default value and false.

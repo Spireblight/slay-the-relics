@@ -103,7 +103,7 @@ type GameStateUpdate struct {
 type GameStateManager struct {
 	tw *client.Twitch
 
-	GameStates map[string]GameState
+	GameStates SyncMap[string, GameState]
 
 	compressedSizeHistogram metric.Int64Histogram
 }
@@ -115,7 +115,7 @@ func NewGameStateManager(tw *client.Twitch) (*GameStateManager, error) {
 	}
 	return &GameStateManager{
 		tw:                      tw,
-		GameStates:              make(map[string]GameState),
+		GameStates:              SyncMap[string, GameState]{},
 		compressedSizeHistogram: hist,
 	}, nil
 }
@@ -260,18 +260,23 @@ func (gs *GameStateManager) broadcastUpdate(ctx context.Context,
 }
 
 func (gs *GameStateManager) ReceiveUpdate(ctx context.Context, userId string, update GameState) error {
-	current, ok := gs.GameStates[userId]
+	current, ok := gs.GameStates.Load(userId)
+	// current state not found, or initialize new run, always override
 	if !ok || update.Index == 0 {
-		gs.GameStates[userId] = update
+		gs.GameStates.Store(userId, update)
 		return gs.broadcastUpdate(ctx, userId, nil, update)
 	}
+	// stale index, ignore
+	if current.Index >= update.Index {
+		return nil
+	}
 	err := gs.broadcastUpdate(ctx, userId, &current, update)
-	gs.GameStates[userId] = update
+	gs.GameStates.Store(userId, update)
 	return err
 }
 
 func (gs *GameStateManager) GetGameState(userId string) (GameState, bool) {
-	state, ok := gs.GameStates[userId]
+	state, ok := gs.GameStates.Load(userId)
 	if !ok {
 		return GameState{}, false
 	}
