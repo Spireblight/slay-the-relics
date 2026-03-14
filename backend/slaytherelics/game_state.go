@@ -54,9 +54,12 @@ type MapNode struct {
 	Parents []int  `json:"parents"`
 }
 
+// GameState is the game state format used by both STS1 and STS2.
+// The STS2 mod transforms its state to the same shape, with a few extra optional fields.
 type GameState struct {
 	Index   int    `json:"gameStateIndex"`
 	Channel string `json:"channel"`
+	Game    string `json:"game,omitempty"`
 
 	Character      string        `json:"character"`
 	Boss           string        `json:"boss"`
@@ -75,6 +78,10 @@ type GameState struct {
 	DrawPile    []CardData `json:"drawPile"`
 	DiscardPile []CardData `json:"discardPile"`
 	ExhaustPile []CardData `json:"exhaustPile"`
+
+	CardTips   map[string][]Tip `json:"cardTips,omitempty"`
+	PotionTips []Tip            `json:"potionTips,omitempty"`
+	CardImages map[string]string `json:"cardImages,omitempty"`
 }
 
 type GameStateUpdate struct {
@@ -98,6 +105,10 @@ type GameStateUpdate struct {
 	DrawPile    *[]CardData `json:"drawPile"`
 	DiscardPile *[]CardData `json:"discardPile"`
 	ExhaustPile *[]CardData `json:"exhaustPile"`
+
+	CardTips   *map[string][]Tip  `json:"cardTips,omitempty"`
+	PotionTips *[]Tip             `json:"potionTips,omitempty"`
+	CardImages *map[string]string `json:"cardImages,omitempty"`
 }
 
 type GameStateManager struct {
@@ -255,6 +266,15 @@ func (gs *GameStateManager) broadcastUpdate(ctx context.Context,
 	if prev.PotionX != update.PotionX {
 		updateValue.PotionX = &update.PotionX
 	}
+	if !reflect.DeepEqual(prev.CardTips, update.CardTips) {
+		updateValue.CardTips = &update.CardTips
+	}
+	if !reflect.DeepEqual(prev.PotionTips, update.PotionTips) {
+		updateValue.PotionTips = &update.PotionTips
+	}
+	if !reflect.DeepEqual(prev.CardImages, update.CardImages) {
+		updateValue.CardImages = &update.CardImages
+	}
 
 	return gs.send(ctx, userId, updateValue)
 }
@@ -282,3 +302,4 @@ func (gs *GameStateManager) GetGameState(userId string) (GameState, bool) {
 	}
 	return state, true
 }
+
