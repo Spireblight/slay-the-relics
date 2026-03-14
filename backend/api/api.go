@@ -21,6 +21,11 @@ type API struct {
 	deckLock  *sync.RWMutex
 
 	gameStateManager *slaytherelics.GameStateManager
+	devMode          bool
+}
+
+type Options struct {
+	DevMode bool
 }
 
 func New(
@@ -28,6 +33,7 @@ func New(
 	u *slaytherelics.Users,
 	b *slaytherelics.Broadcaster,
 	g *slaytherelics.GameStateManager,
+	opts ...Options,
 ) (*API, error) {
 	r := gin.Default()
 	r.Use(o11y.Middleware)
@@ -35,6 +41,11 @@ func New(
 	err := r.SetTrustedProxies(nil)
 	if err != nil {
 		return nil, err
+	}
+
+	var opt Options
+	if len(opts) > 0 {
+		opt = opts[0]
 	}
 
 	api := &API{
@@ -46,6 +57,7 @@ func New(
 		gameStateManager: g,
 		deckLists:        make(map[string]string),
 		deckLock:         &sync.RWMutex{},
+		devMode:          opt.DevMode,
 	}
 
 	r.POST("/", api.postOldMessageHandler)

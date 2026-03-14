@@ -69,7 +69,7 @@ func initialize(ctx context.Context, cfg config.Config) (_ *api.API, cancel func
 	}
 
 	span.AddEvent("starting server")
-	a, err := api.New(twitchClient, users, broadcaster, gameStateManager)
+	a, err := api.New(twitchClient, users, broadcaster, gameStateManager, api.Options{DevMode: cfg.DevMode})
 	return a, cancel, err
 }
 
