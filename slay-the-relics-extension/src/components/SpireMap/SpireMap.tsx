@@ -104,6 +104,7 @@ function MapCanvas(props: {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.scale(scalingFactor, scalingFactor);
 
+    //TODO: add sts2 bosses
     const bossImg = getBossImage(props.boss);
     bossImg.onload = () => {
       let length = nodes.length;

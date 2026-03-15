@@ -287,3 +287,24 @@ div.powertip-header {
 .text-other {
   color: rgb(53, 255, 255);
 }
+
+/* STS2 BBCode color tags */
+.sts2-gold {
+  color: rgb(239, 200, 81);
+}
+
+.sts2-blue {
+  color: rgb(135, 206, 235);
+}
+
+.sts2-red {
+  color: rgb(255, 101, 99);
+}
+
+.sts2-green {
+  color: rgb(127, 255, 0);
+}
+
+.sts2-purple {
+  color: rgb(238, 130, 238);
+}
