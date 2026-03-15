@@ -27,9 +27,10 @@ public class SlayTheRelicsExporterMod
             _client = new BackendClient(_config);
             _exporter = new StateExporter(_config);
 
-            if (string.IsNullOrEmpty(_config.Channel))
+            if (string.IsNullOrEmpty(_config.Channel) || string.IsNullOrEmpty(_config.AuthToken))
             {
-                Log.Warn("[SlayTheRelicsExporter] No channel configured. Set 'Channel' in config.json.");
+                Log.Info("[SlayTheRelicsExporter] No credentials found, starting auth flow...");
+                _ = RunAuthThenPoll();
                 return;
             }
 
@@ -39,6 +40,29 @@ public class SlayTheRelicsExporterMod
         catch (Exception ex)
         {
             Log.Error($"[SlayTheRelicsExporter] Failed to initialize: {ex}");
+        }
+    }
+
+    private static async Task RunAuthThenPoll()
+    {
+        try
+        {
+            var auth = new AuthServer(_config!);
+            var success = await auth.Authenticate();
+            if (!success)
+            {
+                Log.Warn("[SlayTheRelicsExporter] Auth failed. Mod will not export game state.");
+                return;
+            }
+
+            // Re-create client with updated config
+            _client = new BackendClient(_config!);
+            StartPolling();
+            Log.Info("[SlayTheRelicsExporter] Auth complete, started polling loop");
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"[SlayTheRelicsExporter] Auth flow error: {ex}");
         }
     }
 
