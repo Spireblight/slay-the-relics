@@ -375,6 +375,7 @@ export function CardGrid(props: {
   character: string;
   cardImages?: Record<string, string>;
   cardTips?: Record<string, Tip[]>;
+  game?: string;
 }) {
   return (
     <div
@@ -389,7 +390,7 @@ export function CardGrid(props: {
     >
       <div
         className={
-          "grid grid-cols-5 grid-flow-row gap-2 w-2/3 content-around z-10"
+          `grid grid-cols-5 grid-flow-row gap-2 w-2/3 z-10 ${props.game === "sts2" ? "content-start" : "content-around"}`
         }
       >
         {props.cards.map((card, i) => {
@@ -431,27 +432,49 @@ export function DeckButton(props: {
   setCardViewMode: Dispatch<SetStateAction<string>>;
   resetCardView: () => void;
   what: DeckType;
+  game?: string;
 }) {
   const locationStyle: CSSProperties = {
     display: props.cardCount ? "block" : "none",
   };
-  switch (props.what) {
-    case "deck":
-      locationStyle.top = "0%";
-      locationStyle.right = "4.322%";
-      break;
-    case "draw":
-      locationStyle.top = "89%";
-      locationStyle.left = "2.322%";
-      break;
-    case "discard":
-      locationStyle.top = "89%";
-      locationStyle.left = "94.322%";
-      break;
-    case "exhaust":
-      locationStyle.top = "78.5%";
-      locationStyle.left = "94.56%";
-      break;
+  if (props.game === "sts2") {
+    switch (props.what) {
+      case "deck":
+        locationStyle.top = "0%";
+        locationStyle.right = "5.5%";
+        break;
+      case "draw":
+        locationStyle.top = "91%";
+        locationStyle.left = "1%";
+        break;
+      case "discard":
+        locationStyle.top = "91%";
+        locationStyle.left = "95.5%";
+        break;
+      case "exhaust":
+        locationStyle.top = "73%";
+        locationStyle.left = "95.5%";
+        break;
+    }
+  } else {
+    switch (props.what) {
+      case "deck":
+        locationStyle.top = "0%";
+        locationStyle.right = "4.322%";
+        break;
+      case "draw":
+        locationStyle.top = "89%";
+        locationStyle.left = "2.322%";
+        break;
+      case "discard":
+        locationStyle.top = "89%";
+        locationStyle.left = "94.322%";
+        break;
+      case "exhaust":
+        locationStyle.top = "78.5%";
+        locationStyle.left = "94.56%";
+        break;
+    }
   }
 
   return (
@@ -480,6 +503,7 @@ export function DeckView(props: {
   enableCardView?: boolean;
   cardImages?: Record<string, string>;
   cardTips?: Record<string, Tip[]>;
+  game?: string;
 }) {
   const [deckViewMode, setDeckViewMode] = useState("hidden");
   const [cardViewMode, setCardViewMode] = useState("hidden");
@@ -570,6 +594,7 @@ export function DeckView(props: {
         setDeckViewMode={setDeckViewMode}
         setCardViewMode={setCardViewMode}
         resetCardView={resetCardView}
+        game={props.game}
       />
       <CardGrid
         cards={props.cards}
@@ -580,6 +605,7 @@ export function DeckView(props: {
         setCardViewMode={setCardViewMode}
         cardImages={props.cardImages}
         cardTips={props.cardTips}
+        game={props.game}
       />
       {props.enableCardView && (
         <CardView
