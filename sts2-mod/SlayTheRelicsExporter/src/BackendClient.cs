@@ -43,6 +43,11 @@ public class BackendClient : IDisposable
                 request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _config.AuthToken);
             }
 
+            if (!string.IsNullOrEmpty(_config.Channel))
+            {
+                request.Headers.Add("User-ID", _config.Channel);
+            }
+
             var response = await _http.SendAsync(request);
             response.EnsureSuccessStatusCode();
             _consecutiveErrors = 0;
