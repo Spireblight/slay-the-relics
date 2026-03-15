@@ -7,11 +7,14 @@ import {
   useEffect,
   useState,
 } from "react";
-import { KeywordTips, PowerTipBlock, TipBody } from "../Tip/Tip";
+import { KeywordTips, PowerTipBlock, Tip, TipBody } from "../Tip/Tip";
 import { ReturnButton } from "../Buttons/Buttons";
 import { Cards, LocalizationContext } from "../Localization/Localization";
 import ReactDOMServer from "react-dom/server";
 import { PlacesType } from "react-tooltip";
+
+const GITHUB_RAW_BASE =
+  "https://raw.githubusercontent.com/Spireblight/slay-the-relics/refs/heads/master/";
 
 type DeckType = "deck" | "draw" | "discard" | "exhaust";
 type Bottle = "flame" | "lightning" | "tornado" | null;
@@ -86,6 +89,8 @@ export function Card(props: {
   character: string;
   onClick: () => void;
   additionalClasses: string;
+  cardImages?: Record<string, string>;
+  cardTips?: Record<string, Tip[]>;
 }) {
   const name = cardName(props.data);
   const upgraded = name.includes("+");
@@ -94,12 +99,28 @@ export function Card(props: {
 
   const loc = useContext(LocalizationContext);
 
+  // Card image: use cardImages override if available, else fall back to slaytabase
+  const normalName = name.replaceAll("+", "");
+  const imageOverride = props.cardImages?.[normalName];
+  const cardImageUrl = imageOverride
+    ? GITHUB_RAW_BASE + imageOverride
+    : slaytabaseUrlForCard(name, upgraded);
+
   const cardStyle: CSSProperties = {
-    backgroundImage: `url(${slaytabaseUrlForCard(name, upgraded)})`,
+    backgroundImage: `url(${cardImageUrl})`,
   };
 
-  const description = lookupCard(name, loc.cards);
-  const tips = KeywordTips(description, loc.keywords);
+  // Card tips: use cardTips override if available, else fall back to localization lookup
+  const tipsOverride = props.cardTips?.[normalName];
+  let description: string;
+  let tips: Tip[];
+  if (tipsOverride) {
+    tips = tipsOverride;
+    description = "";
+  } else {
+    description = lookupCard(name, loc.cards);
+    tips = KeywordTips(description, loc.keywords);
+  }
 
   let addDescription = "";
   let addTitle = "";
@@ -228,6 +249,8 @@ export function CardView(props: {
   upgradeChecked: Map<number, boolean>;
   setUpgradeChecked: Dispatch<SetStateAction<Map<number, boolean>>>;
   character: string;
+  cardImages?: Record<string, string>;
+  cardTips?: Record<string, Tip[]>;
 }) {
   if (props.cards.length < 1) {
     return <div></div>;
@@ -312,6 +335,8 @@ export function CardView(props: {
           character={props.character}
           additionalClasses={"card-view-card"}
           onClick={closeCard}
+          cardImages={props.cardImages}
+          cardTips={props.cardTips}
         />
         <button
           id={"card_view_checkbox"}
@@ -348,6 +373,8 @@ export function CardGrid(props: {
   setCardIndex: Dispatch<SetStateAction<number>>;
   setCardViewMode: Dispatch<SetStateAction<string>>;
   character: string;
+  cardImages?: Record<string, string>;
+  cardTips?: Record<string, Tip[]>;
 }) {
   return (
     <div
@@ -387,6 +414,8 @@ export function CardGrid(props: {
                 props.setCardIndex(i);
                 props.setCardViewMode("flex");
               }}
+              cardImages={props.cardImages}
+              cardTips={props.cardTips}
             />
           );
         })}
@@ -449,6 +478,8 @@ export function DeckView(props: {
   character: string;
   what: DeckType;
   enableCardView?: boolean;
+  cardImages?: Record<string, string>;
+  cardTips?: Record<string, Tip[]>;
 }) {
   const [deckViewMode, setDeckViewMode] = useState("hidden");
   const [cardViewMode, setCardViewMode] = useState("hidden");
@@ -547,6 +578,8 @@ export function DeckView(props: {
         deckViewMode={deckViewMode}
         setCardIndex={setCardIndex}
         setCardViewMode={setCardViewMode}
+        cardImages={props.cardImages}
+        cardTips={props.cardTips}
       />
       {props.enableCardView && (
         <CardView
@@ -559,6 +592,8 @@ export function DeckView(props: {
           setDisplay={setCardViewMode}
           upgradeChecked={upgradeChecked}
           setUpgradeChecked={setUpgradeChecked}
+          cardImages={props.cardImages}
+          cardTips={props.cardTips}
         />
       )}
     </div>
