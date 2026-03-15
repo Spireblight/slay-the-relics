@@ -47,6 +47,7 @@ class NumHitBox {
 
 interface RunState extends Record<string, unknown> {
   channel: string;
+  game?: string;
 
   character: string;
   boss: string;
@@ -103,6 +104,7 @@ export default class App extends Component<AppProps, AppState> {
         character: "",
         boss: "",
         channel: "",
+        game: "",
         additionalTips: [],
         staticTips: [],
         relicTips: [],
@@ -254,8 +256,8 @@ export default class App extends Component<AppProps, AppState> {
 
   render() {
     const styles: CSSProperties = {
-      background: import.meta.env.PROD ? "transparent" : "darkgrey",
-      // background: "transparent",
+      //background: import.meta.env.PROD ? "transparent" : "darkgrey",
+      background: "transparent",
     };
     return (
       <LocalizationContext value={this.state.localization}>
@@ -264,12 +266,14 @@ export default class App extends Component<AppProps, AppState> {
             boss={this.state.runState.boss}
             nodes={this.state.runState.mapNodes}
             path={this.state.runState.mapPath}
+            game={this.state.runState.game}
           />
           <RelicBar
             relics={this.state.runState.relics}
             character={this.state.runState.character}
             relicParams={this.state.runState.baseRelicStats}
             relicTips={this.state.runState.relicTips}
+            game={this.state.runState.game}
           />
           <PotionBar
             potions={this.state.runState.potions}
@@ -277,6 +281,7 @@ export default class App extends Component<AppProps, AppState> {
             character={this.state.runState.character}
             potionX={this.state.runState.potionX}
             potionTips={this.state.runState.potionTips}
+            game={this.state.runState.game}
           />
           <DeckView
             bottles={this.state.runState.bottles}
@@ -286,6 +291,7 @@ export default class App extends Component<AppProps, AppState> {
             enableCardView={true}
             cardImages={this.state.runState.cardImages}
             cardTips={this.state.runState.cardTips}
+            game={this.state.runState.game}
           />
           <DeckView
             cards={this.state.runState.drawPile}
@@ -293,6 +299,7 @@ export default class App extends Component<AppProps, AppState> {
             what={"draw"}
             cardImages={this.state.runState.cardImages}
             cardTips={this.state.runState.cardTips}
+            game={this.state.runState.game}
           />
           <DeckView
             cards={this.state.runState.discardPile}
@@ -300,6 +307,7 @@ export default class App extends Component<AppProps, AppState> {
             what={"discard"}
             cardImages={this.state.runState.cardImages}
             cardTips={this.state.runState.cardTips}
+            game={this.state.runState.game}
           />
           <DeckView
             cards={this.state.runState.exhaustPile}
@@ -307,6 +315,7 @@ export default class App extends Component<AppProps, AppState> {
             what={"exhaust"}
             cardImages={this.state.runState.cardImages}
             cardTips={this.state.runState.cardTips}
+            game={this.state.runState.game}
           />
           <div>
             {this.state.runState.additionalTips
