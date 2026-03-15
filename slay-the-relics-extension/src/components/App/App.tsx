@@ -63,7 +63,10 @@ interface RunState extends Record<string, unknown> {
   mapNodes: MapNode[][];
   mapPath: number[][];
   bottles: number[];
-  potionX: number;
+  potionX: number
+  cardImages?: Record<string, string>;
+  cardTips?: Record<string, Tip[]>;
+  potionTips?: Tip[];
 }
 
 interface AppState {
@@ -273,6 +276,7 @@ export default class App extends Component<AppProps, AppState> {
             relics={this.state.runState.relics}
             character={this.state.runState.character}
             potionX={this.state.runState.potionX}
+            potionTips={this.state.runState.potionTips}
           />
           <DeckView
             bottles={this.state.runState.bottles}
@@ -280,21 +284,29 @@ export default class App extends Component<AppProps, AppState> {
             character={this.state.runState.character}
             what={"deck"}
             enableCardView={true}
+            cardImages={this.state.runState.cardImages}
+            cardTips={this.state.runState.cardTips}
           />
           <DeckView
             cards={this.state.runState.drawPile}
             character={this.state.runState.character}
             what={"draw"}
+            cardImages={this.state.runState.cardImages}
+            cardTips={this.state.runState.cardTips}
           />
           <DeckView
             cards={this.state.runState.discardPile}
             character={this.state.runState.character}
             what={"discard"}
+            cardImages={this.state.runState.cardImages}
+            cardTips={this.state.runState.cardTips}
           />
           <DeckView
             cards={this.state.runState.exhaustPile}
             character={this.state.runState.character}
             what={"exhaust"}
+            cardImages={this.state.runState.cardImages}
+            cardTips={this.state.runState.cardTips}
           />
           <div>
             {this.state.runState.additionalTips

@@ -27,6 +27,7 @@ export default function PotionBar(props: {
   potions: string[];
   relics: string[];
   potionX: number;
+  potionTips?: Tip[];
 }) {
   const hasBark =
     props.relics.includes("Sacred Bark") || props.relics.includes("SacredBark");
@@ -34,6 +35,9 @@ export default function PotionBar(props: {
   return (
     <div>
       {props.potions.map((potion, i) => {
+        const tips = props.potionTips?.[i]
+          ? [props.potionTips[i]]
+          : getPotionTips(potion, hasBark, potionsLoc);
         return (
           <PowerTipStrip
             place={"bottom-start"}
@@ -47,7 +51,7 @@ export default function PotionBar(props: {
               w: "2.916%",
               h: "5.556%",
             }}
-            tips={getPotionTips(potion, hasBark, potionsLoc)}
+            tips={tips}
           />
         );
       })}
