@@ -1,0 +1,11 @@
+{
+  "id": "SlayTheRelicsExporter",
+  "name": "SlayTheRelicsExporter",
+  "author": "VMService & Der Koch",
+  "description": "A mod that exports all relics in the game to a JSON file for use in external applications.",
+  "version": "v1.62",
+  "has_pck": false,
+  "has_dll": true,
+  "dependencies": [],
+  "affects_gameplay": false
+}
