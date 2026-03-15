@@ -34,6 +34,8 @@ go.work
 .idea/**/usage.statistics.xml
 .idea/**/dictionaries
 .idea/**/shelf
+/**/.idea/vcs.xml
+/**/.idea/encodings.xml
 
 # AWS User-specific
 .idea/**/aws.xml
@@ -449,3 +451,5 @@ log.jsonl
 backend/bin
 backend/test-reports
 frontend/*.py
+/sts2-mod/SlayTheRelicsExporter/bin/
+/sts2-mod/SlayTheRelicsExporter/obj/
