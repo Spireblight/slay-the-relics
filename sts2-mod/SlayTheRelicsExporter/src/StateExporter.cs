@@ -93,7 +93,7 @@ public class StateExporter
 
             var act = runState.Acts[currentActIndex];
             var boss = act.BossEncounter;
-            return boss?.Title.GetFormattedText() ?? "";
+            return boss?.Id.Entry.ToLowerInvariant() ?? "";
         }
         catch
         {
@@ -112,7 +112,21 @@ public class StateExporter
             {
                 var name = relic.Title.GetFormattedText();
                 state.Relics.Add(name);
-                state.RelicTips.AddRange(TipExporter.RelicTips(relic));
+                var tips = TipExporter.RelicTips(relic);
+                // Merge all hover tips into a single tip to maintain 1:1 mapping with relics
+                if (tips.Count > 0)
+                {
+                    var merged = new TipData
+                    {
+                        Header = tips[0].Header,
+                        Description = string.Join("\n", tips.Select(t => t.Description).Where(d => !string.IsNullOrEmpty(d)))
+                    };
+                    state.RelicTips.Add(merged);
+                }
+                else
+                {
+                    state.RelicTips.Add(new TipData { Header = name, Description = "" });
+                }
             }
             catch (Exception ex)
             {
