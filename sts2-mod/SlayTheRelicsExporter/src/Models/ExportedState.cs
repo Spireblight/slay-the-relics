@@ -57,7 +57,7 @@ public class ExportedState
     public List<int> Bottles { get; set; } = new() { -1, -1, -1 };
 
     [JsonPropertyName("potionX")]
-    public double PotionX { get; set; } = 33;
+    public double PotionX { get; set; } = 28;
 
     [JsonPropertyName("drawPile")]
     public List<object> DrawPile { get; set; } = new();

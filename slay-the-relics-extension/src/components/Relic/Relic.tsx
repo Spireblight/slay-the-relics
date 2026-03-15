@@ -31,6 +31,12 @@ export function LookupRelic(
   relicsLoc: Relics,
   relicTip: Tip | null,
 ): RelicProp {
+  // If we have a direct tip from the mod (STS2), use it as the sole tip
+  // and skip the localization lookup to avoid duplicates
+  if (relicTip !== null) {
+    return new RelicProp(relicTip.header, relicTip.description ?? "", []);
+  }
+
   const relicLoc = relicsLoc[relic];
   if (relicLoc === undefined || relicLoc === null) {
     return new RelicProp(relic, relic, []);
@@ -54,7 +60,7 @@ export function LookupRelic(
 
   const description = descriptionParts.join("");
   const name = relicLoc.NAME ?? relic;
-  return new RelicProp(name, description, relicTip === null ? [] : [relicTip]);
+  return new RelicProp(name, description, []);
 }
 
 export function Relic(props: {
@@ -78,22 +84,31 @@ export function RelicBar(props: {
   relics: string[];
   relicParams: Record<number, (string | number)[]>;
   relicTips: Tip[];
+  game?: string;
 }) {
   const multiPage = props.relics.length > RELIC_PER_PAGE ? 1 : 0;
   const relicsLoc = useContext(LocalizationContext).relics;
+
+  // STS2 relics are in the top bar but offset differently
+  const hitboxLeft = props.game === "sts2" ? 1.0 : RELIC_HITBOX_LEFT;
+  const hitboxY = props.game === "sts2" ? 7.5 : 6.111;
+  const hitboxW = props.game === "sts2" ? 3.5 : 3.75;
+  const hitboxH = props.game === "sts2" ? 8.0 : 8.666;
+  const hitboxSpacing = props.game === "sts2" ? 3.5 : RELIC_HITBOX_WIDTH;
+
   return (
     <div id={"relic-bar"}>
       {props.relics.slice(0, RELIC_PER_PAGE).map((relic, i) => {
         const hitbox = {
           x:
-            RELIC_HITBOX_LEFT +
-            i * RELIC_HITBOX_WIDTH +
+            hitboxLeft +
+            i * hitboxSpacing +
             multiPage * RELIC_HITBOX_MULTIPAGE_OFFSET +
             "%",
-          y: 6.111 + "%",
+          y: hitboxY + "%",
           z: 1,
-          w: 3.75 + "%",
-          h: 8.666 + "%",
+          w: hitboxW + "%",
+          h: hitboxH + "%",
         };
         const relicParams = props.relicParams[i] || [];
         const lookupRelicTip = (i: number) => {
