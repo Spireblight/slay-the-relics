@@ -4,6 +4,62 @@ import { PlacesType } from "react-tooltip";
 import { Keywords, LocalizationContext } from "../Localization/Localization";
 import ReactDOMServer from "react-dom/server";
 
+const COLOR_TAG_REGEX =
+  /\[(gold|blue|red|green|purple)\](.*?)\[\/\1\]/g;
+
+const COLOR_TAG_CLASS: Record<string, string> = {
+  gold: "sts2-gold",
+  blue: "sts2-blue",
+  red: "sts2-red",
+  green: "sts2-green",
+  purple: "sts2-purple",
+};
+
+/**
+ * Parses STS2 BBCode-style color tags into React elements.
+ * Returns null if no color tags are found (caller should use default rendering).
+ */
+export function renderColorTags(
+  text: string,
+): React.ReactNode[] | null {
+  if (!text.includes("[")) {
+    return null;
+  }
+
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let found = false;
+
+  // Reset regex state
+  COLOR_TAG_REGEX.lastIndex = 0;
+
+  while ((match = COLOR_TAG_REGEX.exec(text)) !== null) {
+    found = true;
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    const color = match[1];
+    const content = match[2];
+    parts.push(
+      <span key={`color-${match.index}`} className={COLOR_TAG_CLASS[color]}>
+        {content}
+      </span>,
+    );
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (!found) {
+    return null;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts;
+}
+
 export type HitBox = {
   x: string;
   y: string;
@@ -123,6 +179,17 @@ export function TipBody(props: {
   raw: string;
   className?: string;
 }) {
+  // Try STS2 color tag rendering first
+  const colorTagNodes = renderColorTags(props.raw);
+  if (colorTagNodes) {
+    return (
+      <div className={props.className ? props.className : ""}>
+        {colorTagNodes}
+      </div>
+    );
+  }
+
+  // Fall back to STS1 space-delimited markup
   const parts = props.raw.split(" ");
   return (
     <div className={props.className ? props.className : ""}>
