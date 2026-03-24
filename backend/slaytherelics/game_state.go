@@ -42,6 +42,7 @@ type Tip struct {
 	Header      string `json:"header"`
 	Description string `json:"description"`
 	Img         string `json:"img"`
+	Type        string `json:"type,omitempty"`
 }
 
 type TipsBox struct {

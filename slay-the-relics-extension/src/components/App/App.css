@@ -54,6 +54,14 @@ div.powertip {
   margin-bottom: 0.278rem;
 }
 
+div.powertip-affliction {
+  background-color: rgb(58, 30, 30);
+  border-top-color: rgb(120, 65, 60);
+  border-left-color: rgb(120, 65, 60);
+  border-right-color: rgb(75, 40, 38);
+  border-bottom-color: rgb(75, 40, 38);
+}
+
 .powertip-shadow {
   -webkit-box-shadow: 0.65em 0.7em 0.035em 0.105em rgba(0, 0, 0, 0.3);
   -moz-box-shadow: 0.65em 0.7em 0.035em 0.105em rgba(0, 0, 0, 0.3);

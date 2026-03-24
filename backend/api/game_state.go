@@ -87,6 +87,7 @@ func (a *API) postGameStateHandler(c *gin.Context) {
 			return
 		}
 		if err != nil {
+			log.Printf("[ERROR] postGameState: auth failed for user %s: %v", headerUserID, err)
 			c.JSON(500, gin.H{"error": err.Error()})
 			return
 		}
@@ -105,6 +106,7 @@ func (a *API) postGameStateHandler(c *gin.Context) {
 
 	err = a.gameStateManager.ReceiveUpdate(ctx, userID, gameState)
 	if err != nil {
+		log.Printf("[ERROR] postGameState: ReceiveUpdate failed for user %s (index=%d): %v", userID, gameState.Index, err)
 		c.JSON(500, gin.H{"error": fmt.Sprintf("failed to post game state update: %v", err)})
 		return
 	}

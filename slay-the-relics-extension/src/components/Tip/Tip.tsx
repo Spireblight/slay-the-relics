@@ -72,11 +72,13 @@ export class Tip {
   header: string;
   description: string;
   img: string | null;
+  type: string | null;
 
-  constructor(header: string, description: string, img: string | null) {
+  constructor(header: string, description: string, img: string | null, type: string | null = null) {
     this.header = header;
     this.description = description;
     this.img = img;
+    this.type = type;
   }
 }
 
@@ -212,9 +214,10 @@ export function TipBody(props: {
 export function PowerTip(props: { tip: Tip; character: string }) {
   const headerImgClass =
     props.tip.img === null ? "powertip-header-noimg" : "powertip-header-wimg";
+  const typeClass = props.tip.type === "affliction" ? " powertip-affliction" : "";
 
   return (
-    <div className={"powertip powertip-shadow"}>
+    <div className={"powertip powertip-shadow" + typeClass}>
       <div className={"powertip-header outline-black " + headerImgClass}>
         {props.tip.header}
         {props.tip.img && (
