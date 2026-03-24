@@ -143,9 +143,9 @@ public class StateExporter
 
         foreach (var card in player.Deck.Cards)
         {
-            var name = GetCardDisplayName(card);
-            state.Deck.Add(name);
-            PopulateCardMeta(card, name, cardImages, cardTips);
+            var key = GetCardKey(card);
+            state.Deck.Add(key);
+            PopulateCardMeta(card, key, cardImages, cardTips);
         }
 
         state.CardImages = cardImages.Count > 0 ? cardImages : null;
@@ -220,6 +220,13 @@ public class StateExporter
             state.DiscardPile = ExportPile(playerCombat.DiscardPile, cardImages, cardTips);
             state.ExhaustPile = ExportPile(playerCombat.ExhaustPile, cardImages, cardTips);
 
+            // Populate tips/images for hand cards (may have combat-applied enchantments/afflictions)
+            foreach (var card in playerCombat.Hand.Cards)
+            {
+                var key = GetCardKey(card);
+                PopulateCardMeta(card, key, cardImages, cardTips);
+            }
+
             state.CardImages = cardImages.Count > 0 ? cardImages : null;
             state.CardTips = cardTips.Count > 0 ? cardTips : null;
 
@@ -238,36 +245,47 @@ public class StateExporter
         var result = new List<object>();
         foreach (var card in pile.Cards)
         {
-            var name = GetCardDisplayName(card);
-            result.Add(name);
-            PopulateCardMeta(card, name, cardImages, cardTips);
+            var key = GetCardKey(card);
+            result.Add(key);
+            PopulateCardMeta(card, key, cardImages, cardTips);
         }
         return result;
     }
 
-    private static string GetCardDisplayName(CardModel card)
+    // Unit separator used to encode card variant info into the key.
+    // Format: "DisplayName\u001Fenchantment\u001Faffliction"
+    // Frontend splits on this to separate display name from variant identity.
+    private const char KeySeparator = '\u001F';
+
+    private static string GetCardKey(CardModel card)
     {
         try
         {
-            return card.Title;
+            var name = card.Title;
+            var enchantment = card.Enchantment?.Id.Entry ?? "";
+            var affliction = card.Affliction?.Id.Entry ?? "";
+            if (enchantment == "" && affliction == "")
+                return name;
+            return $"{name}{KeySeparator}{enchantment}{KeySeparator}{affliction}";
         }
-        catch
+        catch (Exception ex)
         {
+            Log.Warn($"[SlayTheRelicsExporter] Failed to get card key for {card.Id}: {ex.Message}");
             return card.Id.ToString();
         }
     }
 
-    private static void PopulateCardMeta(CardModel card, string displayName,
+    private static void PopulateCardMeta(CardModel card, string cardKey,
         Dictionary<string, string> cardImages, Dictionary<string, List<TipData>> cardTips)
     {
         // Card image path
-        if (!cardImages.ContainsKey(displayName))
+        if (!cardImages.ContainsKey(cardKey))
         {
             try
             {
                 var idEntry = card.Id.Entry.ToLowerInvariant();
                 var suffix = card.IsUpgraded ? "plusone" : "";
-                cardImages[displayName] = $"assets/sts2/card-images/{idEntry}{suffix}.png";
+                cardImages[cardKey] = $"assets/sts2/card-images/{idEntry}{suffix}.png";
             }
             catch
             {
@@ -275,10 +293,10 @@ public class StateExporter
             }
         }
 
-        // Card tips
-        if (!cardTips.ContainsKey(displayName))
+        // Card tips (includes enchantment/affliction tips via card.HoverTips)
+        if (!cardTips.ContainsKey(cardKey))
         {
-            cardTips[displayName] = TipExporter.CardTips(card);
+            cardTips[cardKey] = TipExporter.CardTips(card);
         }
     }
 

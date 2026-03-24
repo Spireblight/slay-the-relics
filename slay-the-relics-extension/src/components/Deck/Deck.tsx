@@ -28,11 +28,21 @@ function BottleURL(bottle: Bottle): string | null {
 
 export type CardData = string | [string, number];
 
-function cardName(card: CardData): string {
+// Card keys may contain \u001F-separated variant info: "Name\u001Fenchantment\u001Faffliction"
+// cardKey returns the full key (for dictionary lookups), cardName returns display name only.
+const KEY_SEPARATOR = "\u001F";
+
+function cardKey(card: CardData): string {
   if (typeof card === "string") {
     return card;
   }
   return card[0];
+}
+
+function cardName(card: CardData): string {
+  const key = cardKey(card);
+  const sep = key.indexOf(KEY_SEPARATOR);
+  return sep === -1 ? key : key.substring(0, sep);
 }
 
 function cardValue(card: CardData): number {
@@ -43,7 +53,10 @@ function cardValue(card: CardData): number {
 }
 
 function withCardName(card: CardData, fn: (n: string) => string): CardData {
-  const newName: string = fn(cardName(card));
+  const key = cardKey(card);
+  const sep = key.indexOf(KEY_SEPARATOR);
+  const suffix = sep === -1 ? "" : key.substring(sep);
+  const newName: string = fn(cardName(card)) + suffix;
   if (typeof card === "string") {
     return newName;
   }
@@ -93,15 +106,17 @@ export function Card(props: {
   cardTips?: Record<string, Tip[]>;
 }) {
   const name = cardName(props.data);
+  const key = cardKey(props.data);
   const upgraded = name.includes("+");
   const slaytabaseName = formatForSlaytabase(name);
   const bottleURL = BottleURL(props.bottle);
 
   const loc = useContext(LocalizationContext);
 
-  // Card image: use cardImages override if available, else fall back to slaytabase
+  // Use full key (with variant info) for dictionary lookups, display name for fallbacks
   const normalName = name.replaceAll("+", "");
-  const imageOverride = props.cardImages?.[normalName];
+  const lookupKey = key.replaceAll("+", "");
+  const imageOverride = props.cardImages?.[lookupKey];
   const cardImageUrl = imageOverride
     ? GITHUB_RAW_BASE + imageOverride
     : slaytabaseUrlForCard(name, upgraded);
@@ -111,7 +126,7 @@ export function Card(props: {
   };
 
   // Card tips: use cardTips override if available, else fall back to localization lookup
-  const tipsOverride = props.cardTips?.[normalName];
+  const tipsOverride = props.cardTips?.[lookupKey];
   let description: string;
   let tips: Tip[];
   if (tipsOverride) {

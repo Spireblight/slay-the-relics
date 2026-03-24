@@ -66,7 +66,34 @@ public static class TipExporter
     {
         try
         {
-            return FromHoverTips(card.HoverTips);
+            // Build tips list with type annotations for enchantments/afflictions
+            var tips = FromHoverTips(card.HoverTips);
+
+            // Tag enchantment tips
+            if (card.Enchantment != null)
+            {
+                var enchantmentTips = FromHoverTips(card.Enchantment.HoverTips);
+                var enchantmentHeaders = new HashSet<string>(enchantmentTips.Select(t => t.Header));
+                foreach (var tip in tips)
+                {
+                    if (enchantmentHeaders.Contains(tip.Header))
+                        tip.Type = "enchantment";
+                }
+            }
+
+            // Tag affliction tips
+            if (card.Affliction != null)
+            {
+                var afflictionTips = FromHoverTips(card.Affliction.HoverTips);
+                var afflictionHeaders = new HashSet<string>(afflictionTips.Select(t => t.Header));
+                foreach (var tip in tips)
+                {
+                    if (afflictionHeaders.Contains(tip.Header))
+                        tip.Type = "affliction";
+                }
+            }
+
+            return tips;
         }
         catch
         {
