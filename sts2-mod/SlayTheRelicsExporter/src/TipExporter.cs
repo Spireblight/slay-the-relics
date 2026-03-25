@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using MegaCrit.Sts2.Core.HoverTips;
@@ -11,39 +12,56 @@ public static class TipExporter
 {
     public static TipData FromHoverTip(IHoverTip tip)
     {
-        var data = new TipData();
+        try
+        {
+            var data = new TipData();
 
-        if (tip is HoverTip ht)
-        {
-            data.Header = ht.Title ?? "";
-            data.Description = ht.Description ?? "";
-        }
-        else if (tip is CardHoverTip cht)
-        {
-            // CardHoverTip wraps a CardModel — extract title and description from it
-            data.Header = cht.Card.Title ?? "";
-            try
+            if (tip is HoverTip ht)
             {
-                data.Description = cht.Card.Description.GetFormattedText();
+                data.Header = ht.Title ?? "";
+                data.Description = ht.Description ?? "";
             }
-            catch
+            else if (tip is CardHoverTip cht)
             {
+                // CardHoverTip is rendered as a mini card image in-game, not as text.
+                // Emit the card image path so the frontend can do the same.
+                var card = cht.Card;
+                data.Header = card.Title ?? "";
+                var idEntry = card.Id.Entry.ToLowerInvariant();
+                var suffix = card.IsUpgraded ? "plusone" : "";
+                data.Img = $"assets/sts2/card-images/{idEntry}{suffix}.png";
+                data.Type = "card";
+            }
+            else
+            {
+                data.Header = tip.Id ?? "";
                 data.Description = "";
             }
-        }
-        else
-        {
-            // Fallback: try to get basic info
-            data.Header = tip.Id ?? "";
-            data.Description = "";
-        }
 
-        return data;
+            return data;
+        }
+        catch (Exception ex)
+        {
+            Log.Warn($"[SlayTheRelicsExporter] Failed to export hover tip: {ex.Message}");
+            return new TipData { Header = tip?.Id ?? "", Description = "" };
+        }
     }
 
     public static List<TipData> FromHoverTips(IEnumerable<IHoverTip> tips)
     {
-        return tips.Select(FromHoverTip).ToList();
+        var result = new List<TipData>();
+        foreach (var tip in tips)
+        {
+            try
+            {
+                result.Add(FromHoverTip(tip));
+            }
+            catch (Exception ex)
+            {
+                Log.Warn($"[SlayTheRelicsExporter] Skipping hover tip: {ex.Message}");
+            }
+        }
+        return result;
     }
 
     public static List<TipData> RelicTips(RelicModel relic)
