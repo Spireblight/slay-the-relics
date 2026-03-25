@@ -23,46 +23,54 @@ public class StateExporter
 
     public ExportedState? Export()
     {
-        var runManager = RunManager.Instance;
-        if (!runManager.IsInProgress)
-            return null;
-
-        var runState = runManager.DebugOnlyGetState();
-        if (runState == null)
-            return null;
-
-        var player = runState.Players.FirstOrDefault();
-        if (player == null)
-            return null;
-
-        var state = new ExportedState
+        try
         {
-            GameStateIndex = _gameStateIndex++,
-            Channel = _config.Channel,
-            Game = "sts2",
-            Character = GetCharacterName(player),
-            Boss = GetBossName(runState),
-        };
+            var runManager = RunManager.Instance;
+            if (!runManager.IsInProgress)
+                return null;
 
-        // Relics (display names + fully resolved tips)
-        ExportRelics(player, state);
+            var runState = runManager.DebugOnlyGetState();
+            if (runState == null)
+                return null;
 
-        // Deck (display names)
-        ExportDeck(player, state);
+            var player = runState.Players.FirstOrDefault();
+            if (player == null)
+                return null;
 
-        // Potions (display names + tips)
-        ExportPotions(player, state);
+            var state = new ExportedState
+            {
+                GameStateIndex = _gameStateIndex++,
+                Channel = _config.Channel,
+                Game = "sts2",
+                Character = GetCharacterName(player),
+                Boss = GetBossName(runState),
+            };
 
-        // Map
-        ExportMap(runState, state);
+            // Relics (display names + fully resolved tips)
+            ExportRelics(player, state);
 
-        // Combat state (piles, power tips)
-        if (CombatManager.Instance.IsInProgress)
-        {
-            ExportCombatState(runState, player, state);
+            // Deck (display names)
+            ExportDeck(player, state);
+
+            // Potions (display names + tips)
+            ExportPotions(player, state);
+
+            // Map
+            ExportMap(runState, state);
+
+            // Combat state (piles, power tips)
+            if (CombatManager.Instance.IsInProgress)
+            {
+                ExportCombatState(runState, player, state);
+            }
+
+            return state;
         }
-
-        return state;
+        catch (Exception ex)
+        {
+            Log.Warn($"[SlayTheRelicsExporter] Export failed: {ex.Message}");
+            return null;
+        }
     }
 
     public void ResetIndex()

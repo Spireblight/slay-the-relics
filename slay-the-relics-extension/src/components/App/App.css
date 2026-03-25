@@ -82,6 +82,13 @@ img.powertip-img {
   height: 1.667rem;
 }
 
+img.powertip-card-img {
+  width: 11rem;
+  border-radius: 0.5rem;
+  margin-left: -1.5rem;
+  filter: drop-shadow(0.4em 0.5em 0.2em rgba(0, 0, 0, 0.5));
+}
+
 img.energy-orb-img {
   vertical-align: top;
   width: 1.111rem;

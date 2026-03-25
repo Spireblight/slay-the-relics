@@ -78,36 +78,46 @@ public class SlayTheRelicsExporterMod
                 try
                 {
                     await PollOnce();
+                    await Task.Delay(_config!.PollIntervalMs, token);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
                 }
                 catch (Exception ex)
                 {
                     Log.Warn($"[SlayTheRelicsExporter] Poll error: {ex.Message}");
                 }
-
-                await Task.Delay(_config!.PollIntervalMs, token);
             }
         }, token);
     }
 
     private static async Task PollOnce()
     {
-        var inRun = RunManager.Instance.IsInProgress;
-
-        // Detect run start → reset index
-        if (inRun && !_wasInRun)
+        try
         {
-            _exporter!.ResetIndex();
+            var inRun = RunManager.Instance.IsInProgress;
+
+            // Detect run start → reset index
+            if (inRun && !_wasInRun)
+            {
+                _exporter!.ResetIndex();
+            }
+
+            _wasInRun = inRun;
+
+            if (!inRun) return;
+
+            // Export and send game state
+            var state = _exporter!.Export();
+            if (state != null)
+            {
+                await _client!.PostGameState(state, SerializerOptions.Default);
+            }
         }
-
-        _wasInRun = inRun;
-
-        if (!inRun) return;
-
-        // Export and send game state
-        var state = _exporter!.Export();
-        if (state != null)
+        catch (Exception ex)
         {
-            await _client!.PostGameState(state, SerializerOptions.Default);
+            Log.Warn($"[SlayTheRelicsExporter] PollOnce error: {ex.Message}");
         }
     }
 }

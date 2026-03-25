@@ -211,7 +211,20 @@ export function TipBody(props: {
   );
 }
 
+const GITHUB_RAW_BASE =
+  "https://raw.githubusercontent.com/Spireblight/slay-the-relics/refs/heads/master/";
+
 export function PowerTip(props: { tip: Tip; character: string }) {
+  if (props.tip.type === "card" && props.tip.img) {
+    return (
+      <img
+        className="powertip-card-img"
+        src={GITHUB_RAW_BASE + props.tip.img}
+        alt={props.tip.header}
+      />
+    );
+  }
+
   const headerImgClass =
     props.tip.img === null ? "powertip-header-noimg" : "powertip-header-wimg";
   const typeClass = props.tip.type === "affliction" ? " powertip-affliction" : "";
