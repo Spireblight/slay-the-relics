@@ -228,7 +228,7 @@ export default class App extends Component<AppProps, AppState> {
 
   componentDidMount() {
     if (import.meta.env.DEV) {
-      void this.initialLoad("59817220");
+      void this.initialLoad("40440822");
     }
     if (this.twitch) {
       this.twitch.onAuthorized((auth) => {
@@ -256,8 +256,8 @@ export default class App extends Component<AppProps, AppState> {
 
   render() {
     const styles: CSSProperties = {
-      //background: import.meta.env.PROD ? "transparent" : "darkgrey",
-      background: "transparent",
+      background: import.meta.env.PROD ? "transparent" : "darkgrey",
+      //background: "transparent",
     };
     return (
       <LocalizationContext value={this.state.localization}>
