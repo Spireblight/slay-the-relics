@@ -70,10 +70,6 @@ public class ExportedState
 
     // --- New optional fields for STS2 ---
 
-    [JsonPropertyName("cardImages")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public Dictionary<string, string>? CardImages { get; set; }
-
     [JsonPropertyName("cardTips")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public Dictionary<string, List<TipData>>? CardTips { get; set; }

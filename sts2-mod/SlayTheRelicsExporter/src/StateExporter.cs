@@ -111,9 +111,6 @@ public class StateExporter
 
     private static void ExportRelics(Player player, ExportedState state)
     {
-        var cardImages = state.CardImages ?? new Dictionary<string, string>();
-        var cardTips = state.CardTips ?? new Dictionary<string, List<TipData>>();
-
         foreach (var relic in player.Relics)
         {
             try
@@ -124,10 +121,16 @@ public class StateExporter
                 // Merge all hover tips into a single tip to maintain 1:1 mapping with relics
                 if (tips.Count > 0)
                 {
+                    var textTips = tips.Where(t => t.Type != "card").ToList();
+                    var parts = textTips.Select((t, i) =>
+                    {
+                        var header = i > 0 && !string.IsNullOrEmpty(t.Header) ? $"[gold]{t.Header}[/gold]\n" : "";
+                        return header + t.Description;
+                    }).Where(d => !string.IsNullOrEmpty(d));
                     var merged = new TipData
                     {
                         Header = tips[0].Header,
-                        Description = string.Join("\n", tips.Select(t => t.Description).Where(d => !string.IsNullOrEmpty(d)))
+                        Description = string.Join("\n\n", parts)
                     };
                     state.RelicTips.Add(merged);
                 }
@@ -146,17 +149,15 @@ public class StateExporter
 
     private static void ExportDeck(Player player, ExportedState state)
     {
-        var cardImages = new Dictionary<string, string>();
         var cardTips = new Dictionary<string, List<TipData>>();
 
         foreach (var card in player.Deck.Cards)
         {
             var key = GetCardKey(card);
             state.Deck.Add(key);
-            PopulateCardMeta(card, key, cardImages, cardTips);
+            PopulateCardMeta(card, key, cardTips);
         }
 
-        state.CardImages = cardImages.Count > 0 ? cardImages : null;
         state.CardTips = cardTips.Count > 0 ? cardTips : null;
     }
 
@@ -221,21 +222,19 @@ public class StateExporter
             if (playerCombat == null) return;
 
             // Card piles
-            var cardImages = state.CardImages ?? new Dictionary<string, string>();
             var cardTips = state.CardTips ?? new Dictionary<string, List<TipData>>();
 
-            state.DrawPile = ExportPile(playerCombat.DrawPile, cardImages, cardTips);
-            state.DiscardPile = ExportPile(playerCombat.DiscardPile, cardImages, cardTips);
-            state.ExhaustPile = ExportPile(playerCombat.ExhaustPile, cardImages, cardTips);
+            state.DrawPile = ExportPile(playerCombat.DrawPile, cardTips);
+            state.DiscardPile = ExportPile(playerCombat.DiscardPile, cardTips);
+            state.ExhaustPile = ExportPile(playerCombat.ExhaustPile, cardTips);
 
-            // Populate tips/images for hand cards (may have combat-applied enchantments/afflictions)
+            // Populate tips for hand cards (may have combat-applied enchantments/afflictions)
             foreach (var card in playerCombat.Hand.Cards)
             {
                 var key = GetCardKey(card);
-                PopulateCardMeta(card, key, cardImages, cardTips);
+                PopulateCardMeta(card, key, cardTips);
             }
 
-            state.CardImages = cardImages.Count > 0 ? cardImages : null;
             state.CardTips = cardTips.Count > 0 ? cardTips : null;
 
             // Power tips with hitbox positions from game UI nodes
@@ -248,14 +247,14 @@ public class StateExporter
     }
 
     private static List<object> ExportPile(CardPile pile,
-        Dictionary<string, string> cardImages, Dictionary<string, List<TipData>> cardTips)
+        Dictionary<string, List<TipData>> cardTips)
     {
         var result = new List<object>();
         foreach (var card in pile.Cards)
         {
             var key = GetCardKey(card);
             result.Add(key);
-            PopulateCardMeta(card, key, cardImages, cardTips);
+            PopulateCardMeta(card, key, cardTips);
         }
         return result;
     }
@@ -269,14 +268,16 @@ public class StateExporter
     {
         try
         {
-            var name = card.Title;
+            var id = card.Id.Entry.ToLowerInvariant();
+            if (card.IsUpgraded)
+                id += "+";
             var enchantment = card.Enchantment != null
                 ? $"{card.Enchantment.Id.Entry}:{card.Enchantment.Amount}"
                 : "";
             var affliction = card.Affliction?.Id.Entry ?? "";
             if (enchantment == "" && affliction == "")
-                return name;
-            return $"{name}{KeySeparator}{enchantment}{KeySeparator}{affliction}";
+                return id;
+            return $"{id}{KeySeparator}{enchantment}{KeySeparator}{affliction}";
         }
         catch (Exception ex)
         {
@@ -286,24 +287,8 @@ public class StateExporter
     }
 
     private static void PopulateCardMeta(CardModel card, string cardKey,
-        Dictionary<string, string> cardImages, Dictionary<string, List<TipData>> cardTips)
+        Dictionary<string, List<TipData>> cardTips)
     {
-        // Card image path
-        if (!cardImages.ContainsKey(cardKey))
-        {
-            try
-            {
-                var idEntry = card.Id.Entry.ToLowerInvariant();
-                var suffix = card.IsUpgraded ? "plusone" : "";
-                cardImages[cardKey] = $"assets/sts2/card-images/{idEntry}{suffix}.png";
-            }
-            catch
-            {
-                // Skip if we can't resolve
-            }
-        }
-
-        // Card tips (includes enchantment/affliction tips via card.HoverTips)
         if (!cardTips.ContainsKey(cardKey))
         {
             cardTips[cardKey] = TipExporter.CardTips(card);

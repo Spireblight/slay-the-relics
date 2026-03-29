@@ -57,7 +57,20 @@ export function renderColorTags(
     parts.push(text.slice(lastIndex));
   }
 
-  return parts;
+  // Replace \n in text nodes with <br /> elements
+  const withBreaks: React.ReactNode[] = [];
+  parts.forEach((part, i) => {
+    if (typeof part === "string" && part.includes("\n")) {
+      part.split("\n").forEach((line, j) => {
+        if (j > 0) withBreaks.push(<br key={`br-${i}-${j}`} />);
+        if (line) withBreaks.push(line);
+      });
+    } else {
+      withBreaks.push(part);
+    }
+  });
+
+  return withBreaks;
 }
 
 export type HitBox = {
