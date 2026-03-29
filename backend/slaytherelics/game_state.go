@@ -82,7 +82,6 @@ type GameState struct {
 
 	CardTips   map[string][]Tip `json:"cardTips,omitempty"`
 	PotionTips []Tip            `json:"potionTips,omitempty"`
-	CardImages map[string]string `json:"cardImages,omitempty"`
 }
 
 type GameStateUpdate struct {
@@ -107,9 +106,8 @@ type GameStateUpdate struct {
 	DiscardPile *[]CardData `json:"discardPile"`
 	ExhaustPile *[]CardData `json:"exhaustPile"`
 
-	CardTips   *map[string][]Tip  `json:"cardTips,omitempty"`
-	PotionTips *[]Tip             `json:"potionTips,omitempty"`
-	CardImages *map[string]string `json:"cardImages,omitempty"`
+	CardTips   *map[string][]Tip `json:"cardTips,omitempty"`
+	PotionTips *[]Tip            `json:"potionTips,omitempty"`
 }
 
 type GameStateManager struct {
@@ -273,10 +271,6 @@ func (gs *GameStateManager) broadcastUpdate(ctx context.Context,
 	if !reflect.DeepEqual(prev.PotionTips, update.PotionTips) {
 		updateValue.PotionTips = &update.PotionTips
 	}
-	if !reflect.DeepEqual(prev.CardImages, update.CardImages) {
-		updateValue.CardImages = &update.CardImages
-	}
-
 	return gs.send(ctx, userId, updateValue)
 }
 

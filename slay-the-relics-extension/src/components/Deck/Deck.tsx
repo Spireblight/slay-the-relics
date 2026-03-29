@@ -28,8 +28,9 @@ function BottleURL(bottle: Bottle): string | null {
 
 export type CardData = string | [string, number];
 
-// Card keys may contain \u001F-separated variant info: "Name\u001FenchantmentId:amount\u001FafflictionId"
-// cardKey returns the full key (for dictionary lookups), cardName returns display name only.
+// Card keys may contain \u001F-separated variant info: "id\u001FenchantmentId:amount\u001FafflictionId"
+// For STS1, the key is the display name. For STS2, the key is the card ID (e.g. "strike_ironclad").
+// cardKey returns the full key (for dictionary lookups), cardName returns the base name/id only.
 const KEY_SEPARATOR = "\u001F";
 
 function cardKey(card: CardData): string {
@@ -115,6 +116,23 @@ function slaytabaseUrlForCard(card: string, upgraded: boolean): string {
   return `https://raw.githubusercontent.com/Spireblight/slay-the-relics/refs/heads/master/assets/sts1/card-images/${formattedCard}.png`;
 }
 
+function sts2UrlForCard(cardId: string, upgraded: boolean): string {
+  const id = cardId.split("+")[0].toLowerCase();
+  const suffix = upgraded ? "plusone" : "";
+  return `${GITHUB_RAW_BASE}assets/sts2/card-images/${id}${suffix}.png`;
+}
+
+function cardImageUrl(
+  name: string,
+  upgraded: boolean,
+  game?: string,
+): string {
+  if (game === "sts2") {
+    return sts2UrlForCard(name, upgraded);
+  }
+  return slaytabaseUrlForCard(name, upgraded);
+}
+
 function lookupCard(name: string, cardsLoc: Cards): string {
   const normalName = name.replaceAll("+", "");
   const upgraded = name.includes("+");
@@ -136,7 +154,6 @@ export function Card(props: {
   character: string;
   onClick: () => void;
   additionalClasses: string;
-  cardImages?: Record<string, string>;
   cardTips?: Record<string, Tip[]>;
   game?: string;
 }) {
@@ -148,16 +165,12 @@ export function Card(props: {
 
   const loc = useContext(LocalizationContext);
 
-  // Use full key (with variant info) for dictionary lookups, display name for fallbacks
   const normalName = name.replaceAll("+", "");
   const lookupKey = key.replaceAll("+", "");
-  const imageOverride = props.cardImages?.[lookupKey];
-  const cardImageUrl = imageOverride
-    ? GITHUB_RAW_BASE + imageOverride
-    : slaytabaseUrlForCard(name, upgraded);
+  const imgUrl = cardImageUrl(name, upgraded, props.game);
 
   const cardStyle: CSSProperties = {
-    backgroundImage: `url(${cardImageUrl})`,
+    backgroundImage: `url(${imgUrl})`,
   };
 
   // Card tips: use cardTips override if available, else fall back to localization lookup
@@ -327,7 +340,6 @@ export function CardView(props: {
   upgradeChecked: Map<number, boolean>;
   setUpgradeChecked: Dispatch<SetStateAction<Map<number, boolean>>>;
   character: string;
-  cardImages?: Record<string, string>;
   cardTips?: Record<string, Tip[]>;
   game?: string;
 }) {
@@ -414,7 +426,6 @@ export function CardView(props: {
           character={props.character}
           additionalClasses={"card-view-card"}
           onClick={closeCard}
-          cardImages={props.cardImages}
           cardTips={props.cardTips}
           game={props.game}
         />
@@ -453,7 +464,6 @@ export function CardGrid(props: {
   setCardIndex: Dispatch<SetStateAction<number>>;
   setCardViewMode: Dispatch<SetStateAction<string>>;
   character: string;
-  cardImages?: Record<string, string>;
   cardTips?: Record<string, Tip[]>;
   game?: string;
 }) {
@@ -495,7 +505,6 @@ export function CardGrid(props: {
                 props.setCardIndex(i);
                 props.setCardViewMode("flex");
               }}
-              cardImages={props.cardImages}
               cardTips={props.cardTips}
               game={props.game}
             />
@@ -582,7 +591,6 @@ export function DeckView(props: {
   character: string;
   what: DeckType;
   enableCardView?: boolean;
-  cardImages?: Record<string, string>;
   cardTips?: Record<string, Tip[]>;
   game?: string;
 }) {
@@ -684,7 +692,6 @@ export function DeckView(props: {
         deckViewMode={deckViewMode}
         setCardIndex={setCardIndex}
         setCardViewMode={setCardViewMode}
-        cardImages={props.cardImages}
         cardTips={props.cardTips}
         game={props.game}
       />
@@ -699,7 +706,6 @@ export function DeckView(props: {
           setDisplay={setCardViewMode}
           upgradeChecked={upgradeChecked}
           setUpgradeChecked={setUpgradeChecked}
-          cardImages={props.cardImages}
           cardTips={props.cardTips}
           game={props.game}
         />
