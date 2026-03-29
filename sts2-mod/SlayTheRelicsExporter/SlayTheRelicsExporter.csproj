@@ -21,4 +21,8 @@
       <Private>false</Private>
     </Reference>
   </ItemGroup>
+  <Target Name="CopyModFiles" AfterTargets="Build">
+    <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="$(STS2ModsDir)/SlayTheRelicsExporter" />
+    <Copy SourceFiles="mod_manifest.json" DestinationFolder="$(STS2ModsDir)/SlayTheRelicsExporter" />
+  </Target>
 </Project>
