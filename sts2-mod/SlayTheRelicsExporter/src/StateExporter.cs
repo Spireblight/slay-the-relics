@@ -261,7 +261,7 @@ public class StateExporter
     }
 
     // Unit separator used to encode card variant info into the key.
-    // Format: "DisplayName\u001Fenchantment\u001Faffliction"
+    // Format: "DisplayName\u001FenchantmentId:amount\u001FafflictionId"
     // Frontend splits on this to separate display name from variant identity.
     private const char KeySeparator = '\u001F';
 
@@ -270,7 +270,9 @@ public class StateExporter
         try
         {
             var name = card.Title;
-            var enchantment = card.Enchantment?.Id.Entry ?? "";
+            var enchantment = card.Enchantment != null
+                ? $"{card.Enchantment.Id.Entry}:{card.Enchantment.Amount}"
+                : "";
             var affliction = card.Affliction?.Id.Entry ?? "";
             if (enchantment == "" && affliction == "")
                 return name;

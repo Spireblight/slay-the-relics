@@ -28,7 +28,7 @@ function BottleURL(bottle: Bottle): string | null {
 
 export type CardData = string | [string, number];
 
-// Card keys may contain \u001F-separated variant info: "Name\u001Fenchantment\u001Faffliction"
+// Card keys may contain \u001F-separated variant info: "Name\u001FenchantmentId:amount\u001FafflictionId"
 // cardKey returns the full key (for dictionary lookups), cardName returns display name only.
 const KEY_SEPARATOR = "\u001F";
 
@@ -43,6 +43,40 @@ function cardName(card: CardData): string {
   const key = cardKey(card);
   const sep = key.indexOf(KEY_SEPARATOR);
   return sep === -1 ? key : key.substring(0, sep);
+}
+
+function cardEnchantment(
+  card: CardData,
+): { id: string; amount: number } | null {
+  const key = cardKey(card);
+  const parts = key.split(KEY_SEPARATOR);
+  if (parts.length < 2 || !parts[1]) return null;
+  const [id, amountStr] = parts[1].split(":");
+  return { id, amount: amountStr ? parseInt(amountStr, 10) : 0 };
+}
+
+function cardAffliction(card: CardData): string | null {
+  const key = cardKey(card);
+  const parts = key.split(KEY_SEPARATOR);
+  if (parts.length < 3 || !parts[2]) return null;
+  return parts[2];
+}
+
+const AFFLICTION_ASSET_OVERRIDES: Record<string, string> = {
+  bound: "affliction_shattereda.png",
+  ringing: "affliction_ringinga.png",
+  infection: "affliction_infectiona.png",
+};
+
+function afflictionOverlayUrl(id: string): string {
+  const lowerId = id.toLowerCase();
+  const filename =
+    AFFLICTION_ASSET_OVERRIDES[lowerId] ?? `affliction_${lowerId}.png`;
+  return `./img/afflictions/${filename}`;
+}
+
+function enchantmentIconUrl(id: string): string {
+  return `./img/enchantments/${id.toLowerCase()}.png`;
 }
 
 function cardValue(card: CardData): number {
@@ -104,6 +138,7 @@ export function Card(props: {
   additionalClasses: string;
   cardImages?: Record<string, string>;
   cardTips?: Record<string, Tip[]>;
+  game?: string;
 }) {
   const name = cardName(props.data);
   const key = cardKey(props.data);
@@ -182,6 +217,11 @@ export function Card(props: {
     .replaceAll("Fatal", "#yFatal")
     .replaceAll("Upgraded", "#yUpgraded");
 
+  const enchantment =
+    props.game === "sts2" ? cardEnchantment(props.data) : null;
+  const affliction =
+    props.game === "sts2" ? cardAffliction(props.data) : null;
+
   const tooltipPlace: PlacesType = "right";
 
   const powerTipBlock = (
@@ -217,6 +257,29 @@ export function Card(props: {
           }}
           alt={`bottled ${props.bottle}`}
         />
+      )}
+      {affliction && (
+        <img
+          src={afflictionOverlayUrl(affliction)}
+          className="affliction-overlay"
+          alt={`affliction: ${affliction}`}
+        />
+      )}
+      {enchantment && (
+        <div className="enchantment-badge">
+          <img
+            src={enchantmentIconUrl(enchantment.id)}
+            className="enchantment-icon"
+            alt={enchantment.id}
+            onError={(e) => {
+              (e.target as HTMLImageElement).src =
+                "./img/enchantments/missing_enchantment.png";
+            }}
+          />
+          {enchantment.amount > 0 && (
+            <span className="enchantment-amount">{enchantment.amount}</span>
+          )}
+        </div>
       )}
       {addTitle && (
         <div
@@ -266,6 +329,7 @@ export function CardView(props: {
   character: string;
   cardImages?: Record<string, string>;
   cardTips?: Record<string, Tip[]>;
+  game?: string;
 }) {
   if (props.cards.length < 1) {
     return <div></div>;
@@ -352,6 +416,7 @@ export function CardView(props: {
           onClick={closeCard}
           cardImages={props.cardImages}
           cardTips={props.cardTips}
+          game={props.game}
         />
         <button
           id={"card_view_checkbox"}
@@ -432,6 +497,7 @@ export function CardGrid(props: {
               }}
               cardImages={props.cardImages}
               cardTips={props.cardTips}
+              game={props.game}
             />
           );
         })}
@@ -635,6 +701,7 @@ export function DeckView(props: {
           setUpgradeChecked={setUpgradeChecked}
           cardImages={props.cardImages}
           cardTips={props.cardTips}
+          game={props.game}
         />
       )}
     </div>
