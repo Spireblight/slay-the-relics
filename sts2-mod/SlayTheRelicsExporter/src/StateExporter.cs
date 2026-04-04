@@ -163,12 +163,19 @@ public class StateExporter
 
     private static void ExportPotions(Player player, ExportedState state)
     {
-        var potionTips = new List<TipData>();
-        var maxSlots = player.MaxPotionCount;
+        var slots = player.PotionSlots;
+        var potionTips = new List<TipData>(slots.Count);
 
-        int i = 0;
-        foreach (var potion in player.Potions)
+        for (int i = 0; i < slots.Count; i++)
         {
+            var potion = slots[i];
+            if (potion == null)
+            {
+                state.Potions.Add("");
+                potionTips.Add(new TipData { Header = "Potion Slot", Description = "" });
+                continue;
+            }
+
             try
             {
                 var name = potion.Title.GetFormattedText();
@@ -180,14 +187,6 @@ public class StateExporter
                 state.Potions.Add(potion.Id.ToString());
                 potionTips.Add(new TipData { Header = potion.Id.ToString() });
             }
-            i++;
-        }
-
-        // Fill remaining empty slots
-        for (; i < maxSlots; i++)
-        {
-            state.Potions.Add("");
-            potionTips.Add(new TipData { Header = "Potion Slot", Description = "" });
         }
 
         state.PotionTips = potionTips;
