@@ -82,6 +82,7 @@ export function RelicBar(props: {
   relics: string[];
   relicParams: Record<number, (string | number)[]>;
   relicTips: Tip[];
+  relicTipMap?: Record<string, Tip[]>;
   game?: string;
 }) {
   const multiPage = props.relics.length > RELIC_PER_PAGE ? 1 : 0;
@@ -109,27 +110,29 @@ export function RelicBar(props: {
           h: hitboxH + "%",
         };
         const relicParams = props.relicParams[i] || [];
-        const lookupRelicTip = (i: number) => {
-          if (!props.relicTips) {
-            return null;
-          }
-          if (props.relicTips.length > i) {
-            return props.relicTips[i];
-          }
-          return null;
-        };
+
+        // Prefer relicTipMap (STS2) over relicTips[index] (STS1)
+        const relicTipMapEntry = props.relicTipMap?.[relic];
+        const relicProp =
+          relicTipMapEntry && relicTipMapEntry.length > 0
+            ? new RelicProp(
+                relicTipMapEntry[0].header,
+                relicTipMapEntry[0].description ?? "",
+                relicTipMapEntry.slice(1),
+              )
+            : LookupRelic(
+                relic,
+                relicParams,
+                relicsLoc,
+                props.relicTips?.[i] ?? null,
+              );
 
         return (
           <Relic
             character={props.character}
             key={"relic-bar-" + i}
             hitbox={hitbox}
-            relic={LookupRelic(
-              relic,
-              relicParams,
-              relicsLoc,
-              lookupRelicTip(i),
-            )}
+            relic={relicProp}
           />
         );
       })}

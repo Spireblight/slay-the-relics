@@ -111,6 +111,8 @@ public class StateExporter
 
     private static void ExportRelics(Player player, ExportedState state)
     {
+        var relicTipMap = new Dictionary<string, List<TipData>>();
+
         foreach (var relic in player.Relics)
         {
             try
@@ -118,25 +120,16 @@ public class StateExporter
                 var name = relic.Title.GetFormattedText();
                 state.Relics.Add(name);
                 var tips = TipExporter.RelicTips(relic);
-                // Merge all hover tips into a single tip to maintain 1:1 mapping with relics
                 if (tips.Count > 0)
                 {
-                    var textTips = tips.Where(t => t.Type != "card").ToList();
-                    var parts = textTips.Select((t, i) =>
-                    {
-                        var header = i > 0 && !string.IsNullOrEmpty(t.Header) ? $"[gold]{t.Header}[/gold]\n" : "";
-                        return header + t.Description;
-                    }).Where(d => !string.IsNullOrEmpty(d));
-                    var merged = new TipData
-                    {
-                        Header = tips[0].Header,
-                        Description = string.Join("\n\n", parts)
-                    };
-                    state.RelicTips.Add(merged);
+                    relicTipMap[name] = tips;
                 }
                 else
                 {
-                    state.RelicTips.Add(new TipData { Header = name, Description = "" });
+                    relicTipMap[name] = new List<TipData>
+                    {
+                        new() { Header = name, Description = "" }
+                    };
                 }
             }
             catch (Exception ex)
@@ -145,6 +138,8 @@ public class StateExporter
                 state.Relics.Add(relic.Id.ToString());
             }
         }
+
+        state.RelicTipMap = relicTipMap.Count > 0 ? relicTipMap : null;
     }
 
     private static void ExportDeck(Player player, ExportedState state)

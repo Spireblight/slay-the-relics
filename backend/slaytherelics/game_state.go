@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -80,34 +81,93 @@ type GameState struct {
 	DiscardPile []CardData `json:"discardPile"`
 	ExhaustPile []CardData `json:"exhaustPile"`
 
-	CardTips   map[string][]Tip `json:"cardTips,omitempty"`
-	PotionTips []Tip            `json:"potionTips,omitempty"`
+	CardTips    map[string][]Tip `json:"cardTips,omitempty"`
+	PotionTips  []Tip            `json:"potionTips,omitempty"`
+	RelicTipMap map[string][]Tip `json:"relicTipMap,omitempty"`
 }
 
-type GameStateUpdate struct {
-	Index   int    `json:"gameStateIndex"`
-	Channel string `json:"channel"`
+// computeMergePatch produces a partial update between prev and update.
+// Inspired by RFC 7396 merge patch but without null-deletion semantics.
+// - Always includes gameStateIndex and channel.
+// - For map[string] fields: includes only changed/added keys (per-key diff).
+// - For all other fields: includes the whole value if changed.
+// - Omits unchanged fields entirely.
+func computeMergePatch(prev *GameState, update GameState) map[string]any {
+	patch := map[string]any{
+		"gameStateIndex": update.Index,
+		"channel":        update.Channel,
+	}
 
-	Character      *string        `json:"character"`
-	Boss           *string        `json:"boss"`
-	Relics         *[]string      `json:"relics"`
-	BaseRelicStats *map[int][]any `json:"baseRelicStats"`
-	RelicTips      *[]Tip         `json:"relicTips"`
-	Deck           *[]CardData    `json:"deck"`
-	Potions        *[]string      `json:"potions"`
-	AdditionalTips *[]TipsBox     `json:"additionalTips"`
-	StaticTips     *[]TipsBox     `json:"staticTips"`
-	MapNodes       *[][]MapNode   `json:"mapNodes"`
-	MapPath        *[][]int       `json:"mapPath"`
-	Bottles        *[]int         `json:"bottles"`
-	PotionX        *float64       `json:"potionX"`
+	prevVal := reflect.ValueOf(*prev)
+	updateVal := reflect.ValueOf(update)
+	prevType := prevVal.Type()
 
-	DrawPile    *[]CardData `json:"drawPile"`
-	DiscardPile *[]CardData `json:"discardPile"`
-	ExhaustPile *[]CardData `json:"exhaustPile"`
+	for i := 0; i < prevType.NumField(); i++ {
+		field := prevType.Field(i)
+		jsonTag := field.Tag.Get("json")
+		if jsonTag == "" {
+			continue
+		}
+		// Parse json tag name (strip omitempty etc.)
+		jsonName := strings.Split(jsonTag, ",")[0]
+		if jsonName == "gameStateIndex" || jsonName == "channel" {
+			continue // already included
+		}
 
-	CardTips   *map[string][]Tip `json:"cardTips,omitempty"`
-	PotionTips *[]Tip            `json:"potionTips,omitempty"`
+		prevField := prevVal.Field(i)
+		updateField := updateVal.Field(i)
+
+		// Per-key diff for map[string]* fields
+		if field.Type.Kind() == reflect.Map && field.Type.Key().Kind() == reflect.String {
+			keyDiff := diffMapKeys(prevField, updateField)
+			if keyDiff != nil {
+				patch[jsonName] = keyDiff
+			}
+			continue
+		}
+
+		// Whole-field diff for everything else
+		if !reflect.DeepEqual(prevField.Interface(), updateField.Interface()) {
+			patch[jsonName] = updateField.Interface()
+		}
+	}
+
+	return patch
+}
+
+// diffMapKeys returns a partial map containing only changed/added keys, or nil if unchanged.
+func diffMapKeys(prev, update reflect.Value) map[string]any {
+	// Handle nil maps
+	prevNil := !prev.IsValid() || prev.IsNil()
+	updateNil := !update.IsValid() || update.IsNil()
+	if prevNil && updateNil {
+		return nil
+	}
+	if prevNil {
+		// Entire map is new
+		result := make(map[string]any, update.Len())
+		for _, key := range update.MapKeys() {
+			result[key.String()] = update.MapIndex(key).Interface()
+		}
+		return result
+	}
+	if updateNil {
+		return nil // map removed — omit from patch, frontend handles via parent arrays
+	}
+
+	result := map[string]any{}
+	// Check changed/added keys
+	for _, key := range update.MapKeys() {
+		updateEntry := update.MapIndex(key)
+		prevEntry := prev.MapIndex(key)
+		if !prevEntry.IsValid() || !reflect.DeepEqual(prevEntry.Interface(), updateEntry.Interface()) {
+			result[key.String()] = updateEntry.Interface()
+		}
+	}
+	if len(result) == 0 {
+		return nil
+	}
+	return result
 }
 
 type GameStateManager struct {
@@ -165,6 +225,7 @@ func compressJson(data any) (_ string, err error) {
 func (gs *GameStateManager) send(ctx context.Context, userId string, data any) (err error) {
 	ctx, span := o11y.Tracer.Start(ctx, "game_state: send")
 	defer o11y.End(&span, &err)
+
 	compressed, err := compressJson(data)
 	if err != nil {
 		return fmt.Errorf("failed to compress game state: %w", err)
@@ -184,7 +245,6 @@ func (gs *GameStateManager) send(ctx context.Context, userId string, data any) (
 	return nil
 }
 
-//nolint:funlen,gocyclo
 func (gs *GameStateManager) broadcastUpdate(ctx context.Context,
 	userId string, prev *GameState, update GameState) (err error) {
 	ctx, span := o11y.Tracer.Start(ctx, "game_state: broadcast game state update", trace.WithAttributes(
@@ -197,81 +257,12 @@ func (gs *GameStateManager) broadcastUpdate(ctx context.Context,
 		return gs.send(ctx, userId, update)
 	}
 
-	updateValue := GameStateUpdate{
-		Index:          update.Index,
-		Channel:        update.Channel,
-		Character:      nil,
-		Boss:           nil,
-		Relics:         nil,
-		RelicTips:      nil,
-		BaseRelicStats: nil,
-		Deck:           nil,
-		Potions:        nil,
-		AdditionalTips: nil,
-		StaticTips:     nil,
-		MapNodes:       nil,
-		MapPath:        nil,
-		DiscardPile:    nil,
-		DrawPile:       nil,
-		ExhaustPile:    nil,
-		Bottles:        nil,
-		PotionX:        nil,
+	patch := computeMergePatch(prev, update)
+	if len(patch) <= 2 {
+		// Only gameStateIndex and channel — nothing actually changed
+		return nil
 	}
-	if prev.Character != update.Character {
-		updateValue.Character = &update.Character
-	}
-	if prev.Boss != update.Boss {
-		updateValue.Boss = &update.Boss
-	}
-	if !reflect.DeepEqual(prev.Relics, update.Relics) {
-		updateValue.Relics = &update.Relics
-	}
-	if !reflect.DeepEqual(prev.BaseRelicStats, update.BaseRelicStats) {
-		updateValue.BaseRelicStats = &update.BaseRelicStats
-	}
-	if !reflect.DeepEqual(prev.RelicTips, update.RelicTips) {
-		updateValue.RelicTips = &update.RelicTips
-	}
-	if !reflect.DeepEqual(prev.Deck, update.Deck) {
-		updateValue.Deck = &update.Deck
-	}
-	if !reflect.DeepEqual(prev.DrawPile, update.DrawPile) {
-		updateValue.DrawPile = &update.DrawPile
-	}
-	if !reflect.DeepEqual(prev.DiscardPile, update.DiscardPile) {
-		updateValue.DiscardPile = &update.DiscardPile
-	}
-	if !reflect.DeepEqual(prev.ExhaustPile, update.ExhaustPile) {
-		updateValue.ExhaustPile = &update.ExhaustPile
-	}
-	if !reflect.DeepEqual(prev.Potions, update.Potions) {
-		updateValue.Potions = &update.Potions
-	}
-	if !reflect.DeepEqual(prev.AdditionalTips, update.AdditionalTips) {
-		updateValue.AdditionalTips = &update.AdditionalTips
-	}
-	if !reflect.DeepEqual(prev.StaticTips, update.StaticTips) {
-		updateValue.StaticTips = &update.StaticTips
-	}
-	if !reflect.DeepEqual(prev.MapNodes, update.MapNodes) {
-		updateValue.MapNodes = &update.MapNodes
-	}
-	if !reflect.DeepEqual(prev.MapPath, update.MapPath) {
-		updateValue.MapPath = &update.MapPath
-	}
-	if !reflect.DeepEqual(prev.Bottles, update.Bottles) {
-		updateValue.Bottles = &update.Bottles
-	}
-	if prev.PotionX != update.PotionX {
-		updateValue.PotionX = &update.PotionX
-	}
-	if !reflect.DeepEqual(prev.CardTips, update.CardTips) {
-		updateValue.CardTips = &update.CardTips
-	}
-	if !reflect.DeepEqual(prev.PotionTips, update.PotionTips) {
-		updateValue.PotionTips = &update.PotionTips
-	}
-	return gs.send(ctx, userId, updateValue)
+	return gs.send(ctx, userId, patch)
 }
 
 func (gs *GameStateManager) ReceiveUpdate(ctx context.Context, userId string, update GameState) error {
