@@ -3,6 +3,7 @@ import { LocalizationContext, Potions } from "../Localization/Localization";
 import { useContext } from "react";
 
 const POTION_HITBOX_WIDTH = 2.916; // %
+const POTION_HITBOX_WIDTH_STS2 = 3.22; // %
 
 function getPotionTips(
   potion: string,
@@ -33,13 +34,16 @@ export default function PotionBar(props: {
   const hasBark =
     props.relics.includes("Sacred Bark") || props.relics.includes("SacredBark");
   const potionsLoc = useContext(LocalizationContext).potions;
+  const isSts2 = props.game === "sts2";
+  const potionY = isSts2 ? "1.5%" : "0%";
+  const hitboxW = isSts2 ? POTION_HITBOX_WIDTH_STS2 : POTION_HITBOX_WIDTH;
+  const offsetPx = isSts2 ? 4 : 0;
   return (
     <div>
       {props.potions.map((potion, i) => {
         const tips = props.potionTips?.[i]
           ? [props.potionTips[i]]
           : getPotionTips(potion, hasBark, potionsLoc);
-        const potionY = props.game === "sts2" ? "1.5%" : "0%";
         return (
           <PowerTipStrip
             place={"bottom-start"}
@@ -47,10 +51,10 @@ export default function PotionBar(props: {
             key={"potion-" + i}
             magGlass={false}
             hitbox={{
-              x: `${props.potionX - POTION_HITBOX_WIDTH / 2 + i * POTION_HITBOX_WIDTH}%`,
+              x: `calc(${props.potionX - hitboxW / 2 + i * hitboxW}% - ${offsetPx}px)`,
               y: potionY,
               z: 1,
-              w: "2.916%",
+              w: `${hitboxW}%`,
               h: "5.556%",
             }}
             tips={tips}
