@@ -244,7 +244,7 @@ export function PowerTip(props: { tip: Tip; character: string }) {
 
   return (
     <div className={"powertip powertip-shadow" + typeClass}>
-      <div className={"powertip-header outline-black " + headerImgClass}>
+      <div className={"powertip-header " + headerImgClass}>
         {props.tip.header}
         {props.tip.img && (
           <img
