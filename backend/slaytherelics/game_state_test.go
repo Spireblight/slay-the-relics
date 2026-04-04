@@ -2,7 +2,6 @@ package slaytherelics
 
 import (
 	"encoding/json"
-	"reflect"
 	"testing"
 
 	"gotest.tools/v3/assert"
@@ -27,9 +26,11 @@ func TestSTS1PayloadWithoutNewFields(t *testing.T) {
 	_, hasCardTips := raw["cardTips"]
 	_, hasPotionTips := raw["potionTips"]
 	_, hasGame := raw["game"]
+	_, hasRelicTipMap := raw["relicTipMap"]
 	assert.Check(t, !hasCardTips)
 	assert.Check(t, !hasPotionTips)
 	assert.Check(t, !hasGame)
+	assert.Check(t, !hasRelicTipMap)
 }
 
 func TestNewFieldsStoreAndRetrieve(t *testing.T) {
@@ -45,6 +46,9 @@ func TestNewFieldsStoreAndRetrieve(t *testing.T) {
 			"bash": {{Header: "Bash", Description: "Deal 8 damage."}},
 		},
 		PotionTips: []Tip{{Header: "Fire Potion", Description: "Deal 20 damage."}},
+		RelicTipMap: map[string][]Tip{
+			"Burning Blood": {{Header: "Burning Blood", Description: "Heal 6 HP."}},
+		},
 	}
 
 	gsm.GameStates.Store("test", gs)
@@ -56,6 +60,8 @@ func TestNewFieldsStoreAndRetrieve(t *testing.T) {
 	assert.Equal(t, loaded.CardTips["bash"][0].Header, "Bash")
 	assert.Equal(t, len(loaded.PotionTips), 1)
 	assert.Equal(t, loaded.PotionTips[0].Header, "Fire Potion")
+	assert.Equal(t, len(loaded.RelicTipMap), 1)
+	assert.Equal(t, loaded.RelicTipMap["Burning Blood"][0].Header, "Burning Blood")
 }
 
 func TestNewFieldsJsonRoundTrip(t *testing.T) {
@@ -67,6 +73,9 @@ func TestNewFieldsJsonRoundTrip(t *testing.T) {
 			"strike_ironclad": {{Header: "Strike", Description: "Deal 6 damage."}},
 		},
 		PotionTips: []Tip{{Header: "Block Potion", Description: "Gain 12 block."}},
+		RelicTipMap: map[string][]Tip{
+			"Vajra": {{Header: "Vajra", Description: "+1 Strength."}},
+		},
 	}
 
 	data, err := json.Marshal(gs)
@@ -79,9 +88,10 @@ func TestNewFieldsJsonRoundTrip(t *testing.T) {
 	assert.Equal(t, loaded.Game, "sts2")
 	assert.Equal(t, loaded.CardTips["strike_ironclad"][0].Header, "Strike")
 	assert.Equal(t, loaded.PotionTips[0].Header, "Block Potion")
+	assert.Equal(t, loaded.RelicTipMap["Vajra"][0].Header, "Vajra")
 }
 
-func TestDeltaCompressionOmitsUnchangedNewFields(t *testing.T) {
+func TestMergePatchOmitsUnchangedFields(t *testing.T) {
 	tips := map[string][]Tip{"bash": {{Header: "Bash", Description: "Deal 8 damage."}}}
 	prev := GameState{
 		Index:    1,
@@ -95,16 +105,16 @@ func TestDeltaCompressionOmitsUnchangedNewFields(t *testing.T) {
 		Character: "Ironclad",
 	}
 
-	delta := computeDelta(&prev, update)
+	patch := computeMergePatch(&prev, update)
 
-	// CardTips unchanged → should be nil
-	assert.Check(t, delta.CardTips == nil)
-	// Character changed → should be set
-	assert.Check(t, delta.Character != nil)
-	assert.Equal(t, *delta.Character, "Ironclad")
+	// CardTips unchanged → should not be in patch
+	_, hasCardTips := patch["cardTips"]
+	assert.Check(t, !hasCardTips)
+	// Character changed → should be in patch
+	assert.Equal(t, patch["character"], "Ironclad")
 }
 
-func TestDeltaCompressionIncludesChangedNewFields(t *testing.T) {
+func TestMergePatchIncludesChangedFields(t *testing.T) {
 	prev := GameState{
 		Index:   1,
 		Channel: "test",
@@ -122,31 +132,71 @@ func TestDeltaCompressionIncludesChangedNewFields(t *testing.T) {
 		PotionTips: []Tip{{Header: "Fire Potion", Description: "Deal 20 damage."}},
 	}
 
-	delta := computeDelta(&prev, update)
+	patch := computeMergePatch(&prev, update)
 
-	assert.Check(t, delta.CardTips != nil)
-	assert.Equal(t, len(*delta.CardTips), 2)
-	assert.Check(t, delta.PotionTips != nil)
-	assert.Equal(t, len(*delta.PotionTips), 1)
+	// CardTips changed → patch should contain only the new key
+	cardTips, ok := patch["cardTips"]
+	assert.Check(t, ok)
+	cardTipsMap := cardTips.(map[string]any)
+	assert.Equal(t, len(cardTipsMap), 1) // only strike_ironclad, bash unchanged
+	_, hasStrike := cardTipsMap["strike_ironclad"]
+	assert.Check(t, hasStrike)
+	_, hasBash := cardTipsMap["bash"]
+	assert.Check(t, !hasBash) // bash unchanged, not in patch
+
+	// PotionTips changed (was nil) → should be in patch
+	_, hasPotionTips := patch["potionTips"]
+	assert.Check(t, hasPotionTips)
 }
 
-// computeDelta mirrors the comparison logic in broadcastUpdate for testing.
-func computeDelta(prev *GameState, update GameState) GameStateUpdate {
-	u := GameStateUpdate{
-		Index:   update.Index,
-		Channel: update.Channel,
+func TestMergePatchPerKeyDiffForRelicTipMap(t *testing.T) {
+	prev := GameState{
+		Index:   1,
+		Channel: "test",
+		RelicTipMap: map[string][]Tip{
+			"Burning Blood": {{Header: "Burning Blood", Description: "Heal 6 HP."}},
+			"Vajra":         {{Header: "Vajra", Description: "+1 Strength."}},
+		},
 	}
-	if prev.Character != update.Character {
-		u.Character = &update.Character
+	update := GameState{
+		Index:   2,
+		Channel: "test",
+		RelicTipMap: map[string][]Tip{
+			"Burning Blood": {{Header: "Burning Blood", Description: "Heal 6 HP."}},
+			"Vajra":         {{Header: "Vajra", Description: "+2 Strength."}}, // changed
+		},
 	}
-	if prev.Boss != update.Boss {
-		u.Boss = &update.Boss
+
+	patch := computeMergePatch(&prev, update)
+
+	relicTipMap, ok := patch["relicTipMap"]
+	assert.Check(t, ok)
+	tipMap := relicTipMap.(map[string]any)
+	// Only Vajra changed
+	assert.Equal(t, len(tipMap), 1)
+	_, hasVajra := tipMap["Vajra"]
+	assert.Check(t, hasVajra)
+	_, hasBurning := tipMap["Burning Blood"]
+	assert.Check(t, !hasBurning)
+}
+
+func TestMergePatchUnchangedMapOmitted(t *testing.T) {
+	tips := map[string][]Tip{
+		"Burning Blood": {{Header: "Burning Blood", Description: "Heal 6 HP."}},
 	}
-	if !reflect.DeepEqual(prev.CardTips, update.CardTips) {
-		u.CardTips = &update.CardTips
+	prev := GameState{
+		Index:       1,
+		Channel:     "test",
+		RelicTipMap: tips,
 	}
-	if !reflect.DeepEqual(prev.PotionTips, update.PotionTips) {
-		u.PotionTips = &update.PotionTips
+	update := GameState{
+		Index:       2,
+		Channel:     "test",
+		RelicTipMap: tips,
 	}
-	return u
+
+	patch := computeMergePatch(&prev, update)
+
+	_, hasRelicTipMap := patch["relicTipMap"]
+	assert.Check(t, !hasRelicTipMap)
 }

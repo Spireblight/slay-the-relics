@@ -35,6 +35,10 @@ public class ExportedState
     [JsonPropertyName("relicTips")]
     public List<TipData> RelicTips { get; set; } = new();
 
+    [JsonPropertyName("relicTipMap")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public Dictionary<string, List<TipData>>? RelicTipMap { get; set; }
+
     [JsonPropertyName("deck")]
     public List<object> Deck { get; set; } = new();
 
