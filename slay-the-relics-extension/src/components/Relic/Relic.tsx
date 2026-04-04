@@ -31,14 +31,12 @@ export function LookupRelic(
   relicsLoc: Relics,
   relicTip: Tip | null,
 ): RelicProp {
-  // If we have a direct tip from the mod (STS2), use it as the sole tip
-  // and skip the localization lookup to avoid duplicates
-  if (relicTip !== null) {
-    return new RelicProp(relicTip.header, relicTip.description ?? "", []);
-  }
-
   const relicLoc = relicsLoc[relic];
   if (relicLoc === undefined || relicLoc === null) {
+    // No localization available — use the mod-provided tip if we have one
+    if (relicTip !== null) {
+      return new RelicProp(relicTip.header, relicTip.description ?? "", []);
+    }
     return new RelicProp(relic, relic, []);
   }
 
@@ -60,7 +58,7 @@ export function LookupRelic(
 
   const description = descriptionParts.join("");
   const name = relicLoc.NAME ?? relic;
-  return new RelicProp(name, description, []);
+  return new RelicProp(name, description, relicTip === null ? [] : [relicTip]);
 }
 
 export function Relic(props: {
