@@ -19,6 +19,18 @@ public class SlayTheRelicsExporterMod
 
     public static void Initialize()
     {
+        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+        {
+            if (args.ExceptionObject is Exception ex)
+                Log.Error($"[SlayTheRelicsExporter] Unhandled exception: {ex}");
+        };
+
+        TaskScheduler.UnobservedTaskException += (_, args) =>
+        {
+            Log.Error($"[SlayTheRelicsExporter] Unobserved task exception: {args.Exception}");
+            args.SetObserved();
+        };
+
         Log.Info("[SlayTheRelicsExporter] Initializing v0.2.0");
 
         try
