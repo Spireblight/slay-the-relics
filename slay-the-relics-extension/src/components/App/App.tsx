@@ -67,6 +67,7 @@ interface RunState extends Record<string, unknown> {
   potionX: number
   cardTips?: Record<string, Tip[]>;
   potionTips?: Tip[];
+  relicTipMap?: Record<string, Tip[]>;
 }
 
 interface AppState {
@@ -163,13 +164,24 @@ export default class App extends Component<AppProps, AppState> {
     );
 
     this.setState((prev) => {
-      return {
-        ...prev,
-        runState: {
-          ...prev.runState,
-          ...filtered,
-        },
-      };
+      const merged = { ...prev.runState };
+      for (const [key, value] of Object.entries(filtered)) {
+        const prevValue = merged[key];
+        // Merge map fields per-key so partial updates (e.g. one changed relic) don't wipe the rest
+        if (
+          value !== null &&
+          typeof value === "object" &&
+          !Array.isArray(value) &&
+          prevValue !== null &&
+          typeof prevValue === "object" &&
+          !Array.isArray(prevValue)
+        ) {
+          merged[key] = { ...prevValue, ...value };
+        } else {
+          merged[key] = value;
+        }
+      }
+      return { ...prev, runState: merged as RunState };
     });
   }
 
@@ -272,6 +284,7 @@ export default class App extends Component<AppProps, AppState> {
             character={this.state.runState.character}
             relicParams={this.state.runState.baseRelicStats}
             relicTips={this.state.runState.relicTips}
+            relicTipMap={this.state.runState.relicTipMap}
             game={this.state.runState.game}
           />
           <PotionBar
