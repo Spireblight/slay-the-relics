@@ -449,3 +449,5 @@ log.jsonl
 backend/bin
 backend/test-reports
 frontend/*.py
+/sts2-mod/**/bin/*
+/sts2-mod/**/obj/*

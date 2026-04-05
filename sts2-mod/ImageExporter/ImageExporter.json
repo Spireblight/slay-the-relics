@@ -1,0 +1,11 @@
+{
+  "id": "ImageExporter",
+  "name": "Image Exporter",
+  "author": "BSchneppe",
+  "description": "Dev tool: exports card images as PNGs from the game's rendering pipeline.",
+  "version": "v0.1.0",
+  "has_pck": false,
+  "has_dll": true,
+  "dependencies": ["BaseLib"],
+  "affects_gameplay": false
+}

@@ -1,0 +1,14 @@
+<Project>
+  <PropertyGroup>
+    <!-- Override these with: dotnet build -p:STS2GameDir=/path/to/game -p:STS2ModsDir=/path/to/mods -->
+    <!-- macOS -->
+    <STS2GameDir Condition="'$(STS2GameDir)' == '' And '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">$(HOME)/Library/Application Support/Steam/steamapps/common/Slay the Spire 2/SlayTheSpire2.app/Contents/Resources/data_sts2_macos_arm64</STS2GameDir>
+    <STS2ModsDir Condition="'$(STS2ModsDir)' == '' And '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">$(HOME)/Library/Application Support/Steam/steamapps/common/Slay the Spire 2/SlayTheSpire2.app/Contents/MacOS/mods</STS2ModsDir>
+    <!-- Windows -->
+    <STS2GameDir Condition="'$(STS2GameDir)' == '' And '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">C:/Program Files (x86)/Steam/steamapps/common/Slay the Spire 2/data</STS2GameDir>
+    <STS2ModsDir Condition="'$(STS2ModsDir)' == '' And '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">C:/Program Files (x86)/Steam/steamapps/common/Slay the Spire 2/mods</STS2ModsDir>
+    <!-- Linux -->
+    <STS2GameDir Condition="'$(STS2GameDir)' == '' And '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">$(HOME)/.steam/steam/steamapps/common/Slay the Spire 2/data</STS2GameDir>
+    <STS2ModsDir Condition="'$(STS2ModsDir)' == '' And '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">$(HOME)/.steam/steam/steamapps/common/Slay the Spire 2/mods</STS2ModsDir>
+  </PropertyGroup>
+</Project>
