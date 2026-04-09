@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Godot;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Modding;
 using MegaCrit.Sts2.Core.Runs;
@@ -19,18 +20,6 @@ public class SlayTheRelicsExporterMod
 
     public static void Initialize()
     {
-        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
-        {
-            if (args.ExceptionObject is Exception ex)
-                Log.Error($"[SlayTheRelicsExporter] Unhandled exception: {ex}");
-        };
-
-        TaskScheduler.UnobservedTaskException += (_, args) =>
-        {
-            Log.Error($"[SlayTheRelicsExporter] Unobserved task exception: {args.Exception}");
-            args.SetObserved();
-        };
-
         Log.Info("[SlayTheRelicsExporter] Initializing v0.2.0");
 
         try
@@ -104,24 +93,41 @@ public class SlayTheRelicsExporterMod
         }, token);
     }
 
+    private static Task<T> RunOnMainThread<T>(Func<T> func)
+    {
+        var tcs = new TaskCompletionSource<T>();
+        Callable.From(() =>
+        {
+            try
+            {
+                tcs.SetResult(func());
+            }
+            catch (Exception ex)
+            {
+                tcs.SetException(ex);
+            }
+        }).CallDeferred();
+        return tcs.Task;
+    }
+
     private static async Task PollOnce()
     {
         try
         {
             var inRun = RunManager.Instance.IsInProgress;
 
-            // Detect run start → reset index
             if (inRun && !_wasInRun)
-            {
                 _exporter!.ResetIndex();
-            }
 
             _wasInRun = inRun;
 
             if (!inRun) return;
 
-            // Export and send game state
-            var state = _exporter!.Export();
+            // Game objects and SmartFormat are not thread-safe —
+            // read state on the main thread.
+            var state = await RunOnMainThread(() => _exporter!.Export());
+
+            // HTTP POST can run on the background thread.
             if (state != null)
             {
                 await _client!.PostGameState(state, SerializerOptions.Default);
