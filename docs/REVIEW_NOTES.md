@@ -14,7 +14,11 @@ using PubSub messaging.
 
 ## Version History/Changelog:
 
-### version 0.0.2 - under review
+### version 2.0.0 - under review
+
+- Added feature: support Slay the Spire 2
+
+### version 0.0.2 - currently released
 
 - Added features: Map view, draw/discard/exhaust view
 - Fixed a lot of issues of the previous version where the tooltips are not consistently displayed
