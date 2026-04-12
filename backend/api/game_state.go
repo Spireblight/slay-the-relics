@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -44,6 +43,7 @@ func extractBearerToken(header string) (string, error) {
 	return tok[1], nil
 }
 
+//nolint:funlen
 func (a *API) postGameStateHandler(c *gin.Context) {
 	var err error
 	ctx, span := o11y.Tracer.Start(c.Request.Context(), "api: post game state")
@@ -67,7 +67,6 @@ func (a *API) postGameStateHandler(c *gin.Context) {
 			return
 		}
 		userID = channelEnvelope.Channel
-		log.Printf("[DEV] POST game-state: channel=%s size=%d bytes", userID, len(body))
 	} else {
 		token, err := extractBearerToken(c.GetHeader("Authorization"))
 		if err != nil {
@@ -87,7 +86,6 @@ func (a *API) postGameStateHandler(c *gin.Context) {
 			return
 		}
 		if err != nil {
-			log.Printf("[ERROR] postGameState: auth failed for user %s: %v", headerUserID, err)
 			c.JSON(500, gin.H{"error": err.Error()})
 			return
 		}
@@ -106,7 +104,6 @@ func (a *API) postGameStateHandler(c *gin.Context) {
 
 	err = a.gameStateManager.ReceiveUpdate(ctx, userID, gameState)
 	if err != nil {
-		log.Printf("[ERROR] postGameState: ReceiveUpdate failed for user %s (index=%d): %v", userID, gameState.Index, err)
 		c.JSON(500, gin.H{"error": fmt.Sprintf("failed to post game state update: %v", err)})
 		return
 	}

@@ -11,7 +11,8 @@ type Config struct {
 	ExtensionSecret string `env:"EXTENSION_SECRET"`
 	OtelEndpoint    string `env:"OTEL_EXPORTER_ENDPOINT"`
 	RedisAddr       string `env:"REDIS_ADDR" default:"localhost:6379"`
-	DevMode         bool   `env:"DEV_MODE" default:"false"` // disable auth and use channel from body, for easier testing without auth
+	// disable auth and use channel from body, for easier testing without auth
+	DevMode bool `env:"DEV_MODE" default:"false"`
 }
 
 func Load() Config {

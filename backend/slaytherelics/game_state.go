@@ -288,4 +288,3 @@ func (gs *GameStateManager) GetGameState(userId string) (GameState, bool) {
 	}
 	return state, true
 }
-
