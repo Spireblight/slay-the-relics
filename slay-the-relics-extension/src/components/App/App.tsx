@@ -239,7 +239,7 @@ export default class App extends Component<AppProps, AppState> {
 
   componentDidMount() {
     if (import.meta.env.DEV) {
-      void this.initialLoad("40440822");
+      void this.initialLoad("59817220");
     }
     if (this.twitch) {
       this.twitch.onAuthorized((auth) => {

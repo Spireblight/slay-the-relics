@@ -16,7 +16,7 @@ public class AuthServer
     private const int Port = 49000;
     private const string RedirectUri = "http://localhost:49000";
 
-    private static readonly string ClientId = "i74ps98l8dz61jcoxgyxb8g68r170t";
+    private static readonly string ClientId = "ebkycs9lir8pbic2r0b7wa6bg6n7ua";
     private readonly Config _config;
 
     public AuthServer(Config config)
