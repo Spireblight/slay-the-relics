@@ -28,7 +28,11 @@ public class SlayTheRelicsExporterMod
             _client = new BackendClient(_config);
             _exporter = new StateExporter(_config);
 
-            if (string.IsNullOrEmpty(_config.Channel) || string.IsNullOrEmpty(_config.AuthToken))
+            ModConfigBridge.OnConnectTwitch = () => _ = RunAuthThenPoll();
+            ModConfigBridge.IsAuthenticated = () => _config?.IsAuthenticated == true;
+            ModConfigBridge.DeferredRegister();
+
+            if (!_config.IsAuthenticated)
             {
                 Log.Info("[SlayTheRelicsExporter] No credentials found, starting auth flow...");
                 _ = RunAuthThenPoll();
@@ -56,8 +60,8 @@ public class SlayTheRelicsExporterMod
                 return;
             }
 
-            // Re-create client with updated config
             _client = new BackendClient(_config!);
+            Callable.From(ModConfigBridge.UpdateStatusLabel).CallDeferred();
             StartPolling();
             Log.Info("[SlayTheRelicsExporter] Auth complete, started polling loop");
         }
@@ -69,6 +73,8 @@ public class SlayTheRelicsExporterMod
 
     private static void StartPolling()
     {
+        _cts?.Cancel();
+        _cts?.Dispose();
         _cts = new CancellationTokenSource();
         var token = _cts.Token;
 
@@ -79,7 +85,7 @@ public class SlayTheRelicsExporterMod
                 try
                 {
                     await PollOnce();
-                    await Task.Delay(_config!.PollIntervalMs, token);
+                    await Task.Delay(ModConfigBridge.PollIntervalMs, token);
                 }
                 catch (OperationCanceledException)
                 {
@@ -123,13 +129,15 @@ public class SlayTheRelicsExporterMod
 
             if (!inRun) return;
 
-            // Game objects and SmartFormat are not thread-safe —
-            // read state on the main thread.
+            // Game state must be read on the main thread (Godot is not thread-safe).
             var state = await RunOnMainThread(() => _exporter!.Export());
 
-            // HTTP POST can run on the background thread.
             if (state != null)
             {
+                var delayMs = ModConfigBridge.Delay;
+                if (delayMs > 0)
+                    await Task.Delay(delayMs);
+
                 await _client!.PostGameState(state, SerializerOptions.Default);
             }
         }

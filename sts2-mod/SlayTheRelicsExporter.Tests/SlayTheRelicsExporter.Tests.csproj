@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>SlayTheRelicsExporter.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.*" />
+    <PackageReference Include="xunit" Version="2.*" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.*" />
+  </ItemGroup>
+
+  <!-- Link source files from the main project that can be tested without game DLLs.
+       Godot/Log stubs in Stubs/ satisfy compile-time references. -->
+  <ItemGroup>
+    <Compile Include="../SlayTheRelicsExporter/src/Config.cs" Link="Config.cs" />
+    <Compile Include="../SlayTheRelicsExporter/src/ModConfigBridge.cs" Link="ModConfigBridge.cs" />
+  </ItemGroup>
+</Project>

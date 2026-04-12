@@ -9,7 +9,9 @@ public class Config
     public string BackendUrl { get; set; } = "https://slay-the-relics.baalorlord.tv";
     public string Channel { get; set; } = "";
     public string AuthToken { get; set; } = "";
-    public int PollIntervalMs { get; set; } = 1000;
+
+    public bool IsAuthenticated =>
+        !string.IsNullOrEmpty(Channel) && !string.IsNullOrEmpty(AuthToken);
 
     private static readonly string ConfigPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
