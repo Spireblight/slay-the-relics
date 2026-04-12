@@ -53,7 +53,7 @@ func (a *API) getDeckHandler(c *gin.Context) {
 	for _, k := range keys {
 		result.WriteString(k)
 		result.WriteString(" x")
-		result.WriteString(fmt.Sprint(d[k]))
+		_, _ = fmt.Fprint(&result, d[k])
 		result.WriteString("\n")
 	}
 
