@@ -52,6 +52,18 @@ The output DLL (`bin/Debug/net9.0/SlayTheRelicsExporter.dll`) and `mod_manifest.
 - After logging in, you can close the browser tab — the mod will start exporting game state automatically
 - If you previously used the STS1 mod, your credentials will be migrated automatically
 
+## Configuration
+
+If [ModConfig-STS2](https://github.com/xhyrzldf/ModConfig-STS2) is installed, a settings panel is available under Settings → Mods → Slay The Relics Exporter with the following options:
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| Poll Interval (ms) | Slider (200–5000) | 1000 | How often game state is sent to the backend |
+| Delay (ms) | Slider (0–10000) | 150 | Stream encoding delay — aligns extension output with what viewers see |
+| Connect with Twitch | Button | — | Triggers the Twitch OAuth authentication flow |
+
+ModConfig is optional — the mod works normally without it using built-in defaults. Authentication credentials (Channel, AuthToken) are stored separately in `%AppData%/SlayTheRelicsExporter/config.json` and are not exposed in the ModConfig UI.
+
 ## Notes
 
 - In order for the extension to be properly visually aligned with the game, the game capture has to perfectly fill the whole stream (as if you had the game fullscreen)
