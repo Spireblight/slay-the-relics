@@ -8,6 +8,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- CI / no game install: use NuGet stubs -->
+    <PackageReference Include="BSchneppe.Sts2.ReferenceAssemblies" Version="0.99.*"
+                      Condition="!Exists('$(STS2GameDir)/sts2.dll')"
+                      PrivateAssets="All" />
+  </ItemGroup>
+
+  <!-- Local dev: use real game DLLs -->
+  <ItemGroup Condition="Exists('$(STS2GameDir)/sts2.dll')">
     <Reference Include="sts2">
       <HintPath>$(STS2GameDir)/sts2.dll</HintPath>
       <Private>false</Private>
@@ -21,7 +29,7 @@
       <Private>false</Private>
     </Reference>
   </ItemGroup>
-  <Target Name="CopyModFiles" AfterTargets="Build">
+  <Target Name="CopyModFiles" AfterTargets="Build" Condition="Exists('$(STS2ModsDir)')">
     <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="$(STS2ModsDir)/SlayTheRelicsExporter" />
     <Copy SourceFiles="mod_manifest.json" DestinationFolder="$(STS2ModsDir)/SlayTheRelicsExporter" />
   </Target>

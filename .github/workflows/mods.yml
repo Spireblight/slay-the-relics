@@ -1,0 +1,45 @@
+name: Build Mod
+on:
+  push:
+    branches: [ "master" ]
+    paths: [ "sts2-mod/**" ]
+  pull_request:
+    branches: [ "master" ]
+    paths: [ "sts2-mod/**" ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      - name: Build SlayTheRelicsExporter
+        run: dotnet build sts2-mod/SlayTheRelicsExporter/SlayTheRelicsExporter.csproj -c Release
+      - name: Build ImageExporter
+        run: dotnet build sts2-mod/ImageExporter/ImageExporter.csproj -c Release
+      - name: Package SlayTheRelicsExporter
+        if: github.ref == 'refs/heads/master'
+        run: |
+          mkdir -p artifacts/SlayTheRelicsExporter
+          cp sts2-mod/SlayTheRelicsExporter/bin/Release/net9.0/SlayTheRelicsExporter.dll artifacts/SlayTheRelicsExporter/
+          cp sts2-mod/SlayTheRelicsExporter/mod_manifest.json artifacts/SlayTheRelicsExporter/
+      - name: Package ImageExporter
+        if: github.ref == 'refs/heads/master'
+        run: |
+          mkdir -p artifacts/ImageExporter
+          find sts2-mod/ImageExporter/.godot/mono/temp/bin/Release/ -name "ImageExporter.dll" -exec cp {} artifacts/ImageExporter/ \;
+          cp sts2-mod/ImageExporter/ImageExporter.json artifacts/ImageExporter/
+      - name: Upload SlayTheRelicsExporter
+        if: github.ref == 'refs/heads/master'
+        uses: actions/upload-artifact@v4
+        with:
+          name: SlayTheRelicsExporter
+          path: artifacts/SlayTheRelicsExporter/
+      - name: Upload ImageExporter
+        if: github.ref == 'refs/heads/master'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ImageExporter
+          path: artifacts/ImageExporter/
