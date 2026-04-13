@@ -59,15 +59,15 @@ public class InlineImageReplacerTests
     }
 
     [Fact]
-    public void Replace_SingleStar_ReturnsSingular()
+    public void Replace_SingleStar_ReturnsStarLabel()
     {
         var input = $"Gain {StarImg()} at the start.";
         var result = InlineImageReplacer.Replace(input);
-        Assert.Equal("Gain [blue]1[/blue] [gold]Star[/gold] at the start.", result);
+        Assert.Equal("Gain [blue]1[/blue] [gold]Stars[/gold] at the start.", result);
     }
 
     [Fact]
-    public void Replace_TwoStars_ReturnsPlural()
+    public void Replace_TwoStars_ReturnsStarLabel()
     {
         var input = $"Gain {StarImg()}{StarImg()} at the start.";
         var result = InlineImageReplacer.Replace(input);
