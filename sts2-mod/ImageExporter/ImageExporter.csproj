@@ -30,10 +30,6 @@
     </Reference>
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Alchyr.Sts2.BaseLib" Version="0.1.9" PrivateAssets="All" />
-  </ItemGroup>
-
   <Target Name="CopyModFiles" AfterTargets="Build" Condition="Exists('$(STS2ModsDir)')">
     <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="$(STS2ModsDir)/ImageExporter" />
     <Copy SourceFiles="ImageExporter.json" DestinationFolder="$(STS2ModsDir)/ImageExporter" />
