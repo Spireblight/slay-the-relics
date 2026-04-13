@@ -5,7 +5,6 @@ Dev tool for Slay the Spire 2 that exports card images as PNGs using the game's 
 ## Prerequisites
 
 - Slay the Spire 2 with mod support enabled
-- [BaseLib](https://github.com/Alchyr/BaseLib) mod installed
 - .NET 9 SDK
 
 ## Building
