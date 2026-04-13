@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using MegaCrit.Sts2.Core.HoverTips;
+using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using SlayTheRelicsExporter.Models;
@@ -10,6 +11,12 @@ namespace SlayTheRelicsExporter;
 
 public static class TipExporter
 {
+    private static string LocalizedEnergyLabel =>
+        new LocString("static_hover_tips", "ENERGY.title").GetFormattedText();
+
+    private static string LocalizedStarLabel =>
+        new LocString("static_hover_tips", "STAR_COUNT.title").GetFormattedText();
+
     public static TipData FromHoverTip(IHoverTip tip)
     {
         try
@@ -19,7 +26,7 @@ public static class TipExporter
             if (tip is HoverTip ht)
             {
                 data.Header = ht.Title ?? "";
-                data.Description = InlineImageReplacer.Replace(ht.Description ?? "");
+                data.Description = InlineImageReplacer.Replace(ht.Description ?? "", LocalizedEnergyLabel, LocalizedStarLabel);
             }
             else if (tip is CardHoverTip cht)
             {

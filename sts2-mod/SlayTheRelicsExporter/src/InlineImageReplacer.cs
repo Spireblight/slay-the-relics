@@ -19,21 +19,18 @@ public static class InlineImageReplacer
         @"(?:\[img\]res://images/packed/sprite_fonts/star_icon\.png\[/img\])+",
         RegexOptions.Compiled);
 
-    public static string Replace(string description)
+    public static string Replace(string description, string energyLabel = "Energy", string starLabel = "Stars")
     {
         if (string.IsNullOrEmpty(description)) return description;
 
         description = _energyWithCount.Replace(description, m =>
-            FormatIconCount(int.Parse(m.Groups[1].Value), "Energy"));
+            FormatIconCount(int.Parse(m.Groups[1].Value), energyLabel));
 
         description = _energyRepeated.Replace(description, m =>
-            FormatIconCount(CountImgTags(m.Value), "Energy"));
+            FormatIconCount(CountImgTags(m.Value), energyLabel));
 
         description = _starsRepeated.Replace(description, m =>
-        {
-            int n = CountImgTags(m.Value);
-            return FormatIconCount(n, n == 1 ? "Star" : "Stars");
-        });
+            FormatIconCount(CountImgTags(m.Value), starLabel));
 
         return description;
     }
