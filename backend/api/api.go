@@ -1,6 +1,7 @@
 package api
 
 import (
+	"net/http"
 	"sync"
 
 	"github.com/gin-gonic/gin"
@@ -35,7 +36,17 @@ func New(
 	g *slaytherelics.GameStateManager,
 	opts ...Options,
 ) (*API, error) {
-	r := gin.Default()
+	r := gin.New()
+	loggerConfig := gin.LoggerConfig{}
+	loggerConfig.Skip = func(c *gin.Context) bool {
+		if c.Writer.Status() == http.StatusNotFound {
+			return true
+		}
+		return c.Writer.Status() < http.StatusBadRequest
+	}
+
+	r.Use(gin.LoggerWithConfig(loggerConfig))
+	r.Use(gin.Recovery())
 	r.Use(o11y.Middleware)
 
 	err := r.SetTrustedProxies(nil)
