@@ -19,7 +19,7 @@ public static class TipExporter
             if (tip is HoverTip ht)
             {
                 data.Header = ht.Title ?? "";
-                data.Description = ht.Description ?? "";
+                data.Description = InlineImageReplacer.Replace(ht.Description ?? "");
             }
             else if (tip is CardHoverTip cht)
             {

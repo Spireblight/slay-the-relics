@@ -17,5 +17,6 @@
   <ItemGroup>
     <Compile Include="../SlayTheRelicsExporter/src/Config.cs" Link="Config.cs" />
     <Compile Include="../SlayTheRelicsExporter/src/ModConfigBridge.cs" Link="ModConfigBridge.cs" />
+    <Compile Include="../SlayTheRelicsExporter/src/InlineImageReplacer.cs" Link="InlineImageReplacer.cs" />
   </ItemGroup>
 </Project>
