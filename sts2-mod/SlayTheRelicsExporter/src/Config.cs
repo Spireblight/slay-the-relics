@@ -13,8 +13,9 @@ public class Config
     public bool IsAuthenticated =>
         !string.IsNullOrEmpty(Channel) && !string.IsNullOrEmpty(AuthToken);
 
-    private static readonly string ConfigPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+    private static string ConfigPath => Path.Combine(
+        Environment.GetEnvironmentVariable("STRE_CONFIG_DIR")
+            ?? Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "SlayTheRelicsExporter",
         "config.json"
     );

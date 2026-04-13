@@ -8,21 +8,17 @@ namespace SlayTheRelicsExporter.Tests;
 public class ConfigTests : IDisposable
 {
     private readonly string _tempDir;
-    private readonly string _originalAppData;
 
     public ConfigTests()
     {
         _tempDir = Path.Combine(Path.GetTempPath(), $"stre_test_{Guid.NewGuid():N}");
         Directory.CreateDirectory(_tempDir);
-
-        // Redirect %AppData% so Config.Load/Save use our temp directory
-        _originalAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        Environment.SetEnvironmentVariable("APPDATA", _tempDir);
+        Environment.SetEnvironmentVariable("STRE_CONFIG_DIR", _tempDir);
     }
 
     public void Dispose()
     {
-        Environment.SetEnvironmentVariable("APPDATA", _originalAppData);
+        Environment.SetEnvironmentVariable("STRE_CONFIG_DIR", null);
         if (Directory.Exists(_tempDir))
             Directory.Delete(_tempDir, true);
     }
