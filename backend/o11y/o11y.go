@@ -54,6 +54,8 @@ func End(span *trace.Span, err *error) {
 
 func Init(serviceName, endpoint string) (func(context.Context), error) {
 	if endpoint == "" {
+		Tracer = otel.Tracer(serviceName)
+		Meter = otel.GetMeterProvider().Meter(serviceName)
 		return func(context.Context) {}, nil
 	}
 	ctx := context.Background()
