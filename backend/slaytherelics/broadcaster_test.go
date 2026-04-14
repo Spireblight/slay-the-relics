@@ -40,7 +40,8 @@ func (p *pubSubStub) SendMessage(ctx context.Context,
 
 func TestBroadcaster(t *testing.T) {
 	ctx := context.Background()
-	cancel := o11y.Init("test")
+	cancel, err := o11y.Init("test", "")
+	assert.NilError(t, err)
 	defer cancel(ctx)
 
 	pubsub := &pubSubStub{

@@ -1,65 +1,25 @@
-extensions:
-  health_check:
-  pprof:
-    endpoint: 0.0.0.0:1777
-  zpages:
-    endpoint: 0.0.0.0:55679
-
 receivers:
   otlp:
     protocols:
       grpc:
-      http:
-  hostmetrics:
-    collection_interval: 10s
-    scrapers:
-      cpu:
-      disk:
-      load:
-      filesystem:
-      memory:
-      network:
-      paging:
-
-processors:
-  resourcedetection:
-    detectors: ['system']
-  batch:
-    send_batch_size: 10000
-    timeout: 10s
+        endpoint: 0.0.0.0:4317
 
 exporters:
-  logging:
-    logLevel: debug
-  otlp/uptrace:
-    endpoint: uptrace:14317
-    tls:
-      insecure: true
-    headers: { 'uptrace-dsn': 'http://project1_secret_token@localhost:14317/1' }
-  otlp:
-    endpoint: uptrace:14317
-    tls:
-      insecure: true
+  otlphttp/openobserve:
+    endpoint: http://open-observe:5080/api/default
     headers:
-      uptrace-dsn: 'http://project2_secret_token@localhost:14317/2'
+      Authorization: "Basic cm9vdEBleGFtcGxlLmNvbTpyb290Cg=="
+      stream-name: default
 
 service:
   pipelines:
     traces:
-      receivers: [otlp]
-      processors: [batch]
-      exporters: [otlp/uptrace, logging]
+      receivers: [ otlp ]
+      exporters: [ otlphttp/openobserve ]
     metrics:
-      receivers: [otlp]
-      processors: [batch]
-      exporters: [otlp/uptrace]
-    metrics/hostmetrics:
-      receivers: [hostmetrics]
-      processors: [batch, resourcedetection]
-      exporters: [otlp/uptrace]
+      receivers: [ otlp ]
+      exporters: [ otlphttp/openobserve ]
     logs:
-      receivers: [otlp]
-      processors: [batch]
-      exporters: [otlp/uptrace]
+      receivers: [ otlp ]
+      exporters: [ otlphttp/openobserve ]
 
-  extensions: [health_check, pprof, zpages]

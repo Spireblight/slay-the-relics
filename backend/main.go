@@ -33,7 +33,10 @@ func main() {
 }
 
 func initialize(ctx context.Context, cfg config.Config) (_ *api.API, cancel func(context.Context), err error) {
-	cancel = o11y.Init("slay-the-relics")
+	cancel, err = o11y.Init("slay-the-relics", cfg.OtelEndpoint)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	ctx, span := o11y.Tracer.Start(ctx, "init")
 	defer o11y.End(&span, &err)
