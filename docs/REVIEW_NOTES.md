@@ -14,7 +14,11 @@ using PubSub messaging.
 
 ## Version History/Changelog:
 
-### version 2.0.0 - under review
+### version 2.0.1 - under review
+
+- Bug fix: Fixed an issue related to initial run state fetch
+
+### version 2.0.0 - currently released
 
 - Added feature: support Slay the Spire 2
 
