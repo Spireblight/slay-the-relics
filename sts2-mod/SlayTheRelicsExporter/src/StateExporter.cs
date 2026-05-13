@@ -250,6 +250,7 @@ public class StateExporter
             result.Add(key);
             PopulateCardMeta(card, key, cardTips);
         }
+
         return result;
     }
 
@@ -289,7 +290,7 @@ public class StateExporter
         }
     }
 
-    private static void ExportPowerTips(CombatState combatState, ExportedState state)
+    private static void ExportPowerTips(ICombatState combatState, ExportedState state)
     {
         try
         {

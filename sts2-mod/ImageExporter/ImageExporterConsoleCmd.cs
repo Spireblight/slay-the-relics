@@ -9,13 +9,15 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Cards;
+using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
+using MegaCrit.Sts2.Core.Runs;
 
 namespace ImageExporter;
 
 public class ImageExporterConsoleCmd : AbstractConsoleCmd
 {
     public override string CmdName => "imageexporter";
-    public override string Args => "cards [output_path] | card <card_id> [output_path]";
+    public override string Args => "cards [output_path] | card <card_id> [output_path] | class [output_path]";
     public override string Description => "Export card images as PNGs.";
     public override bool IsNetworked => false;
 
@@ -27,7 +29,7 @@ public class ImageExporterConsoleCmd : AbstractConsoleCmd
     public override CmdResult Process(Player? issuingPlayer, string[] args)
     {
         if (args.Length == 0)
-            return new CmdResult(false, "Usage: imageexporter card <card_id> [output_path] | cards [output_path]");
+            return new CmdResult(false, "Usage: imageexporter card <card_id> [output_path] | cards [output_path] | class [output_path]");
 
         var subcommand = args[0].ToLowerInvariant();
 
@@ -35,8 +37,35 @@ public class ImageExporterConsoleCmd : AbstractConsoleCmd
         {
             "card" => ExportSingleCard(args),
             "cards" => ExportAllCards(args),
+            "class" => ExportClassCards(args),
             _ => new CmdResult(false, $"Unknown subcommand: {subcommand}")
         };
+        
+        
+    }
+
+    private CmdResult ExportClassCards(string[] args)
+    {
+        var runState = RunManager.Instance.DebugOnlyGetState();
+        if (runState is null)
+        {
+            return new CmdResult(false, "Start a run with the desired class");
+        }
+
+        var outputDir = args.Length > 1 ? args[1] : "user://card-images";
+        var globalPath = ResolvePath(outputDir);
+        Directory.CreateDirectory(globalPath);
+
+        var cards = ModelDb.AllCards
+            .Where(c => c.Pool.Title == runState.Players.FirstOrDefault()?.Character.CardPool.Title)
+            .ToList();
+        MainFile.Logger.Info($"Exporting {cards.Count} cards to {globalPath}");
+
+        var exporter = new BatchCardExportHelper(cards, globalPath, exportUpgraded: false);
+        var tree = (SceneTree)Engine.GetMainLoop();
+        tree.Root.AddChild(exporter);
+
+        return new CmdResult(true, $"Exporting {cards.Count} cards (check logs for completion)...");
     }
 
     private CmdResult ExportSingleCard(string[] args)
@@ -204,6 +233,7 @@ public partial class CardExportHelper : Node
             _nCard.QueueFree();
             _nCard = null;
         }
+
         if (_viewport != null && IsInstanceValid(_viewport))
         {
             RemoveChild(_viewport);
@@ -216,20 +246,14 @@ public partial class CardExportHelper : Node
 /// <summary>
 /// Exports all cards one at a time, waiting for frames between each.
 /// </summary>
-public partial class BatchCardExportHelper : Node
+public partial class BatchCardExportHelper(List<CardModel> cards, string outputDir, bool exportUpgraded = true)
+    : Node
 {
-    private readonly List<CardModel> _cards;
-    private readonly string _outputDir;
     private int _currentIndex;
     private int _exported;
     private int _errors;
+    private bool _exportUpgraded = exportUpgraded;
     private CardExportHelper? _current;
-
-    public BatchCardExportHelper(List<CardModel> cards, string outputDir)
-    {
-        _cards = cards;
-        _outputDir = outputDir;
-    }
 
     public override void _Ready()
     {
@@ -250,18 +274,18 @@ public partial class BatchCardExportHelper : Node
 
     private void StartNext()
     {
-        if (_currentIndex >= _cards.Count)
+        if (_currentIndex >= cards.Count)
         {
             MainFile.Logger.Info($"Batch export complete: {_exported} exported, {_errors} errors");
             QueueFree();
             return;
         }
 
-        var card = _cards[_currentIndex++];
+        var card = cards[_currentIndex++];
         try
         {
             var filename = ImageExporterConsoleCmd.CardIdToFilename(card.Id.Entry);
-            _current = new CardExportHelper(card, _outputDir, filename, exportUpgraded: true);
+            _current = new CardExportHelper(card, outputDir, filename, exportUpgraded: _exportUpgraded);
             AddChild(_current);
         }
         catch (Exception ex)
