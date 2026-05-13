@@ -18,7 +18,7 @@ public class BackendClient : IDisposable
     public BackendClient(Config config)
     {
         _config = config;
-        _http.Timeout = TimeSpan.FromSeconds(10);
+        _http.Timeout = TimeSpan.FromSeconds(60);
     }
 
     public async Task PostGameState(object state, JsonSerializerOptions options)

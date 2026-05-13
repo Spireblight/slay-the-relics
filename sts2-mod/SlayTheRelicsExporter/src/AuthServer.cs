@@ -108,11 +108,12 @@ public class AuthServer
     {
         try
         {
-            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
             var body = JsonSerializer.Serialize(new { code });
             var content = new StringContent(body, Encoding.UTF8, "application/json");
 
             var resp = await http.PostAsync($"{_config.BackendUrl}/api/v1/auth", content);
+            Log.Info($"api/v1/auth status is: {resp.StatusCode}");
             resp.EnsureSuccessStatusCode();
 
             var json = await resp.Content.ReadAsStringAsync();
@@ -154,7 +155,8 @@ public class AuthServer
         try
         {
             if (OperatingSystem.IsWindows())
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
+                System.Diagnostics.Process.Start(
+                    new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
             else if (OperatingSystem.IsMacOS())
                 System.Diagnostics.Process.Start("open", url);
             else
@@ -169,32 +171,33 @@ public class AuthServer
 
     private static string GetIndexHtml(string state)
     {
-        var authUrl = $"https://id.twitch.tv/oauth2/authorize?response_type=code&client_id={ClientId}&redirect_uri={Uri.EscapeDataString(RedirectUri)}&scope=user%3Aread%3Afollows&state={state}";
+        var authUrl =
+            $"https://id.twitch.tv/oauth2/authorize?response_type=code&client_id={ClientId}&redirect_uri={Uri.EscapeDataString(RedirectUri)}&scope=user%3Aread%3Afollows&state={state}";
         return $"""
-            <!DOCTYPE html>
-            <html lang="en">
-            <head><meta charset="utf-8"><title>Slay the Relics</title></head>
-            <body>
-            <h1>Slay the Relics Exporter</h1>
-            <p>Click the link below to connect your Twitch account:</p>
-            <a href="{authUrl}">Connect with Twitch</a>
-            <script>window.location.href = "{authUrl}";</script>
-            </body>
-            </html>
-            """;
+                <!DOCTYPE html>
+                <html lang="en">
+                <head><meta charset="utf-8"><title>Slay the Relics</title></head>
+                <body>
+                <h1>Slay the Relics Exporter</h1>
+                <p>Click the link below to connect your Twitch account:</p>
+                <a href="{authUrl}">Connect with Twitch</a>
+                <script>window.location.href = "{authUrl}";</script>
+                </body>
+                </html>
+                """;
     }
 
     private static string GetSuccessHtml()
     {
         return """
-            <!DOCTYPE html>
-            <html lang="en">
-            <head><meta charset="utf-8"><title>Slay the Relics</title></head>
-            <body>
-            <h1>Slay the Relics Exporter</h1>
-            <p>Successfully connected to Twitch, you may close this tab now.</p>
-            </body>
-            </html>
-            """;
+               <!DOCTYPE html>
+               <html lang="en">
+               <head><meta charset="utf-8"><title>Slay the Relics</title></head>
+               <body>
+               <h1>Slay the Relics Exporter</h1>
+               <p>Successfully connected to Twitch, you may close this tab now.</p>
+               </body>
+               </html>
+               """;
     }
 }
