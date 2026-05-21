@@ -84,6 +84,7 @@ type GameState struct {
 	CardTips    map[string][]Tip `json:"cardTips,omitempty"`
 	PotionTips  []Tip            `json:"potionTips,omitempty"`
 	RelicTipMap map[string][]Tip `json:"relicTipMap,omitempty"`
+	Floor       int              `json:"floor,omitempty"`
 }
 
 // computeMergePatch produces a partial update between prev and update.

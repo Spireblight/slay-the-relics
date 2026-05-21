@@ -44,6 +44,7 @@ public class StateExporter
                 Game = "sts2",
                 Character = GetCharacterName(player),
                 Boss = GetBossName(runState),
+                Floor = runState.TotalFloor,
             };
 
             // Relics (display names + fully resolved tips)
