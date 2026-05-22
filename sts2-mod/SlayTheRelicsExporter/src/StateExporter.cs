@@ -245,7 +245,7 @@ public class StateExporter
         Dictionary<string, List<TipData>> cardTips)
     {
         var result = new List<object>();
-        foreach (var card in pile.Cards)
+        foreach (var card in pile.Cards.OrderBy(m => m.Rarity).ThenBy(m => m.Id.ToString()))
         {
             var key = GetCardKey(card);
             result.Add(key);
