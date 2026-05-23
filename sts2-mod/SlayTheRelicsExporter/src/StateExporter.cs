@@ -21,21 +21,56 @@ public class StateExporter
         _config = config;
     }
 
+    private Player? GetPlayer(RunManager runManager, RunState runState)
+    {
+        var netId = runManager.NetService.NetId;
+        var player = runState.GetPlayer(netId);
+        if (player == null && (netId == 1 || netId == 0))
+        {
+            return runState.Players.FirstOrDefault();
+        }
+        return player;
+    }
+
     public ExportedState? Export()
     {
         try
         {
             var runManager = RunManager.Instance;
             if (!runManager.IsInProgress)
-                return null;
+            {
+                ResetIndex();
+                return new ExportedState
+                {
+                    GameStateIndex = 0,
+                    Channel = _config.Channel,
+                    Game = "sts2",
+                };
+            }
 
             var runState = runManager.DebugOnlyGetState();
             if (runState == null)
-                return null;
+            {
+                ResetIndex();
+                return new ExportedState
+                {
+                    GameStateIndex = 0,
+                    Channel = _config.Channel,
+                    Game = "sts2",
+                };
+            }
 
-            var player = runState.Players.FirstOrDefault();
+            var player = GetPlayer(runManager, runState);
             if (player == null)
-                return null;
+            {
+                ResetIndex();
+                return new ExportedState
+                {
+                    GameStateIndex = 0,
+                    Channel = _config.Channel,
+                    Game = "sts2",
+                };
+            }
 
             var state = new ExportedState
             {
