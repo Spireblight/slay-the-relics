@@ -5,11 +5,7 @@ A mod that exports game state to the [Slay the Relics](https://dashboard.twitch.
 ## Install
 
 1. Install the Twitch extension on your channel: <https://dashboard.twitch.tv/extensions/ebkycs9lir8pbic2r0b7wa6bg6n7ua>
-2. Download the latest `SlayTheRelicsExporter` mod release
-3. Place the mod folder in the `mods/` directory inside your STS2 install:
-   - **Windows:** `<Steam library>/steamapps/common/Slay the Spire 2/mods/`
-   - **macOS:** `<Steam library>/steamapps/common/Slay the Spire 2/SlayTheSpire2.app/Contents/MacOS/mods/`
-   - **Linux:** `<Steam library>/steamapps/common/Slay the Spire 2/mods/`
+2. Subscribe to the mod on the Workshop: <https://steamcommunity.com/sharedfiles/filedetails/?id=3751631894>
 
 ## Building from source
 
