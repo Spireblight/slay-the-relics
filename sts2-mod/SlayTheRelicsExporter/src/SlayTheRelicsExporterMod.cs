@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Godot;
+using HarmonyLib;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Modding;
 using MegaCrit.Sts2.Core.Runs;
@@ -18,6 +19,11 @@ public class SlayTheRelicsExporterMod
     private static CancellationTokenSource? _cts;
     private static bool _wasInRun;
     private static bool _sentEmptyState;
+    private static bool _isAuthenticating;
+
+    public static Config? CurrentConfig => _config;
+    public static bool IsAuthenticating => _isAuthenticating;
+    public static event Action? AuthStatusChanged;
 
     public static void Initialize()
     {
@@ -29,14 +35,13 @@ public class SlayTheRelicsExporterMod
             _client = new BackendClient(_config);
             _exporter = new StateExporter(_config);
 
-            ModConfigBridge.OnConnectTwitch = () => _ = RunAuthThenPoll();
-            ModConfigBridge.IsAuthenticated = () => _config?.IsAuthenticated == true;
-            ModConfigBridge.DeferredRegister();
+            var harmony = new Harmony("com.spireblight.slaytherelicsexporter");
+            harmony.PatchAll();
 
             if (!_config.IsAuthenticated)
             {
                 Log.Info("[SlayTheRelicsExporter] No credentials found, starting auth flow...");
-                _ = RunAuthThenPoll();
+                _ = AuthenticateAsync();
                 return;
             }
 
@@ -49,26 +54,36 @@ public class SlayTheRelicsExporterMod
         }
     }
 
-    private static async Task RunAuthThenPoll()
+    public static async Task<bool> AuthenticateAsync()
     {
+        if (_isAuthenticating || _config == null) return false;
+        _isAuthenticating = true;
+        AuthStatusChanged?.Invoke();
+
         try
         {
-            var auth = new AuthServer(_config!);
+            var auth = new AuthServer(_config);
             var success = await auth.Authenticate();
             if (!success)
             {
                 Log.Warn("[SlayTheRelicsExporter] Auth failed. Mod will not export game state.");
-                return;
+                return false;
             }
 
-            _client = new BackendClient(_config!);
-            Callable.From(ModConfigBridge.UpdateStatusLabel).CallDeferred();
+            _client = new BackendClient(_config);
             StartPolling();
             Log.Info("[SlayTheRelicsExporter] Auth complete, started polling loop");
+            return true;
         }
         catch (Exception ex)
         {
             Log.Error($"[SlayTheRelicsExporter] Auth flow error: {ex}");
+            return false;
+        }
+        finally
+        {
+            _isAuthenticating = false;
+            AuthStatusChanged?.Invoke();
         }
     }
 
@@ -86,7 +101,8 @@ public class SlayTheRelicsExporterMod
                 try
                 {
                     await PollOnce();
-                    await Task.Delay(ModConfigBridge.PollIntervalMs, token);
+                    var interval = _config?.PollIntervalMs ?? 1000;
+                    await Task.Delay(interval, token);
                 }
                 catch (OperationCanceledException)
                 {
@@ -139,7 +155,7 @@ public class SlayTheRelicsExporterMod
 
             if (state != null)
             {
-                var delayMs = ModConfigBridge.Delay;
+                var delayMs = _config?.Delay ?? 150;
                 if (delayMs > 0)
                     await Task.Delay(delayMs);
 

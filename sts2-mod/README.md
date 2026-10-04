@@ -50,15 +50,15 @@ The output DLL (`bin/Debug/net9.0/SlayTheRelicsExporter.dll`) and `mod_manifest.
 
 ## Configuration
 
-If [ModConfig-STS2](https://github.com/xhyrzldf/ModConfig-STS2) is installed, a settings panel is available under Settings → Mods → Slay The Relics Exporter with the following options:
+A native settings panel is built into the game under **Main Menu / Settings → Mods → SlayTheRelicsExporter** (no external mod dependencies required):
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
-| Poll Interval (ms) | Slider (200–5000) | 1000 | How often game state is sent to the backend |
-| Delay (ms) | Slider (0–10000) | 150 | Stream encoding delay — aligns extension output with what viewers see |
-| Connect with Twitch | Button | — | Triggers the Twitch OAuth authentication flow |
+| Poll Interval | Slider (200–5000 ms) | 1000 ms | How often game state is sent to the backend |
+| Stream Delay | Slider (0–10000 ms) | 150 ms | Stream encoding delay — aligns extension output with what viewers see |
+| Connect with Twitch | Button | — | Triggers Twitch OAuth flow, with live connection status indicator |
 
-ModConfig is optional — the mod works normally without it using built-in defaults. Authentication credentials (Channel, AuthToken) are stored separately in `%AppData%/SlayTheRelicsExporter/config.json` and are not exposed in the ModConfig UI.
+Settings and credentials are automatically saved to `%AppData%/SlayTheRelicsExporter/config.json`.
 
 ## Notes
 

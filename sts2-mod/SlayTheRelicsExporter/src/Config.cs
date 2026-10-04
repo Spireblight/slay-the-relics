@@ -10,6 +10,20 @@ public class Config
     public string Channel { get; set; } = "";
     public string AuthToken { get; set; } = "";
 
+    private int _pollIntervalMs = 1000;
+    public int PollIntervalMs
+    {
+        get => _pollIntervalMs;
+        set => _pollIntervalMs = Math.Clamp(value, 200, 5000);
+    }
+
+    private int _delay = 150;
+    public int Delay
+    {
+        get => _delay;
+        set => _delay = Math.Clamp(value, 0, 10000);
+    }
+
     public bool IsAuthenticated =>
         !string.IsNullOrEmpty(Channel) && !string.IsNullOrEmpty(AuthToken);
 
@@ -24,10 +38,21 @@ public class Config
     {
         if (File.Exists(ConfigPath))
         {
-            var json = File.ReadAllText(ConfigPath);
-            var config = JsonSerializer.Deserialize<Config>(json);
-            if (config != null && !string.IsNullOrEmpty(config.AuthToken))
-                return config;
+            try
+            {
+                var json = File.ReadAllText(ConfigPath);
+                var config = JsonSerializer.Deserialize<Config>(json);
+                if (config != null)
+                {
+                    if (string.IsNullOrEmpty(config.AuthToken))
+                        config.Channel = "";
+                    return config;
+                }
+            }
+            catch
+            {
+                // Fall back to fresh defaults if file is corrupted
+            }
         }
 
         var fresh = new Config();

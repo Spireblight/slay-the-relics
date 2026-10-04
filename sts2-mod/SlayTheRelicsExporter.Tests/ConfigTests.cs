@@ -79,4 +79,68 @@ public class ConfigTests : IDisposable
 
         Assert.True(File.Exists(Path.Combine(configDir, "config.json")));
     }
+
+    [Fact]
+    public void Load_NoExistingFile_ReturnsDefaultSettings()
+    {
+        var config = Config.Load();
+
+        Assert.Equal(1000, config.PollIntervalMs);
+        Assert.Equal(150, config.Delay);
+    }
+
+    [Fact]
+    public void Save_ThenLoad_RoundTripsSettings()
+    {
+        var config = Config.Load();
+        config.PollIntervalMs = 2500;
+        config.Delay = 400;
+        config.Save();
+
+        var reloaded = Config.Load();
+
+        Assert.Equal(2500, reloaded.PollIntervalMs);
+        Assert.Equal(400, reloaded.Delay);
+    }
+
+    [Fact]
+    public void Settings_ClampsToBounds()
+    {
+        var config = new Config();
+
+        config.PollIntervalMs = 50;
+        Assert.Equal(200, config.PollIntervalMs);
+
+        config.PollIntervalMs = 10000;
+        Assert.Equal(5000, config.PollIntervalMs);
+
+        config.Delay = -100;
+        Assert.Equal(0, config.Delay);
+
+        config.Delay = 20000;
+        Assert.Equal(10000, config.Delay);
+    }
+
+    [Fact]
+    public void Load_PreservesSettingsEvenWhenAuthTokenIsEmpty()
+    {
+        var configDir = Path.Combine(_tempDir, "SlayTheRelicsExporter");
+        Directory.CreateDirectory(configDir);
+        var configPath = Path.Combine(configDir, "config.json");
+        var json = JsonSerializer.Serialize(new
+        {
+            Channel = "stale",
+            AuthToken = "",
+            PollIntervalMs = 2200,
+            Delay = 350
+        });
+        File.WriteAllText(configPath, json);
+
+        var config = Config.Load();
+
+        Assert.Equal("", config.Channel);
+        Assert.Equal("", config.AuthToken);
+        Assert.Equal(2200, config.PollIntervalMs);
+        Assert.Equal(350, config.Delay);
+    }
 }
