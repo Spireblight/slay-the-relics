@@ -17,6 +17,7 @@ public class SlayTheRelicsExporterMod
     private static StateExporter? _exporter;
     private static CancellationTokenSource? _cts;
     private static bool _wasInRun;
+    private static bool _sentEmptyState;
 
     public static void Initialize()
     {
@@ -123,11 +124,15 @@ public class SlayTheRelicsExporterMod
             var inRun = RunManager.Instance.IsInProgress;
 
             if (inRun && !_wasInRun)
+            {
                 _exporter!.ResetIndex();
+                _sentEmptyState = false;
+            }
 
             _wasInRun = inRun;
 
-            if (!inRun) return;
+            if (!inRun && _sentEmptyState)
+                return;
 
             // Game state must be read on the main thread (Godot is not thread-safe).
             var state = await RunOnMainThread(() => _exporter!.Export());
@@ -139,6 +144,9 @@ public class SlayTheRelicsExporterMod
                     await Task.Delay(delayMs);
 
                 await _client!.PostGameState(state, SerializerOptions.Default);
+
+                if (!inRun)
+                    _sentEmptyState = true;
             }
         }
         catch (Exception ex)
