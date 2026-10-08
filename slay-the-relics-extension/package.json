@@ -24,9 +24,14 @@
     "dev": "vite",
     "build": "NODE_ENV=production vite build && cd dist && zip -r ../build.zip *",
     "preview": "yarn build && vite preview",
-    "test": "echo 'Testing is not configured for Vite yet.'",
+    "test": "vitest run",
     "pretty": "prettier --write .",
-    "lint": "yarn pretty && yarn tsc -b && yarn eslint"
+    "lint": "yarn pretty && yarn tsc -b && yarn eslint",
+    "generate:card-previews": "node scripts/generate-card-previews.mjs",
+    "predev": "node scripts/generate-card-previews.mjs",
+    "prebuild": "node scripts/generate-card-previews.mjs",
+    "pretest": "node scripts/generate-card-previews.mjs",
+    "prelint": "node scripts/generate-card-previews.mjs"
   },
   "eslintConfig": {
     "extends": [
@@ -55,7 +60,9 @@
     "eslint": "^9.31.0",
     "eslint-plugin-react": "^7.37.5",
     "globals": "^16.3.0",
+    "jsdom": "^26.1.0",
     "prettier": "3.6.2",
+    "sharp": "^0.35.5",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.37.0",
     "vite": "^6.4.2",

@@ -28,7 +28,14 @@ const tslintConfig = tseslint.config(
     },
   },
   {
-    files: ["**/*.md", "**/*.css", "eslint.config.mjs", "vite.config.mts"],
+    files: [
+      "**/*.md",
+      "**/*.css",
+      "eslint.config.mjs",
+      "vite.config.mts",
+      "vitest.config.mts",
+      "scripts/**/*.mjs",
+    ],
     extends: [tseslint.configs.disableTypeChecked],
   },
 );
