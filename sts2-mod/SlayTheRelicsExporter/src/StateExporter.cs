@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 using SlayTheRelicsExporter.Models;
 
@@ -93,6 +95,9 @@ public class StateExporter
 
             // Map
             ExportMap(runState, state);
+
+            // Dread mode: top-bar boss icon dominion tooltip (outside boss fights only)
+            ExportDreadTopBarBossTip(runState, state);
 
             // Combat state (piles, power tips)
             if (CombatManager.Instance.IsInProgress)
@@ -268,7 +273,7 @@ public class StateExporter
             state.CardTips = cardTips.Count > 0 ? cardTips : null;
 
             // Power tips with hitbox positions from game UI nodes
-            ExportPowerTips(combatState, state);
+            ExportPowerTips(runState, combatState, state);
         }
         catch (Exception ex)
         {
@@ -326,13 +331,64 @@ public class StateExporter
         }
     }
 
-    private static void ExportPowerTips(ICombatState combatState, ExportedState state)
+    private static bool IsDreadMode(RunState runState)
     {
         try
         {
+            var gameMode = runState.GetType().GetProperty("GameMode")?.GetValue(runState)?.ToString();
+            return DreadBossBuffs.IsDreadGameMode(gameMode);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool IsInBossRoom(RunState runState) =>
+        runState.BaseRoom?.RoomType == RoomType.Boss || runState.CurrentRoom?.RoomType == RoomType.Boss;
+
+    private static void ExportDreadTopBarBossTip(RunState runState, ExportedState state)
+    {
+        try
+        {
+            if (!IsDreadMode(runState) || IsInBossRoom(runState))
+                return;
+
+            var bossIconTip = HitBoxReader.ReadTopBarBossIconTip(TipExporter.FromHoverTips);
+            if (bossIconTip != null)
+            {
+                state.StaticTips.Add(bossIconTip);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warn($"[SlayTheRelicsExporter] Failed to export Dread top-bar boss tip: {ex.Message}");
+        }
+    }
+
+    private static void ExportPowerTips(RunState runState, ICombatState combatState, ExportedState state)
+    {
+        try
+        {
+            var isDreadBossCombat = IsDreadMode(runState) &&
+                (IsInBossRoom(runState) || combatState.Encounter?.RoomType == RoomType.Boss);
+            var encounterEntry = isDreadBossCombat ? combatState.Encounter?.Id.Entry : null;
+
+            Func<Creature, List<TipData>>? prependedTipsResolver = isDreadBossCombat
+                ? creature =>
+                {
+                    if (creature.Side != CombatSide.Enemy)
+                        return new List<TipData>();
+
+                    var tip = DreadBossBuffs.GetBossCreatureTip(creature.Monster?.Id.Entry, encounterEntry);
+                    return tip != null ? new List<TipData> { tip } : new List<TipData>();
+                }
+                : null;
+
             var tipsBoxes = HitBoxReader.ReadCombatTips(
                 combatState.Creatures,
-                power => TipExporter.FromHoverTips(power.HoverTips));
+                power => TipExporter.FromHoverTips(power.HoverTips),
+                prependedTipsResolver);
             state.AdditionalTips.AddRange(tipsBoxes);
         }
         catch (Exception ex)
