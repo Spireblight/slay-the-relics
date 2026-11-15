@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <!-- CI / no game install: use NuGet stubs -->
-    <PackageReference Include="BSchneppe.Sts2.ReferenceAssemblies" Version="0.99.*"
+    <PackageReference Include="BSchneppe.Sts2.ReferenceAssemblies" Version="0.111.0-beta-41cef1ea"
                       Condition="!Exists('$(STS2GameDir)/sts2.dll')"
                       PrivateAssets="All" />
   </ItemGroup>
