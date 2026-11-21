@@ -1,12 +1,16 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace SlayTheRelicsExporter;
 
 public class Config
 {
-    public string BackendUrl { get; set; } = "https://slay-the-relics.baalorlord.tv";
+    public const string DefaultLiveBackendUrl = "https://slay-the-relics.baalorlord.tv";
+    public const string DefaultDevBackendUrl = "http://localhost:8888";
+
+    public string BackendUrl { get; set; } = DefaultLiveBackendUrl;
     public string Channel { get; set; } = "";
     public string AuthToken { get; set; } = "";
 
@@ -24,28 +28,39 @@ public class Config
         set => _delay = Math.Clamp(value, 0, 10000);
     }
 
+    [JsonIgnore]
+    public bool IsDevConfig { get; private set; }
+
     public bool IsAuthenticated =>
         !string.IsNullOrEmpty(Channel) && !string.IsNullOrEmpty(AuthToken);
 
-    private static string ConfigPath => Path.Combine(
+    private static string ConfigDir => Path.Combine(
         Environment.GetEnvironmentVariable("STRE_CONFIG_DIR")
             ?? Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "SlayTheRelicsExporter",
-        "config.json"
+        "SlayTheRelicsExporter"
     );
 
-    public static Config Load()
+    private static string LiveConfigPath => Path.Combine(ConfigDir, "config.json");
+    private static string DevConfigPath => Path.Combine(ConfigDir, "config.dev.json");
+
+    public static bool DevConfigExists => File.Exists(DevConfigPath);
+
+    private string TargetPath => IsDevConfig ? DevConfigPath : LiveConfigPath;
+
+    public static Config Load(bool devMode = false)
     {
-        if (File.Exists(ConfigPath))
+        var path = devMode ? DevConfigPath : LiveConfigPath;
+        if (File.Exists(path))
         {
             try
             {
-                var json = File.ReadAllText(ConfigPath);
+                var json = File.ReadAllText(path);
                 var config = JsonSerializer.Deserialize<Config>(json);
                 if (config != null)
                 {
                     if (string.IsNullOrEmpty(config.AuthToken))
                         config.Channel = "";
+                    config.IsDevConfig = devMode;
                     return config;
                 }
             }
@@ -55,17 +70,20 @@ public class Config
             }
         }
 
-        var fresh = new Config();
+        var fresh = new Config
+        {
+            BackendUrl = devMode ? DefaultDevBackendUrl : DefaultLiveBackendUrl,
+            IsDevConfig = devMode,
+        };
         fresh.Save();
         return fresh;
     }
 
     public void Save()
     {
-        var dir = Path.GetDirectoryName(ConfigPath)!;
+        var dir = Path.GetDirectoryName(TargetPath)!;
         Directory.CreateDirectory(dir);
         var json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
-        File.WriteAllText(ConfigPath, json);
+        File.WriteAllText(TargetPath, json);
     }
-
 }
