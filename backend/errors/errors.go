@@ -1,14 +1,5 @@
 package errors
 
-type Timeout struct {
-	Err error
-}
-
-func (s *Timeout) Error() string {
-	return s.Err.Error()
-}
-func (s *Timeout) Unwrap() error { return s.Err }
-
 type AuthError struct {
 	Err error
 }

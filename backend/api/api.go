@@ -2,7 +2,6 @@ package api
 
 import (
 	"net/http"
-	"sync"
 
 	"github.com/gin-gonic/gin"
 
@@ -14,12 +13,8 @@ import (
 type API struct {
 	Router *gin.Engine
 
-	twitch      *client.Twitch
-	users       *slaytherelics.Users
-	broadcaster *slaytherelics.Broadcaster
-
-	deckLists map[string]string
-	deckLock  *sync.RWMutex
+	twitch *client.Twitch
+	users  *slaytherelics.Users
 
 	gameStateManager *slaytherelics.GameStateManager
 	localPubSub      *slaytherelics.LocalPubSub
@@ -34,7 +29,6 @@ type Options struct {
 func New(
 	t *client.Twitch,
 	u *slaytherelics.Users,
-	b *slaytherelics.Broadcaster,
 	g *slaytherelics.GameStateManager,
 	opts ...Options,
 ) (*API, error) {
@@ -66,20 +60,12 @@ func New(
 
 		twitch:           t,
 		users:            u,
-		broadcaster:      b,
 		gameStateManager: g,
 		localPubSub:      opt.LocalPubSub,
-		deckLists:        make(map[string]string),
-		deckLock:         &sync.RWMutex{},
 		devMode:          opt.DevMode,
 	}
 
-	r.POST("/", api.postOldMessageHandler)
 	r.POST("/api/v1/auth", api.Auth)
-	r.POST("/api/v1/message", api.postMessageHandler)
-	r.GET("/deck/:name", api.getDeckHandler)
-
-	r.POST("/api/v1/login", api.Login)
 	r.POST("/api/v2/game-state", api.postGameStateHandler)
 	r.GET("/api/v2/game-state/:channel-id", api.getGameStateHandler)
 	if api.localPubSub != nil {

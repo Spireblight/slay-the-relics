@@ -142,26 +142,23 @@ slaytherelics/
 │   └── sts2/                        # Slay the Spire 2 assets
 │       └── card-images/             # STS2 card renders exported via ImageExporter
 ├── backend/                         # Go Extension Backend Service (EBS)
-│   ├── api/                         # Gin route handlers, auth middleware, and legacy v1 compat
+│   ├── api/                         # Gin route handlers and auth checks
 │   │   ├── api.go                   # API struct, routing table, logger config
-│   │   ├── auth.go                  # /api/v1/auth and /api/v1/login handlers
-│   │   ├── game_state.go            # POST /api/v2/game-state & GET /api/v2/game-state/:channel-id
-│   │   ├── message.go               # v1 POST /api/v1/message handler
-│   │   ├── old_message.go           # Legacy v1 unversioned POST handler
-│   │   └── deck.go                  # GET /deck/:name handler and v1 deck decompressor
+│   │   ├── auth.go                  # POST /api/v1/auth handler
+│   │   ├── dev_events.go            # GET /api/dev/events/:channel-id SSE handler (local dev)
+│   │   └── game_state.go            # POST /api/v2/game-state & GET /api/v2/game-state/:channel-id
 │   ├── client/                      # External service clients
 │   │   ├── twitch.go                # Twitch Helix API & PubSub client
 │   │   └── redis.go                 # Redis client initialization
 │   ├── config/                      # Kong environment variable configuration
-│   ├── errors/                      # Typed error definitions (AuthError, Timeout)
+│   ├── errors/                      # Typed error definitions (AuthError)
 │   ├── models/                      # Internal data models (User)
 │   ├── o11y/                        # OpenTelemetry tracing, metrics, and HTTP middleware
 │   ├── otel_config/                 # Local OpenTelemetry collector configuration
 │   ├── scripts/                     # Linting, imports, dev-tools, and test shell scripts
 │   ├── slaytherelics/               # Core business logic
 │   │   ├── game_state.go            # GameState schema, computeMergePatch, compressJson
-│   │   ├── broadcaster.go           # Sender worker pool, rate-limiting queue, keep-alive loop
-│   │   ├── messages.go              # PubSub message dispatcher
+│   │   ├── local_pubsub.go          # Local dev SSE Publisher hub
 │   │   ├── syncmap.go               # Generic thread-safe SyncMap[K, V]
 │   │   └── users.go                 # Twitch OAuth validation, bcrypt hashing, Redis auth cache
 │   ├── tools/                       # Go tool dependencies (golangci-lint, etc.)
@@ -259,11 +256,6 @@ The backend acts as an intelligent stateful relay between game exporters and the
     - Compresses with `gzip.BestCompression`.
     - Encodes with `ascii85` wrapped in `<~` and `~>`.
     - This keeps typical state updates under Twitch PubSub's strict 5 KB message size limit.
-
-- **Broadcaster Queue (`backend/slaytherelics/broadcaster.go`)**:
-  - Manages per-broadcaster `sender` goroutines to prevent PubSub rate-limit saturation.
-  - Supports configurable stream delay (configured by streamer in mod settings) to synchronize the extension with video encoding lag.
-  - Maintains a keep-alive worker that periodically flushes cached state if no updates occur.
 
 - **Authentication & Security (`backend/slaytherelics/users.go` & `backend/api/game_state.go`)**:
   - Streamers authenticate with Twitch OAuth (`POST /api/v1/auth`).
