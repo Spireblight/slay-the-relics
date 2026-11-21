@@ -125,14 +125,29 @@ if [[ -z "${VITE_DEV_CHANNEL:-}" ]]; then
   fi
 fi
 
-# Derive backend target URL for Vite proxy from LISTEN_ADDR (default :8888)
+# Derive backend target URL and port for Vite proxy from LISTEN_ADDR (default :8888)
 LISTEN_ADDR="${LISTEN_ADDR:-:8888}"
+BACKEND_HOST="127.0.0.1"
+BACKEND_PORT="8888"
 if [[ "${LISTEN_ADDR}" == :* ]]; then
-  export VITE_BACKEND_URL="http://localhost${LISTEN_ADDR}"
+  BACKEND_PORT="${LISTEN_ADDR#:}"
+  export VITE_BACKEND_URL="http://localhost:${BACKEND_PORT}"
+elif [[ "${LISTEN_ADDR}" == 0.0.0.0:* ]]; then
+  BACKEND_PORT="${LISTEN_ADDR#0.0.0.0:}"
+  export VITE_BACKEND_URL="http://localhost:${BACKEND_PORT}"
+elif [[ "${LISTEN_ADDR}" == "[::]:"* ]]; then
+  BACKEND_PORT="${LISTEN_ADDR#\[::\]:}"
+  export VITE_BACKEND_URL="http://localhost:${BACKEND_PORT}"
 elif [[ "${LISTEN_ADDR}" != http://* && "${LISTEN_ADDR}" != https://* ]]; then
+  BACKEND_HOST="${LISTEN_ADDR%:*}"
+  BACKEND_PORT="${LISTEN_ADDR##*:}"
   export VITE_BACKEND_URL="http://${LISTEN_ADDR}"
 else
   export VITE_BACKEND_URL="${LISTEN_ADDR}"
+  hostport="${LISTEN_ADDR#*://}"
+  hostport="${hostport%%/*}"
+  BACKEND_HOST="${hostport%:*}"
+  BACKEND_PORT="${hostport##*:}"
 fi
 
 echo ""
@@ -188,12 +203,31 @@ on_exit() {
 trap on_signal INT TERM
 trap on_exit EXIT
 
-# Start Go backend (air) and Vite frontend in parallel with prefixed output
+# Start Go backend (air) first and wait until it is accepting connections before starting Vite
 (
   cd "${BACKEND_DIR}"
   exec "${AIR_BIN}" -c .air.toml
 ) > >(sed -u 's/^/[backend]  /') 2>&1 &
-PIDS+=($!)
+BACKEND_PID=$!
+PIDS+=("${BACKEND_PID}")
+
+echo "[dev] Waiting for backend on ${BACKEND_HOST}:${BACKEND_PORT}..."
+BACKEND_READY=0
+for _ in $(seq 1 300); do
+  if ! kill -0 "${BACKEND_PID}" 2>/dev/null; then
+    echo "[dev] Backend process exited before becoming ready." >&2
+    exit 1
+  fi
+  if (echo > "/dev/tcp/${BACKEND_HOST}/${BACKEND_PORT}") >/dev/null 2>&1; then
+    BACKEND_READY=1
+    break
+  fi
+  sleep 0.1
+done
+
+if [[ "${BACKEND_READY}" -ne 1 ]]; then
+  echo "[dev] Timed out waiting for backend on ${BACKEND_HOST}:${BACKEND_PORT}; starting frontend anyway." >&2
+fi
 
 (
   cd "${FRONTEND_DIR}"
