@@ -4,8 +4,7 @@ import { PlacesType } from "react-tooltip";
 import { Keywords, LocalizationContext } from "../Localization/Localization";
 import ReactDOMServer from "react-dom/server";
 
-const COLOR_TAG_REGEX =
-  /\[(gold|blue|red|green|purple)\](.*?)\[\/\1\]/g;
+const COLOR_TAG_REGEX = /\[(gold|blue|red|green|purple)\](.*?)\[\/\1\]/g;
 
 const COLOR_TAG_CLASS: Record<string, string> = {
   gold: "sts2-gold",
@@ -19,9 +18,7 @@ const COLOR_TAG_CLASS: Record<string, string> = {
  * Parses STS2 BBCode-style color tags into React elements.
  * Returns null if no color tags are found (caller should use default rendering).
  */
-export function renderColorTags(
-  text: string,
-): React.ReactNode[] | null {
+export function renderColorTags(text: string): React.ReactNode[] | null {
   if (!text.includes("[")) {
     return null;
   }
@@ -87,7 +84,12 @@ export class Tip {
   img: string | null;
   type: string | null;
 
-  constructor(header: string, description: string, img: string | null, type: string | null = null) {
+  constructor(
+    header: string,
+    description: string,
+    img: string | null,
+    type: string | null = null,
+  ) {
     this.header = header;
     this.description = description;
     this.img = img;
@@ -240,7 +242,8 @@ export function PowerTip(props: { tip: Tip; character: string }) {
 
   const headerImgClass =
     props.tip.img === null ? "powertip-header-noimg" : "powertip-header-wimg";
-  const typeClass = props.tip.type === "affliction" ? " powertip-affliction" : "";
+  const typeClass =
+    props.tip.type === "affliction" ? " powertip-affliction" : "";
 
   return (
     <div className={"powertip powertip-shadow" + typeClass}>

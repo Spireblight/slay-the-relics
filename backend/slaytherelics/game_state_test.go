@@ -18,6 +18,8 @@ import (
 	"github.com/MaT1g3R/slaytherelics/o11y"
 )
 
+const burningBlood = "Burning Blood"
+
 func TestSTS1PayloadWithoutNewFields(t *testing.T) {
 	gs := GameState{
 		Index:     1,
@@ -62,7 +64,7 @@ func TestNewFieldsStoreAndRetrieve(t *testing.T) {
 		},
 		PotionTips: []Tip{{Header: "Fire Potion", Description: "Deal 20 damage."}},
 		RelicTipMap: map[string][]Tip{
-			"Burning Blood": {{Header: "Burning Blood", Description: "Heal 6 HP."}},
+			burningBlood: {{Header: burningBlood, Description: "Heal 6 HP."}},
 		},
 	}
 
@@ -76,7 +78,7 @@ func TestNewFieldsStoreAndRetrieve(t *testing.T) {
 	assert.Equal(t, len(loaded.PotionTips), 1)
 	assert.Equal(t, loaded.PotionTips[0].Header, "Fire Potion")
 	assert.Equal(t, len(loaded.RelicTipMap), 1)
-	assert.Equal(t, loaded.RelicTipMap["Burning Blood"][0].Header, "Burning Blood")
+	assert.Equal(t, loaded.RelicTipMap[burningBlood][0].Header, burningBlood)
 }
 
 func TestNewFieldsJsonRoundTrip(t *testing.T) {
@@ -169,16 +171,16 @@ func TestMergePatchPerKeyDiffForRelicTipMap(t *testing.T) {
 		Index:   1,
 		Channel: "test",
 		RelicTipMap: map[string][]Tip{
-			"Burning Blood": {{Header: "Burning Blood", Description: "Heal 6 HP."}},
-			"Vajra":         {{Header: "Vajra", Description: "+1 Strength."}},
+			burningBlood: {{Header: burningBlood, Description: "Heal 6 HP."}},
+			"Vajra":      {{Header: "Vajra", Description: "+1 Strength."}},
 		},
 	}
 	update := GameState{
 		Index:   2,
 		Channel: "test",
 		RelicTipMap: map[string][]Tip{
-			"Burning Blood": {{Header: "Burning Blood", Description: "Heal 6 HP."}},
-			"Vajra":         {{Header: "Vajra", Description: "+2 Strength."}}, // changed
+			burningBlood: {{Header: burningBlood, Description: "Heal 6 HP."}},
+			"Vajra":      {{Header: "Vajra", Description: "+2 Strength."}}, // changed
 		},
 	}
 
@@ -191,13 +193,13 @@ func TestMergePatchPerKeyDiffForRelicTipMap(t *testing.T) {
 	assert.Equal(t, len(tipMap), 1)
 	_, hasVajra := tipMap["Vajra"]
 	assert.Check(t, hasVajra)
-	_, hasBurning := tipMap["Burning Blood"]
+	_, hasBurning := tipMap[burningBlood]
 	assert.Check(t, !hasBurning)
 }
 
 func TestMergePatchUnchangedMapOmitted(t *testing.T) {
 	tips := map[string][]Tip{
-		"Burning Blood": {{Header: "Burning Blood", Description: "Heal 6 HP."}},
+		burningBlood: {{Header: burningBlood, Description: "Heal 6 HP."}},
 	}
 	prev := GameState{
 		Index:       1,

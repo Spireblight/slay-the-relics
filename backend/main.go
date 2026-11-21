@@ -68,18 +68,9 @@ func initialize(ctx context.Context, cfg config.Config) (_ *api.API, cancel func
 	if err != nil {
 		return nil, cancel, err
 	}
-	var (
-		publisher   slaytherelics.Publisher
-		localPubSub *slaytherelics.LocalPubSub
-	)
-	switch strings.ToLower(strings.TrimSpace(cfg.PubSubMode)) {
-	case "", "twitch":
-		publisher = twitchClient
-	case "sse":
-		localPubSub = slaytherelics.NewLocalPubSub()
-		publisher = localPubSub
-	default:
-		return nil, cancel, fmt.Errorf("invalid PUBSUB_MODE %q: expected \"twitch\" or \"sse\"", cfg.PubSubMode)
+	publisher, localPubSub, err := newPublisher(cfg.PubSubMode, twitchClient)
+	if err != nil {
+		return nil, cancel, err
 	}
 
 	gameStateManager, err := slaytherelics.NewGameStateManager(publisher)
@@ -96,6 +87,21 @@ func initialize(ctx context.Context, cfg config.Config) (_ *api.API, cancel func
 		api.Options{DevMode: cfg.DevMode, LocalPubSub: localPubSub},
 	)
 	return a, cancel, err
+}
+
+func newPublisher(
+	mode string,
+	twitchClient *client.Twitch,
+) (slaytherelics.Publisher, *slaytherelics.LocalPubSub, error) {
+	switch strings.ToLower(strings.TrimSpace(mode)) {
+	case "", "twitch":
+		return twitchClient, nil, nil
+	case "sse":
+		localPubSub := slaytherelics.NewLocalPubSub()
+		return localPubSub, localPubSub, nil
+	default:
+		return nil, nil, fmt.Errorf("invalid PUBSUB_MODE %q: expected \"twitch\" or \"sse\"", mode)
+	}
 }
 
 // setupPprofListener runs a background listener for handling pprof requests. This is done separately from any other

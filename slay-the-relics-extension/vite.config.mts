@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { resolve } from "path";
-import mkcert from 'vite-plugin-mkcert'
+import mkcert from "vite-plugin-mkcert";
 
 const useHttps = process.env.VITE_HTTPS === "true";
 const devPort = Number(process.env.VITE_PORT) || 8080;

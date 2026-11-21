@@ -29,7 +29,8 @@ describe("GameStateSyncController", () => {
   });
 
   it("applies contiguous patches directly without fetching", () => {
-    const fetchSnapshot = vi.fn<() => Promise<SnapshotResult<MockState> | null>>();
+    const fetchSnapshot =
+      vi.fn<() => Promise<SnapshotResult<MockState> | null>>();
     const patches: Partial<MockState>[] = [];
     const resets: MockState[] = [];
 
@@ -130,7 +131,10 @@ describe("GameStateSyncController", () => {
     ctrl.handleParsedMessage({ gameStateIndex: 0, character: "Silent" });
 
     // Stale fetch from prior run (index 42) must not overwrite new run at index 0
-    deferred.resolve({ index: 42, state: { gameStateIndex: 42, character: "Ironclad" } });
+    deferred.resolve({
+      index: 42,
+      state: { gameStateIndex: 42, character: "Ironclad" },
+    });
     await fetchPromise;
 
     expect(ctrl.currentIndex).toBe(0);
@@ -138,7 +142,8 @@ describe("GameStateSyncController", () => {
     expect(resets).toHaveLength(1);
 
     // Pending jitter timer should also be cancelled by index === 0
-    const fetchSnapshot2 = vi.fn<() => Promise<SnapshotResult<MockState> | null>>();
+    const fetchSnapshot2 =
+      vi.fn<() => Promise<SnapshotResult<MockState> | null>>();
     const ctrl2 = new GameStateSyncController<MockState>({
       fetchSnapshot: fetchSnapshot2,
       applyFullState: vi.fn(),
