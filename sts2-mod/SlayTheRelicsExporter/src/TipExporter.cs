@@ -34,7 +34,7 @@ public static class TipExporter
                 // Emit the card image path so the frontend can do the same.
                 var card = cht.Card;
                 data.Header = card.Title ?? "";
-                var idEntry = card.Id.Entry.ToLowerInvariant();
+                var idEntry = StateExporter.GetCardAssetId(card);
                 var suffix = card.IsUpgraded ? "plusone" : "";
                 data.Img = $"assets/sts2/card-images/{idEntry}{suffix}.png";
                 data.Type = "card";
