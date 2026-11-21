@@ -1,0 +1,19 @@
+root = "."
+tmp_dir = "bin"
+
+[build]
+  bin = "./bin/server-dev"
+  cmd = "go build -o ./bin/server-dev ."
+  delay = 500
+  exclude_dir = ["bin", "tools", "test-reports", "otel_config", "scripts"]
+  exclude_regex = ["_test\\.go$"]
+  include_ext = ["go"]
+  kill_delay = "2s"
+  send_interrupt = true
+  stop_on_error = true
+
+[log]
+  time = false
+
+[misc]
+  clean_on_exit = true

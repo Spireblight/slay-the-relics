@@ -79,13 +79,28 @@ interface AppState {
 
 const API_BASE_URL = import.meta.env.PROD
   ? "https://slay-the-relics.baalorlord.tv"
-  : "http://localhost:8888";
+  : "";
+
+function getDevChannel(): string {
+  const fromQuery = new URLSearchParams(window.location.search)
+    .get("channel")
+    ?.trim();
+  if (fromQuery) {
+    return fromQuery;
+  }
+  const envChannel = import.meta.env.VITE_DEV_CHANNEL as unknown;
+  if (typeof envChannel === "string" && envChannel.trim() !== "") {
+    return envChannel.trim();
+  }
+  return "59817220";
+}
 
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 interface AppProps {}
 
 export default class App extends Component<AppProps, AppState> {
   private readonly twitch: typeof Twitch.ext | null;
+  private eventSource: EventSource | null;
   private gameStateIndex: number;
 
   constructor(props: AppProps) {
@@ -93,6 +108,7 @@ export default class App extends Component<AppProps, AppState> {
 
     //if the extension is running on twitch or dev rig, set the shorthand here. otherwise, set to null.
     this.twitch = window.Twitch ? window.Twitch.ext : null;
+    this.eventSource = null;
     this.gameStateIndex = 0;
     this.state = {
       localization: {
@@ -251,10 +267,48 @@ export default class App extends Component<AppProps, AppState> {
     );
   }
 
-  componentDidMount() {
-    if (import.meta.env.DEV) {
-      void this.initialLoad("59817220");
+  connectLocalSSE(channel: string) {
+    if (this.eventSource) {
+      this.eventSource.close();
+      this.eventSource = null;
     }
+    const url = `${API_BASE_URL}/api/dev/events/${encodeURIComponent(channel)}`;
+    const es = new EventSource(url);
+    let hasOpened = false;
+
+    es.addEventListener("open", () => {
+      // On reconnect (e.g. after backend hot reload), resync full state snapshot.
+      if (hasOpened) {
+        this.fetchState().catch((err) => {
+          console.error("Failed to resync state after SSE reconnect", err);
+        });
+      }
+      hasOpened = true;
+    });
+
+    es.addEventListener("broadcast", (event) => {
+      const msgEvent = event as MessageEvent<string>;
+      this.handleMessage(msgEvent.data).catch((err) => {
+        console.error("Failed to handle local SSE broadcast", err);
+      });
+    });
+
+    this.eventSource = es;
+  }
+
+  componentDidMount() {
+    const pubsubMode = import.meta.env.VITE_PUBSUB_MODE as unknown;
+    const useLocalDev =
+      import.meta.env.DEV &&
+      (pubsubMode === "sse" || !this.twitch || window.self === window.top);
+
+    if (useLocalDev) {
+      const channel = getDevChannel();
+      void this.initialLoad(channel);
+      this.connectLocalSSE(channel);
+      return;
+    }
+
     if (this.twitch) {
       this.twitch.onAuthorized((auth) => {
         const channel = auth.channelId;
@@ -276,6 +330,10 @@ export default class App extends Component<AppProps, AppState> {
       this.twitch.unlisten("broadcast", () =>
         console.log("successfully unlistened"),
       );
+    }
+    if (this.eventSource) {
+      this.eventSource.close();
+      this.eventSource = null;
     }
   }
 
