@@ -27,3 +27,14 @@ func (s *SyncMap[KeyType, ValueType]) Load(key KeyType) (ValueType, bool) {
 func (s *SyncMap[KeyType, ValueType]) Store(key KeyType, value ValueType) {
 	(*sync.Map)(s).Store(key, value)
 }
+
+// LoadOrStore returns the existing value for the key if present.
+// Otherwise, it stores and returns the given value.
+func (s *SyncMap[KeyType, ValueType]) LoadOrStore(key KeyType, value ValueType) (ValueType, bool) {
+	actualRaw, loaded := (*sync.Map)(s).LoadOrStore(key, value)
+	actual, ok := actualRaw.(ValueType)
+	if !ok {
+		return *(new(ValueType)), loaded
+	}
+	return actual, loaded
+}
