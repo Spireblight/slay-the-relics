@@ -21,57 +21,31 @@ public static class MapTransformer
         { MapPointType.RestSite, "R" },
         { MapPointType.Treasure, "T" },
         { MapPointType.Boss, "M" },
-        { MapPointType.Ancient, "?" },
+        { MapPointType.Ancient, "A" },
         { MapPointType.Unassigned, "*" },
     };
 
     public static (List<List<MapNodeData>> mapNodes, List<List<int>> mapPath) Transform(
         ActMap map, IReadOnlyList<MapCoord> visitedCoords)
     {
-        var allPoints = map.GetAllMapPoints().ToList();
-        if (allPoints.Count == 0)
+        var specs = new List<MapPointSpec>();
+
+        foreach (var point in map.GetAllMapPoints())
+        {
+            specs.Add(ToSpec(point));
+        }
+
+        // StartingMapPoint (Ancient at row 0) lives outside ActMap.Grid, so GetAllMapPoints() omits it.
+        var startPoint = map.StartingMapPoint;
+        if (startPoint != null && startPoint.coord.col >= 0 && startPoint.coord.row >= 0)
+        {
+            specs.Add(ToSpec(startPoint));
+        }
+
+        if (specs.Count == 0)
             return (new List<List<MapNodeData>>(), new List<List<int>>());
 
-        // Find grid dimensions
-        int maxRow = allPoints.Max(p => p.coord.row);
-        int maxCol = allPoints.Max(p => p.coord.col);
-
-        // Build lookup: (col, row) → MapPoint
-        var pointLookup = new Dictionary<(int col, int row), MapPoint>();
-        foreach (var point in allPoints)
-        {
-            pointLookup[(point.coord.col, point.coord.row)] = point;
-        }
-
-        // Build mapNodes[row][col]
-        var mapNodes = new List<List<MapNodeData>>();
-        for (int row = 0; row <= maxRow; row++)
-        {
-            var rowNodes = new List<MapNodeData>();
-            for (int col = 0; col <= maxCol; col++)
-            {
-                if (pointLookup.TryGetValue((col, row), out var point))
-                {
-                    var sts1Type = TypeMap.GetValueOrDefault(point.PointType, "*");
-                    // MapPoint already has parents — extract their col indices
-                    var parentCols = point.parents
-                        .Select(p => p.coord.col)
-                        .OrderBy(c => c)
-                        .ToList();
-
-                    rowNodes.Add(new MapNodeData
-                    {
-                        Type = sts1Type,
-                        Parents = parentCols,
-                    });
-                }
-                else
-                {
-                    rowNodes.Add(new MapNodeData { Type = "*", Parents = new List<int>() });
-                }
-            }
-            mapNodes.Add(rowNodes);
-        }
+        var mapNodes = MapGridBuilder.Build(specs, map.GetColumnCount());
 
         // Build mapPath from visited coordinates
         var mapPath = visitedCoords
@@ -79,5 +53,15 @@ public static class MapTransformer
             .ToList();
 
         return (mapNodes, mapPath);
+    }
+
+    private static MapPointSpec ToSpec(MapPoint point)
+    {
+        var nodeType = TypeMap.GetValueOrDefault(point.PointType, "*");
+        var parentCols = point.parents
+            .Select(p => p.coord.col)
+            .OrderBy(c => c)
+            .ToList();
+        return new MapPointSpec(point.coord.col, point.coord.row, nodeType, parentCols);
     }
 }

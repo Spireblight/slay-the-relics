@@ -82,6 +82,8 @@ public class StateExporter
                 Game = "sts2",
                 Character = GetCharacterName(player),
                 Boss = GetBossName(runState),
+                SecondBoss = GetSecondBossName(runState),
+                Ancient = GetAncientName(runState),
                 Floor = runState.TotalFloor,
             };
 
@@ -144,6 +146,42 @@ public class StateExporter
             var act = runState.Acts[currentActIndex];
             var boss = act.BossEncounter;
             return boss?.Id.Entry.ToLowerInvariant() ?? "";
+        }
+        catch
+        {
+            return "";
+        }
+    }
+
+    private static string GetSecondBossName(RunState runState)
+    {
+        try
+        {
+            var currentActIndex = runState.CurrentActIndex;
+            if (currentActIndex < 0 || currentActIndex >= runState.Acts.Count)
+                return "";
+
+            var act = runState.Acts[currentActIndex];
+            var secondBoss = act.SecondBossEncounter;
+            return secondBoss?.Id.Entry.ToLowerInvariant() ?? "";
+        }
+        catch
+        {
+            return "";
+        }
+    }
+
+    private static string GetAncientName(RunState runState)
+    {
+        try
+        {
+            var currentActIndex = runState.CurrentActIndex;
+            if (currentActIndex < 0 || currentActIndex >= runState.Acts.Count)
+                return "";
+
+            var act = runState.Acts[currentActIndex];
+            var ancient = act.Ancient;
+            return ancient?.Id.Entry.ToLowerInvariant() ?? "";
         }
         catch
         {

@@ -66,4 +66,10 @@ public class ExportedState
     [JsonPropertyName("floor")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? Floor { get; set; }
+
+    [JsonPropertyName("secondBoss")]
+    public string SecondBoss { get; set; } = "";
+
+    [JsonPropertyName("ancient")]
+    public string Ancient { get; set; } = "";
 }
