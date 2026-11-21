@@ -22,11 +22,13 @@ type API struct {
 	deckLock  *sync.RWMutex
 
 	gameStateManager *slaytherelics.GameStateManager
+	localPubSub      *slaytherelics.LocalPubSub
 	devMode          bool
 }
 
 type Options struct {
-	DevMode bool
+	DevMode     bool
+	LocalPubSub *slaytherelics.LocalPubSub
 }
 
 func New(
@@ -66,6 +68,7 @@ func New(
 		users:            u,
 		broadcaster:      b,
 		gameStateManager: g,
+		localPubSub:      opt.LocalPubSub,
 		deckLists:        make(map[string]string),
 		deckLock:         &sync.RWMutex{},
 		devMode:          opt.DevMode,
@@ -79,5 +82,8 @@ func New(
 	r.POST("/api/v1/login", api.Login)
 	r.POST("/api/v2/game-state", api.postGameStateHandler)
 	r.GET("/api/v2/game-state/:channel-id", api.getGameStateHandler)
+	if api.localPubSub != nil {
+		r.GET("/api/dev/events/:channel-id", api.devEventsHandler)
+	}
 	return api, nil
 }

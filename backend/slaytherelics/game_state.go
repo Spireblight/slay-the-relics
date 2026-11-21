@@ -14,7 +14,6 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/MaT1g3R/slaytherelics/client"
 	"github.com/MaT1g3R/slaytherelics/o11y"
 )
 
@@ -174,20 +173,20 @@ func diffMapKeys(prev, update reflect.Value) map[string]any {
 }
 
 type GameStateManager struct {
-	tw *client.Twitch
+	pub Publisher
 
 	GameStates SyncMap[string, GameState]
 
 	compressedSizeHistogram metric.Int64Histogram
 }
 
-func NewGameStateManager(tw *client.Twitch) (*GameStateManager, error) {
+func NewGameStateManager(pub Publisher) (*GameStateManager, error) {
 	hist, err := o11y.Meter.Int64Histogram("game_state.compressed_size")
 	if err != nil {
 		return nil, err
 	}
 	return &GameStateManager{
-		tw:                      tw,
+		pub:                     pub,
 		GameStates:              SyncMap[string, GameState]{},
 		compressedSizeHistogram: hist,
 	}, nil
@@ -241,7 +240,7 @@ func (gs *GameStateManager) send(ctx context.Context, userId string, data any) (
 		metric.WithAttributes(attribute.String("user_id", userId)),
 	)
 
-	err = gs.tw.PostExtensionPubSub(ctx, userId, compressed)
+	err = gs.pub.PostExtensionPubSub(ctx, userId, compressed)
 	if err != nil {
 		return fmt.Errorf("failed to post game state update: %w", err)
 	}

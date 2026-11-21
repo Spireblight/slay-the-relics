@@ -4,8 +4,11 @@ import tailwindcss from "@tailwindcss/vite";
 import { resolve } from "path";
 import mkcert from 'vite-plugin-mkcert'
 
+const useHttps = process.env.VITE_HTTPS === "true";
+const devPort = Number(process.env.VITE_PORT) || 8080;
+
 export default defineConfig({
-  plugins: [mkcert(),react(), tailwindcss()],
+  plugins: [...(useHttps ? [mkcert()] : []), react(), tailwindcss()],
   build: {
     rollupOptions: {
       input: {
@@ -20,10 +23,18 @@ export default defineConfig({
   },
   base: "./",
   server: {
+    host: "localhost",
     open: "/video_overlay.html",
-    port: 8080,
+    port: devPort,
+    strictPort: true,
+    proxy: {
+      "/api": {
+        target: process.env.VITE_BACKEND_URL ?? "http://localhost:8888",
+        changeOrigin: true,
+      },
+    },
   },
   preview: {
-    port: 8080,
+    port: devPort,
   },
 });

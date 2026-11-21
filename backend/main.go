@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	_ "net/http/pprof" // nolint:gosec
+	"strings"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -66,13 +68,33 @@ func initialize(ctx context.Context, cfg config.Config) (_ *api.API, cancel func
 	if err != nil {
 		return nil, cancel, err
 	}
-	gameStateManager, err := slaytherelics.NewGameStateManager(twitchClient)
+	var (
+		publisher   slaytherelics.Publisher
+		localPubSub *slaytherelics.LocalPubSub
+	)
+	switch strings.ToLower(strings.TrimSpace(cfg.PubSubMode)) {
+	case "", "twitch":
+		publisher = twitchClient
+	case "sse":
+		localPubSub = slaytherelics.NewLocalPubSub()
+		publisher = localPubSub
+	default:
+		return nil, cancel, fmt.Errorf("invalid PUBSUB_MODE %q: expected \"twitch\" or \"sse\"", cfg.PubSubMode)
+	}
+
+	gameStateManager, err := slaytherelics.NewGameStateManager(publisher)
 	if err != nil {
 		return nil, cancel, err
 	}
 
 	span.AddEvent("starting server")
-	a, err := api.New(twitchClient, users, broadcaster, gameStateManager, api.Options{DevMode: cfg.DevMode})
+	a, err := api.New(
+		twitchClient,
+		users,
+		broadcaster,
+		gameStateManager,
+		api.Options{DevMode: cfg.DevMode, LocalPubSub: localPubSub},
+	)
 	return a, cancel, err
 }
 
