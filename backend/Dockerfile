@@ -1,5 +1,5 @@
 ## Build
-FROM golang:1.25-trixie AS build
+FROM golang:1.27-trixie AS build
 
 WORKDIR /app
 
@@ -12,7 +12,7 @@ COPY . ./
 RUN go build -o /slay-the-relics
 
 ## Deploy
-FROM golang:1.25-trixie
+FROM golang:1.27-trixie
 
 RUN adduser appuser
 USER appuser
