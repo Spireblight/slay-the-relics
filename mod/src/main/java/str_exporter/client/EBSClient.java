@@ -30,10 +30,6 @@ public class EBSClient {
         return doRequest("POST", "/api/v1/auth", config.gson.toJson(body), User.class);
     }
 
-    public void broadcastMessage(String message) throws IOException {
-        doRequest("POST", "/api/v1/message", message, String.class);
-    }
-
     public void postGameState(String gs) throws IOException {
         doRequest("POST", "/api/v2/game-state", gs, HashMap.class);
     }

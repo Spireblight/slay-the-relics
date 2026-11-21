@@ -6,7 +6,6 @@ import (
 	"net/http"
 	_ "net/http/pprof" // nolint:gosec
 	"strings"
-	"time"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -51,7 +50,6 @@ func initialize(ctx context.Context, cfg config.Config) (_ *api.API, cancel func
 	setupPprofListener(cfg)
 
 	twitchClient, err := client.New(
-		ctx,
 		cfg.ClientID,
 		cfg.ClientSecret,
 		cfg.OwnerUserID,
@@ -63,11 +61,6 @@ func initialize(ctx context.Context, cfg config.Config) (_ *api.API, cancel func
 
 	rdb := client.NewRedis(cfg.RedisAddr)
 	users := slaytherelics.NewUsers(twitchClient, rdb)
-	messages := slaytherelics.NewMessages(twitchClient)
-	broadcaster, err := slaytherelics.NewBroadcaster(messages, 20, time.Second*3, time.Minute)
-	if err != nil {
-		return nil, cancel, err
-	}
 	publisher, localPubSub, err := newPublisher(cfg.PubSubMode, twitchClient)
 	if err != nil {
 		return nil, cancel, err
@@ -82,7 +75,6 @@ func initialize(ctx context.Context, cfg config.Config) (_ *api.API, cancel func
 	a, err := api.New(
 		twitchClient,
 		users,
-		broadcaster,
 		gameStateManager,
 		api.Options{DevMode: cfg.DevMode, LocalPubSub: localPubSub},
 	)

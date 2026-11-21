@@ -20,7 +20,7 @@ func TestDevEventsEndpointOnlyMountedWithLocalPubSub(t *testing.T) {
 	assert.NilError(t, err)
 	defer cleanup(context.Background())
 
-	a, err := New(nil, nil, nil, nil, Options{DevMode: false})
+	a, err := New(nil, nil, nil, Options{DevMode: false})
 	assert.NilError(t, err)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/dev/events/12345", nil)
@@ -38,7 +38,7 @@ func TestDevEventsStreamsBroadcastFrames(t *testing.T) {
 	gsm, err := slaytherelics.NewGameStateManager(hub)
 	assert.NilError(t, err)
 
-	a, err := New(nil, nil, nil, gsm, Options{DevMode: true, LocalPubSub: hub})
+	a, err := New(nil, nil, gsm, Options{DevMode: true, LocalPubSub: hub})
 	assert.NilError(t, err)
 
 	srv := httptest.NewServer(a.Router)
@@ -107,7 +107,7 @@ func TestGetGameStateSetsNoStoreCacheControl(t *testing.T) {
 	})
 	assert.NilError(t, err)
 
-	a, err := New(nil, nil, nil, gsm, Options{DevMode: true, LocalPubSub: hub})
+	a, err := New(nil, nil, gsm, Options{DevMode: true, LocalPubSub: hub})
 	assert.NilError(t, err)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v2/game-state/12345", nil)
