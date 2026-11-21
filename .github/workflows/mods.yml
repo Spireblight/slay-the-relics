@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ "master" ]
     paths: [ "sts2-mod/**" ]
+
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
