@@ -7,6 +7,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 using SlayTheRelicsExporter.Models;
@@ -300,11 +301,23 @@ public class StateExporter
     // Frontend splits on this to separate display name from variant identity.
     private const char KeySeparator = '\u001F';
 
+    internal static string GetCardAssetId(CardModel card)
+    {
+        if (card is MadScience madScience)
+        {
+            return MadScienceVariant.GetAssetId(
+                madScience.TinkerTimeType.ToString(),
+                madScience.TinkerTimeRider.ToString());
+        }
+
+        return card.Id.Entry.ToLowerInvariant();
+    }
+
     private static string GetCardKey(CardModel card)
     {
         try
         {
-            var id = card.Id.Entry.ToLowerInvariant();
+            var id = GetCardAssetId(card);
             if (card.IsUpgraded)
                 id += "+";
             var enchantment = card.Enchantment != null
