@@ -22,6 +22,9 @@ public class SettingsPanel
     private readonly Label _delayValueLabel;
     private readonly Button _twitchButton;
     private readonly Label _statusLabel;
+    private readonly VBoxContainer _devModeBox;
+    private readonly CheckBox _devModeCheckBox;
+    private readonly Label _devModeDesc;
 
     public Control Root => _root;
 
@@ -186,6 +189,31 @@ public class SettingsPanel
         twitchRow.AddChild(_statusLabel);
         _root.AddChild(twitchRow);
 
+        // Dev Mode section (only visible when config.dev.json exists)
+        _devModeBox = new VBoxContainer { Visible = false };
+        _devModeBox.AddThemeConstantOverride("separation", 2);
+
+        _devModeCheckBox = new CheckBox
+        {
+            Text = "Dev Mode (use local config.dev.json)",
+        };
+        _devModeCheckBox.AddThemeFontSizeOverride("font_size", 15);
+        _devModeCheckBox.AddThemeColorOverride("font_color", new Color(0.95f, 0.82f, 0.4f));
+        if (regularFont != null) _devModeCheckBox.AddThemeFontOverride("font", regularFont);
+        _devModeCheckBox.Toggled += OnDevModeToggled;
+
+        _devModeDesc = new Label
+        {
+            Text = "Switches to local backend until unchecked or game restarts.",
+        };
+        _devModeDesc.AddThemeFontSizeOverride("font_size", 13);
+        _devModeDesc.AddThemeColorOverride("font_color", new Color(0.65f, 0.65f, 0.65f));
+        if (regularFont != null) _devModeDesc.AddThemeFontOverride("font", regularFont);
+
+        _devModeBox.AddChild(_devModeCheckBox);
+        _devModeBox.AddChild(_devModeDesc);
+        _root.AddChild(_devModeBox);
+
         SlayTheRelicsExporterMod.AuthStatusChanged += OnAuthStatusChanged;
         _root.TreeExited += OnTreeExited;
 
@@ -226,9 +254,15 @@ public class SettingsPanel
         });
     }
 
+    private void OnDevModeToggled(bool toggledOn)
+    {
+        SlayTheRelicsExporterMod.SetDevMode(toggledOn);
+        Refresh();
+    }
+
     private void OnAuthStatusChanged()
     {
-        Callable.From(UpdateStatus).CallDeferred();
+        Callable.From(Refresh).CallDeferred();
     }
 
     private void OnTreeExited()
@@ -238,6 +272,8 @@ public class SettingsPanel
 
     public void Refresh()
     {
+        if (_root == null || !GodotObject.IsInstanceValid(_root)) return;
+
         var config = SlayTheRelicsExporterMod.CurrentConfig;
         if (config != null)
         {
@@ -246,6 +282,18 @@ public class SettingsPanel
             _delaySlider.SetValueNoSignal(config.Delay);
             _delayValueLabel.Text = $"{config.Delay} ms";
         }
+
+        _devModeBox.Visible = Config.DevConfigExists;
+        _devModeCheckBox.SetPressedNoSignal(SlayTheRelicsExporterMod.IsDevMode);
+        if (SlayTheRelicsExporterMod.IsDevMode && config != null)
+        {
+            _devModeDesc.Text = $"Active endpoint: {config.BackendUrl}";
+        }
+        else
+        {
+            _devModeDesc.Text = "Switches to local backend until unchecked or game restarts.";
+        }
+
         UpdateStatus();
     }
 
@@ -255,26 +303,31 @@ public class SettingsPanel
 
         var config = SlayTheRelicsExporterMod.CurrentConfig;
         var isAuth = config?.IsAuthenticated == true;
+        var modeSuffix = SlayTheRelicsExporterMod.IsDevMode ? " [DEV]" : "";
 
         if (SlayTheRelicsExporterMod.IsAuthenticating)
         {
             _twitchButton.Disabled = true;
             _twitchButton.Text = "Connecting...";
-            _statusLabel.Text = "Waiting for browser login...";
+            _statusLabel.Text = $"Waiting for browser login...{modeSuffix}";
             _statusLabel.AddThemeColorOverride("font_color", new Color(0.95f, 0.75f, 0.3f));
         }
         else if (isAuth)
         {
             _twitchButton.Disabled = false;
             _twitchButton.Text = "Reconnect Twitch";
-            _statusLabel.Text = $"✓ Connected ({config!.Channel})";
-            _statusLabel.AddThemeColorOverride("font_color", new Color(0.35f, 0.85f, 0.35f));
+            _statusLabel.Text = $"✓ Connected ({config!.Channel}){modeSuffix}";
+            _statusLabel.AddThemeColorOverride(
+                "font_color",
+                SlayTheRelicsExporterMod.IsDevMode
+                    ? new Color(0.4f, 0.85f, 0.95f)
+                    : new Color(0.35f, 0.85f, 0.35f));
         }
         else
         {
             _twitchButton.Disabled = false;
             _twitchButton.Text = "Connect with Twitch";
-            _statusLabel.Text = "✗ Not Connected";
+            _statusLabel.Text = $"✗ Not Connected{modeSuffix}";
             _statusLabel.AddThemeColorOverride("font_color", new Color(0.9f, 0.35f, 0.35f));
         }
     }

@@ -143,4 +143,40 @@ public class ConfigTests : IDisposable
         Assert.Equal(2200, config.PollIntervalMs);
         Assert.Equal(350, config.Delay);
     }
+
+    [Fact]
+    public void DevConfig_IsolatedFromLiveConfig()
+    {
+        Assert.False(Config.DevConfigExists);
+
+        var live = Config.Load();
+        live.Channel = "live_user";
+        live.AuthToken = "live_token";
+        live.Save();
+
+        Assert.False(Config.DevConfigExists);
+
+        var dev = Config.Load(devMode: true);
+        Assert.True(dev.IsDevConfig);
+        Assert.True(Config.DevConfigExists);
+        Assert.Equal(Config.DefaultDevBackendUrl, dev.BackendUrl);
+
+        dev.Channel = "dev_user";
+        dev.AuthToken = "dev_token";
+        dev.Save();
+
+        // Reloading live config must preserve live credentials and backend URL
+        var reloadedLive = Config.Load();
+        Assert.False(reloadedLive.IsDevConfig);
+        Assert.Equal(Config.DefaultLiveBackendUrl, reloadedLive.BackendUrl);
+        Assert.Equal("live_user", reloadedLive.Channel);
+        Assert.Equal("live_token", reloadedLive.AuthToken);
+
+        // Reloading dev config preserves dev credentials and backend URL
+        var reloadedDev = Config.Load(devMode: true);
+        Assert.True(reloadedDev.IsDevConfig);
+        Assert.Equal(Config.DefaultDevBackendUrl, reloadedDev.BackendUrl);
+        Assert.Equal("dev_user", reloadedDev.Channel);
+        Assert.Equal("dev_token", reloadedDev.AuthToken);
+    }
 }

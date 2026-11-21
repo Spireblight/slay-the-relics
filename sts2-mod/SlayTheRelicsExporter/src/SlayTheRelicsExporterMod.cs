@@ -23,6 +23,7 @@ public class SlayTheRelicsExporterMod
 
     public static Config? CurrentConfig => _config;
     public static bool IsAuthenticating => _isAuthenticating;
+    public static bool IsDevMode => _config?.IsDevConfig == true;
     public static event Action? AuthStatusChanged;
 
     public static void Initialize()
@@ -31,7 +32,8 @@ public class SlayTheRelicsExporterMod
 
         try
         {
-            _config = Config.Load();
+            // Always start in live mode so game restarts never stay stuck on local dev config.
+            _config = Config.Load(devMode: false);
             _client = new BackendClient(_config);
             _exporter = new StateExporter(_config);
 
@@ -52,6 +54,36 @@ public class SlayTheRelicsExporterMod
         {
             Log.Error($"[SlayTheRelicsExporter] Failed to initialize: {ex}");
         }
+    }
+
+    public static void SetDevMode(bool enabled)
+    {
+        if (IsDevMode == enabled)
+            return;
+
+        if (enabled && !Config.DevConfigExists)
+        {
+            Log.Warn("[SlayTheRelicsExporter] Cannot enable dev mode: config.dev.json does not exist.");
+            return;
+        }
+
+        StopPolling();
+        _client?.Dispose();
+
+        _config = Config.Load(devMode: enabled);
+        _client = new BackendClient(_config);
+        _exporter = new StateExporter(_config);
+        _wasInRun = false;
+        _sentEmptyState = false;
+
+        Log.Info($"[SlayTheRelicsExporter] Switched to {(enabled ? "DEV" : "LIVE")} config ({_config.BackendUrl})");
+
+        if (_config.IsAuthenticated)
+        {
+            StartPolling();
+        }
+
+        AuthStatusChanged?.Invoke();
     }
 
     public static async Task<bool> AuthenticateAsync()
@@ -87,10 +119,16 @@ public class SlayTheRelicsExporterMod
         }
     }
 
-    private static void StartPolling()
+    private static void StopPolling()
     {
         _cts?.Cancel();
         _cts?.Dispose();
+        _cts = null;
+    }
+
+    private static void StartPolling()
+    {
+        StopPolling();
         _cts = new CancellationTokenSource();
         var token = _cts.Token;
 
