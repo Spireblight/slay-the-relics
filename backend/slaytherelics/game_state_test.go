@@ -27,10 +27,14 @@ func TestSTS1PayloadWithoutNewFields(t *testing.T) {
 	_, hasPotionTips := raw["potionTips"]
 	_, hasGame := raw["game"]
 	_, hasRelicTipMap := raw["relicTipMap"]
+	_, hasSecondBoss := raw["secondBoss"]
+	_, hasAncient := raw["ancient"]
 	assert.Check(t, !hasCardTips)
 	assert.Check(t, !hasPotionTips)
 	assert.Check(t, !hasGame)
 	assert.Check(t, !hasRelicTipMap)
+	assert.Check(t, !hasSecondBoss)
+	assert.Check(t, !hasAncient)
 }
 
 func TestNewFieldsStoreAndRetrieve(t *testing.T) {
@@ -199,4 +203,35 @@ func TestMergePatchUnchangedMapOmitted(t *testing.T) {
 
 	_, hasRelicTipMap := patch["relicTipMap"]
 	assert.Check(t, !hasRelicTipMap)
+}
+
+func TestSecondBossAndAncientRoundTripAndClearPatch(t *testing.T) {
+	gs := GameState{
+		Index:      1,
+		Channel:    "test",
+		Game:       "sts2",
+		Boss:       "queen_boss",
+		SecondBoss: "test_subject_boss",
+		Ancient:    "vakuu",
+	}
+
+	data, err := json.Marshal(gs)
+	assert.NilError(t, err)
+
+	var loaded GameState
+	err = json.Unmarshal(data, &loaded)
+	assert.NilError(t, err)
+	assert.Equal(t, loaded.Boss, "queen_boss")
+	assert.Equal(t, loaded.SecondBoss, "test_subject_boss")
+	assert.Equal(t, loaded.Ancient, "vakuu")
+
+	// Clearing secondBoss on a subsequent update should emit an empty string in the merge patch
+	next := loaded
+	next.Index = 2
+	next.SecondBoss = ""
+	next.Ancient = "neow"
+
+	patch := computeMergePatch(&loaded, next)
+	assert.Equal(t, patch["secondBoss"], "")
+	assert.Equal(t, patch["ancient"], "neow")
 }

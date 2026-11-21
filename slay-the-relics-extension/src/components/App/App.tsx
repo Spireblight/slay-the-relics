@@ -51,6 +51,8 @@ interface RunState extends Record<string, unknown> {
 
   character: string;
   boss: string;
+  secondBoss?: string;
+  ancient?: string;
   relics: string[];
   baseRelicStats: Record<number, (string | number)[]>;
   relicTips: Tip[];
@@ -103,6 +105,8 @@ export default class App extends Component<AppProps, AppState> {
         relics: [],
         character: "",
         boss: "",
+        secondBoss: "",
+        ancient: "",
         channel: "",
         game: "",
         additionalTips: [],
@@ -203,7 +207,17 @@ export default class App extends Component<AppProps, AppState> {
     }
 
     const index = js["gameStateIndex"] as number;
-    if (index === 0 || this.gameStateIndex + 1 === index) {
+    if (index === 0) {
+      this.gameStateIndex = index;
+      // Full state snapshot: clear optional STS2 fields that may be omitted when empty
+      this.setStateUpdate({
+        secondBoss: "",
+        ancient: "",
+        ...(js as RunState),
+      });
+      return;
+    }
+    if (this.gameStateIndex + 1 === index) {
       this.gameStateIndex = index;
       this.setStateUpdate(js as RunState);
       return;
@@ -275,6 +289,8 @@ export default class App extends Component<AppProps, AppState> {
         <div className={"App"} style={styles}>
           <SpireMap
             boss={this.state.runState.boss}
+            secondBoss={this.state.runState.secondBoss}
+            ancient={this.state.runState.ancient}
             nodes={this.state.runState.mapNodes}
             path={this.state.runState.mapPath}
             game={this.state.runState.game}

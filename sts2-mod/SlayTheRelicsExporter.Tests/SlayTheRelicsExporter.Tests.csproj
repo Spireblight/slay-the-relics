@@ -18,6 +18,8 @@
     <Compile Include="../SlayTheRelicsExporter/src/DreadBossBuffs.cs" Link="DreadBossBuffs.cs" />
     <Compile Include="../SlayTheRelicsExporter/src/InlineImageReplacer.cs" Link="InlineImageReplacer.cs" />
     <Compile Include="../SlayTheRelicsExporter/src/MadScienceVariant.cs" Link="MadScienceVariant.cs" />
+    <Compile Include="../SlayTheRelicsExporter/src/MapGridBuilder.cs" Link="MapGridBuilder.cs" />
+    <Compile Include="../SlayTheRelicsExporter/src/Models/MapNodeData.cs" Link="MapNodeData.cs" />
     <Compile Include="../SlayTheRelicsExporter/src/Models/TipData.cs" Link="TipData.cs" />
   </ItemGroup>
 </Project>
