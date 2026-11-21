@@ -89,3 +89,32 @@ func TestDevEventsStreamsBroadcastFrames(t *testing.T) {
 	assert.Check(t, strings.HasPrefix(payload, "<~"))
 	assert.Check(t, strings.HasSuffix(payload, "~>"))
 }
+
+func TestGetGameStateSetsNoStoreCacheControl(t *testing.T) {
+	cleanup, err := o11y.Init("test", "")
+	assert.NilError(t, err)
+	defer cleanup(context.Background())
+
+	hub := slaytherelics.NewLocalPubSub()
+	gsm, err := slaytherelics.NewGameStateManager(hub)
+	assert.NilError(t, err)
+
+	err = gsm.ReceiveUpdate(context.Background(), "12345", slaytherelics.GameState{
+		Index:   0,
+		Channel: "12345",
+		Game:    "sts2",
+		Floor:   1,
+	})
+	assert.NilError(t, err)
+
+	a, err := New(nil, nil, nil, gsm, Options{DevMode: true, LocalPubSub: hub})
+	assert.NilError(t, err)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v2/game-state/12345", nil)
+	rec := httptest.NewRecorder()
+	a.Router.ServeHTTP(rec, req)
+
+	assert.Equal(t, rec.Code, http.StatusOK)
+	assert.Equal(t, rec.Header().Get("Cache-Control"), "no-store")
+	assert.Equal(t, rec.Header().Get("Access-Control-Allow-Origin"), "*")
+}

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"sync"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -175,7 +176,9 @@ func diffMapKeys(prev, update reflect.Value) map[string]any {
 type GameStateManager struct {
 	pub Publisher
 
-	GameStates SyncMap[string, GameState]
+	GameStates    SyncMap[string, GameState]
+	ingestIndexes SyncMap[string, int]
+	channelLocks  SyncMap[string, *sync.Mutex]
 
 	compressedSizeHistogram metric.Int64Histogram
 }
@@ -188,8 +191,15 @@ func NewGameStateManager(pub Publisher) (*GameStateManager, error) {
 	return &GameStateManager{
 		pub:                     pub,
 		GameStates:              SyncMap[string, GameState]{},
+		ingestIndexes:           SyncMap[string, int]{},
+		channelLocks:            SyncMap[string, *sync.Mutex]{},
 		compressedSizeHistogram: hist,
 	}, nil
+}
+
+func (gs *GameStateManager) channelLock(userId string) *sync.Mutex {
+	mu, _ := gs.channelLocks.LoadOrStore(userId, &sync.Mutex{})
+	return mu
 }
 
 func compressJson(data any) (_ string, err error) {
@@ -247,40 +257,79 @@ func (gs *GameStateManager) send(ctx context.Context, userId string, data any) (
 	return nil
 }
 
-func (gs *GameStateManager) broadcastUpdate(ctx context.Context,
-	userId string, prev *GameState, update GameState) (err error) {
+func (gs *GameStateManager) broadcastPayload(ctx context.Context,
+	userId string, ingestIndex, broadcastIndex int, payload any) (err error) {
 	ctx, span := o11y.Tracer.Start(ctx, "game_state: broadcast game state update", trace.WithAttributes(
 		attribute.String("user_id", userId),
-		attribute.Int("gamestate_index", update.Index),
+		attribute.Int("gamestate_index", broadcastIndex),
+		attribute.Int("ingest_index", ingestIndex),
 	))
 	defer o11y.End(&span, &err)
 
-	if prev == nil {
-		return gs.send(ctx, userId, update)
-	}
-
-	patch := computeMergePatch(prev, update)
-	if len(patch) <= 2 {
-		// Only gameStateIndex and channel — nothing actually changed
-		return nil
-	}
-	return gs.send(ctx, userId, patch)
+	return gs.send(ctx, userId, payload)
 }
 
 func (gs *GameStateManager) ReceiveUpdate(ctx context.Context, userId string, update GameState) error {
+	mu := gs.channelLock(userId)
+	mu.Lock()
+	defer mu.Unlock()
+
+	ingestIndex := update.Index
 	current, ok := gs.GameStates.Load(userId)
-	// current state not found, or initialize new run, always override
-	if !ok || update.Index == 0 {
+
+	// New run or menu reset (index == 0): reset broadcast sequence to 0 and emit full snapshot.
+	if ingestIndex == 0 {
+		if ok && current.Index == 0 {
+			patch := computeMergePatch(&current, update)
+			if len(patch) <= 2 {
+				gs.ingestIndexes.Store(userId, 0)
+				return nil
+			}
+		}
+		update.Index = 0
 		gs.GameStates.Store(userId, update)
-		return gs.broadcastUpdate(ctx, userId, nil, update)
+		gs.ingestIndexes.Store(userId, 0)
+		return gs.broadcastPayload(ctx, userId, 0, 0, update)
 	}
-	// stale index, ignore
-	if current.Index >= update.Index {
+
+	// First update seen for this channel mid-run (e.g. after backend restart):
+	// initialize broadcastIndex to ingestIndex so connected viewers don't drop
+	// subsequent patches if this full snapshot fails PubSub size limits.
+	if !ok {
+		gs.GameStates.Store(userId, update)
+		gs.ingestIndexes.Store(userId, ingestIndex)
+		return gs.broadcastPayload(ctx, userId, ingestIndex, update.Index, update)
+	}
+
+	// Reject stale or duplicate mod POSTs using the mod's ingest index.
+	lastIngestIndex, hasIngest := gs.ingestIndexes.Load(userId)
+	if !hasIngest {
+		lastIngestIndex = current.Index
+	}
+	if lastIngestIndex >= ingestIndex {
 		return nil
 	}
-	err := gs.broadcastUpdate(ctx, userId, &current, update)
+
+	patch := computeMergePatch(&current, update)
+	if len(patch) <= 2 {
+		// Only gameStateIndex and channel — nothing actually changed.
+		// Track ingestIndex for ordering, but keep stored state & broadcastIndex unchanged.
+		gs.ingestIndexes.Store(userId, ingestIndex)
+		return nil
+	}
+
+	nextBroadcastIndex := current.Index + 1
+	update.Index = nextBroadcastIndex
+	patch["gameStateIndex"] = nextBroadcastIndex
+
+	// Store before broadcasting so any viewer fetchState() triggered by this
+	// broadcast immediately reads the updated state and matching broadcastIndex.
+	// Keep the stored state and advanced broadcastIndex even if PubSub fails so
+	// the next successful broadcast naturally signals viewers to fetchState().
 	gs.GameStates.Store(userId, update)
-	return err
+	gs.ingestIndexes.Store(userId, ingestIndex)
+
+	return gs.broadcastPayload(ctx, userId, ingestIndex, nextBroadcastIndex, patch)
 }
 
 func (gs *GameStateManager) GetGameState(userId string) (GameState, bool) {

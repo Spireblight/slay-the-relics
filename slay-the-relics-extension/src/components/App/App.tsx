@@ -13,6 +13,7 @@ import {
   LocalizationData,
 } from "../Localization/Localization";
 import { Tooltip } from "react-tooltip";
+import { GameStateSyncController } from "./sync";
 
 interface MapNode {
   type: string;
@@ -100,8 +101,9 @@ interface AppProps {}
 
 export default class App extends Component<AppProps, AppState> {
   private readonly twitch: typeof Twitch.ext | null;
+  private readonly sync: GameStateSyncController<RunState>;
   private eventSource: EventSource | null;
-  private gameStateIndex: number;
+  private initialLoadSeq: number;
 
   constructor(props: AppProps) {
     super(props);
@@ -109,7 +111,28 @@ export default class App extends Component<AppProps, AppState> {
     //if the extension is running on twitch or dev rig, set the shorthand here. otherwise, set to null.
     this.twitch = window.Twitch ? window.Twitch.ext : null;
     this.eventSource = null;
-    this.gameStateIndex = 0;
+    this.initialLoadSeq = 0;
+    this.sync = new GameStateSyncController<RunState>({
+      fetchSnapshot: () => this.fetchSnapshot(),
+      applyFullState: (state) => {
+        this.setRunState({
+          secondBoss: "",
+          ancient: "",
+          ...state,
+        });
+      },
+      applyPatch: (patch) => {
+        this.setStateUpdate(patch as RunState);
+      },
+      onResetSnapshot: (snapshot) => {
+        // Full state snapshot: clear optional STS2 fields that may be omitted when empty
+        this.setStateUpdate({
+          secondBoss: "",
+          ancient: "",
+          ...snapshot,
+        });
+      },
+    });
     this.state = {
       localization: {
         cards: {},
@@ -159,20 +182,29 @@ export default class App extends Component<AppProps, AppState> {
     });
   }
 
-  async fetchState() {
+  private async fetchSnapshot(): Promise<{
+    index: number;
+    state: RunState;
+  } | null> {
     if (this.state.runState.channel === "") {
       console.warn("empty channel id");
-      return;
+      return null;
     }
     const resp = await fetch(
       API_BASE_URL + "/api/v2/game-state/" + this.state.runState.channel,
     );
-    if (resp.ok) {
-      const js = (await resp.json()) as Record<string, unknown>;
-      this.gameStateIndex = js["gameStateIndex"] as number;
-      this.setRunState(js as RunState);
-      return;
+    if (!resp.ok) {
+      return null;
     }
+    const js = (await resp.json()) as Record<string, unknown>;
+    return {
+      index: js["gameStateIndex"] as number,
+      state: js as RunState,
+    };
+  }
+
+  async fetchState() {
+    await this.sync.fetchNow();
   }
 
   setStateUpdate(js: RunState) {
@@ -205,7 +237,7 @@ export default class App extends Component<AppProps, AppState> {
     });
   }
 
-  async handleMessage(body: string) {
+  handleMessage(body: string) {
     let jsString = "";
     try {
       jsString = this.decomp(body);
@@ -222,42 +254,31 @@ export default class App extends Component<AppProps, AppState> {
       throw e;
     }
 
-    const index = js["gameStateIndex"] as number;
-    if (index === 0) {
-      this.gameStateIndex = index;
-      // Full state snapshot: clear optional STS2 fields that may be omitted when empty
-      this.setStateUpdate({
-        secondBoss: "",
-        ancient: "",
-        ...(js as RunState),
-      });
-      return;
-    }
-    if (this.gameStateIndex + 1 === index) {
-      this.gameStateIndex = index;
-      this.setStateUpdate(js as RunState);
-      return;
-    }
-    if (this.gameStateIndex >= index) {
-      // our game state is ahead, do nothing
-      return;
-    }
-
-    console.warn("index out of sync: ", this.gameStateIndex, " ", index);
-    await this.fetchState();
+    this.sync.handleParsedMessage(js);
   }
 
   async initialLoad(channel: string) {
+    const seq = ++this.initialLoadSeq;
+    this.sync.resetEpoch();
     const loc = await fetchLocalizationData();
+    if (seq !== this.initialLoadSeq) {
+      return;
+    }
     this.setState(
       (prev) => ({ ...prev, localization: loc }),
       () => {
+        if (seq !== this.initialLoadSeq) {
+          return;
+        }
         this.setState(
           (prev) => ({
             ...prev,
             runState: { ...prev.runState, channel: channel },
           }),
           () => {
+            if (seq !== this.initialLoadSeq) {
+              return;
+            }
             this.fetchState().catch((err) => {
               console.error(err);
             });
@@ -288,15 +309,18 @@ export default class App extends Component<AppProps, AppState> {
 
     es.addEventListener("broadcast", (event) => {
       const msgEvent = event as MessageEvent<string>;
-      this.handleMessage(msgEvent.data).catch((err) => {
+      try {
+        this.handleMessage(msgEvent.data);
+      } catch (err) {
         console.error("Failed to handle local SSE broadcast", err);
-      });
+      }
     });
 
     this.eventSource = es;
   }
 
   componentDidMount() {
+    this.sync.activate();
     const pubsubMode = import.meta.env.VITE_PUBSUB_MODE as unknown;
     const useLocalDev =
       import.meta.env.DEV &&
@@ -318,14 +342,18 @@ export default class App extends Component<AppProps, AppState> {
       });
 
       this.twitch.listen("broadcast", (_, __, body) => {
-        this.handleMessage(body).catch((err) => {
+        try {
+          this.handleMessage(body);
+        } catch (err) {
           console.error(err);
-        });
+        }
       });
     }
   }
 
   componentWillUnmount() {
+    this.initialLoadSeq++;
+    this.sync.dispose();
     if (this.twitch) {
       this.twitch.unlisten("broadcast", () =>
         console.log("successfully unlistened"),

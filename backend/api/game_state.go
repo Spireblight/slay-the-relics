@@ -116,6 +116,7 @@ func (a *API) getGameStateHandler(c *gin.Context) {
 	defer o11y.End(&span, &err)
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	c.Writer.Header().Set("Cache-Control", "no-store")
 	channel := c.Param("channel-id")
 	if channel == "" {
 		c.JSON(400, gin.H{"error": "channel-id parameter is required"})
