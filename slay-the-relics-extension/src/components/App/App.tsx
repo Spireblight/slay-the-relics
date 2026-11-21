@@ -67,7 +67,7 @@ interface RunState extends Record<string, unknown> {
   mapNodes: MapNode[][];
   mapPath: number[][];
   bottles: number[];
-  potionX: number
+  potionX: number;
   cardTips?: Record<string, Tip[]>;
   potionTips?: Tip[];
   relicTipMap?: Record<string, Tip[]>;

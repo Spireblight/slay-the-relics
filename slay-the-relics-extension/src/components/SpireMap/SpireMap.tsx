@@ -71,8 +71,7 @@ export function computeSts2MapLayout(
     const rowStartX = (canvasW - rowWidth) / 2 - sts2LineOffset;
     const x = rowStartX + j * nodeSpacing;
     const y = canvasH - bottomPadding - i * rowSpacing;
-    const r =
-      nodes[i]?.[j]?.type === "A" ? sts2AncientRadius : sts2NodeRadius;
+    const r = nodes[i]?.[j]?.type === "A" ? sts2AncientRadius : sts2NodeRadius;
     return { x, y, r };
   };
 
@@ -485,7 +484,13 @@ function MapCanvas(props: {
       for (const pathNode of path) {
         const node = getLocation(pathNode[1], pathNode[0]);
         ctx.beginPath();
-        ctx.arc(node.x + lineOffset, node.y + lineOffset, node.r, 0, Math.PI * 2);
+        ctx.arc(
+          node.x + lineOffset,
+          node.y + lineOffset,
+          node.r,
+          0,
+          Math.PI * 2,
+        );
         ctx.strokeStyle = "#3972C6";
         ctx.lineWidth = 7;
         ctx.setLineDash([]);
@@ -496,7 +501,15 @@ function MapCanvas(props: {
     return () => {
       cancelled = true;
     };
-  }, [nodes, path, canvasRef, isSts2, props.boss, props.secondBoss, props.ancient]);
+  }, [
+    nodes,
+    path,
+    canvasRef,
+    isSts2,
+    props.boss,
+    props.secondBoss,
+    props.ancient,
+  ]);
 
   return (
     <div

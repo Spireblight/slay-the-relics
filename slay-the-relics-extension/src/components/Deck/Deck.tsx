@@ -122,11 +122,7 @@ function sts2UrlForCard(cardId: string, upgraded: boolean): string {
   return `${GITHUB_RAW_BASE}assets/sts2/card-images/${id}${suffix}.png`;
 }
 
-function cardImageUrl(
-  name: string,
-  upgraded: boolean,
-  game?: string,
-): string {
+function cardImageUrl(name: string, upgraded: boolean, game?: string): string {
   if (game === "sts2") {
     return sts2UrlForCard(name, upgraded);
   }
@@ -165,7 +161,6 @@ export function Card(props: {
 
   const loc = useContext(LocalizationContext);
 
-  const normalName = name.replaceAll("+", "");
   const lookupKey = key.replaceAll("+", "");
   const imgUrl = cardImageUrl(name, upgraded, props.game);
 
@@ -232,8 +227,7 @@ export function Card(props: {
 
   const enchantment =
     props.game === "sts2" ? cardEnchantment(props.data) : null;
-  const affliction =
-    props.game === "sts2" ? cardAffliction(props.data) : null;
+  const affliction = props.game === "sts2" ? cardAffliction(props.data) : null;
 
   const tooltipPlace: PlacesType = "right";
 
@@ -479,9 +473,7 @@ export function CardGrid(props: {
       }}
     >
       <div
-        className={
-          `grid grid-cols-5 grid-flow-row gap-2 w-2/3 z-10 ${props.game === "sts2" ? "content-start" : "content-around"}`
-        }
+        className={`grid grid-cols-5 grid-flow-row gap-2 w-2/3 z-10 ${props.game === "sts2" ? "content-start" : "content-around"}`}
       >
         {props.cards.map((card, i) => {
           let bottle: Bottle = null;

@@ -3,7 +3,9 @@ export interface SnapshotResult<TState> {
   state: TState;
 }
 
-export interface GameStateSyncCallbacks<TState extends Record<string, unknown>> {
+export interface GameStateSyncCallbacks<
+  TState extends Record<string, unknown>,
+> {
   fetchSnapshot: () => Promise<SnapshotResult<TState> | null>;
   applyFullState: (state: TState) => void;
   applyPatch: (patch: Partial<TState>) => void;

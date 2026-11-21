@@ -109,6 +109,13 @@ func Init(serviceName, endpoint string) (func(context.Context), error) {
 	Tracer = otel.Tracer(serviceName)
 	Meter = otel.GetMeterProvider().Meter(serviceName)
 
+	return shutdownProviders(tracerProvider, meterProvider), nil
+}
+
+func shutdownProviders(
+	tracerProvider *sdktrace.TracerProvider,
+	meterProvider *sdkmetric.MeterProvider,
+) func(context.Context) {
 	return func(ctx context.Context) {
 		// Shutdown will flush any remaining spans/metrics and shut down the exporters.
 		handleCtx, cancel := context.WithTimeout(ctx, time.Second*5)
@@ -119,5 +126,5 @@ func Init(serviceName, endpoint string) (func(context.Context), error) {
 		if err := meterProvider.Shutdown(handleCtx); err != nil {
 			log.Printf("failed to shutdown meter provider: %v", err)
 		}
-	}, nil
+	}
 }

@@ -3,7 +3,10 @@ import { computeSts2MapLayout } from "./SpireMap";
 
 function makeGrid(rows: number, cols = 7) {
   const grid = Array.from({ length: rows }, () =>
-    Array.from({ length: cols }, () => ({ type: "*", parents: [] as number[] })),
+    Array.from({ length: cols }, () => ({
+      type: "*",
+      parents: [] as number[],
+    })),
   );
   grid[0][3] = { type: "A", parents: [] };
   for (let r = 1; r < rows; r++) {
@@ -15,7 +18,10 @@ function makeGrid(rows: number, cols = 7) {
 describe("computeSts2MapLayout", () => {
   it("centers single boss circle directly on bossCenter with boss radius", () => {
     const nodes = makeGrid(14);
-    const layout = computeSts2MapLayout(nodes, [[3, 0], [3, 14]]);
+    const layout = computeSts2MapLayout(nodes, [
+      [3, 0],
+      [3, 14],
+    ]);
 
     expect(layout.hasSecondBoss).toBe(false);
     expect(layout.secondBossCenter).toBeNull();
