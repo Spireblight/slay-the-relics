@@ -1,5 +1,14 @@
-#!/bin/sh
+#!/usr/bin/env bash
+set -euo pipefail
 
-cp "$HOME/.steam/steam/steamapps/common/Slay the Spire 2/mods/SlayTheRelicsExporter"/* ./content
+SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
+MOD_DIR="$(CDPATH='' cd -- "${SCRIPT_DIR}/.." && pwd)"
+CONTENT_DIR="${SCRIPT_DIR}/content"
 
+dotnet build "${MOD_DIR}/SlayTheRelicsExporter.csproj" -c Release -p:STS2ModsDir=
+
+cp "${MOD_DIR}/bin/Release/net9.0/SlayTheRelicsExporter.dll" "${CONTENT_DIR}/SlayTheRelicsExporter.dll"
+cp "${MOD_DIR}/mod_manifest.json" "${CONTENT_DIR}/mod_manifest.json"
+
+cd "${SCRIPT_DIR}"
 ModUploader upload -w .

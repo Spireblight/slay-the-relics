@@ -28,7 +28,7 @@ public class SlayTheRelicsExporterMod
 
     public static void Initialize()
     {
-        Log.Info("[SlayTheRelicsExporter] Initializing v2.7.0");
+        Log.Info("[SlayTheRelicsExporter] Initializing v2.7.1");
 
         try
         {
