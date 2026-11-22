@@ -57,7 +57,7 @@ public static class TipExporter
     public static List<TipData> FromHoverTips(IEnumerable<IHoverTip> tips)
     {
         var result = new List<TipData>();
-        foreach (var tip in tips)
+        foreach (var tip in IHoverTip.RemoveDupes(tips))
         {
             try
             {
