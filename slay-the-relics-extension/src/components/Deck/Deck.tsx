@@ -234,6 +234,25 @@ function lookupCard(name: string, cardsLoc: Cards): string {
   return cardLoc.DESCRIPTION;
 }
 
+export function lookupCardTips(
+  cardTips: Record<string, Tip[]> | undefined,
+  key: string,
+): Tip[] | undefined {
+  if (!cardTips) {
+    return undefined;
+  }
+  if (cardTips[key] !== undefined) {
+    return cardTips[key];
+  }
+  const sep = key.indexOf(KEY_SEPARATOR);
+  const base = sep === -1 ? key : key.substring(0, sep);
+  const suffix = sep === -1 ? "" : key.substring(sep);
+  const altKey = base.includes("+")
+    ? base.replaceAll("+", "") + suffix
+    : base + "+" + suffix;
+  return cardTips[altKey];
+}
+
 export function Card(props: {
   data: CardData;
   bottle: Bottle;
@@ -251,7 +270,6 @@ export function Card(props: {
 
   const loc = useContext(LocalizationContext);
 
-  const lookupKey = key.replaceAll("+", "");
   const imgUrl = cardImageUrl(name, upgraded, props.game);
 
   const cardStyle: CSSProperties = {
@@ -259,7 +277,7 @@ export function Card(props: {
   };
 
   // Card tips: use cardTips override if available, else fall back to localization lookup
-  const tipsOverride = props.cardTips?.[lookupKey];
+  const tipsOverride = lookupCardTips(props.cardTips, key);
   let description: string;
   let tips: Tip[];
   if (tipsOverride) {
