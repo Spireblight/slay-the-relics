@@ -65,6 +65,7 @@ export function Relic(props: {
   character: string;
   relic: RelicProp;
   hitbox: HitBox;
+  noExpand?: boolean;
 }) {
   return (
     <PowerTipStrip
@@ -73,6 +74,7 @@ export function Relic(props: {
       hitbox={props.hitbox}
       tips={props.relic.getTips()}
       place={"bottom-start"}
+      noExpand={props.noExpand}
     />
   );
 }
@@ -113,19 +115,21 @@ export function RelicBar(props: {
 
         // Prefer relicTipMap (STS2) over relicTips[index] (STS1)
         const relicTipMapEntry = props.relicTipMap?.[relic];
-        const relicProp =
-          relicTipMapEntry && relicTipMapEntry.length > 0
-            ? new RelicProp(
-                relicTipMapEntry[0].header,
-                relicTipMapEntry[0].description ?? "",
-                relicTipMapEntry.slice(1),
-              )
-            : LookupRelic(
-                relic,
-                relicParams,
-                relicsLoc,
-                props.relicTips?.[i] ?? null,
-              );
+        const hasRelicTipMap = Boolean(
+          relicTipMapEntry && relicTipMapEntry.length > 0,
+        );
+        const relicProp = hasRelicTipMap
+          ? new RelicProp(
+              relicTipMapEntry![0].header,
+              relicTipMapEntry![0].description ?? "",
+              relicTipMapEntry!.slice(1),
+            )
+          : LookupRelic(
+              relic,
+              relicParams,
+              relicsLoc,
+              props.relicTips?.[i] ?? null,
+            );
 
         return (
           <Relic
@@ -133,6 +137,7 @@ export function RelicBar(props: {
             key={"relic-bar-" + i}
             hitbox={hitbox}
             relic={relicProp}
+            noExpand={hasRelicTipMap}
           />
         );
       })}

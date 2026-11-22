@@ -335,15 +335,39 @@ export function KeywordTips(paragraph: string, keywords: Keywords): Tip[] {
   });
 }
 
-function expandTips(tips: Tip[], keywords: Keywords): Tip[] {
+export function dedupeTips(tips: Tip[]): Tip[] {
+  const seen = new Set<string>();
+  const result: Tip[] = [];
+  for (const tip of tips) {
+    const key = [
+      tip.type ?? "",
+      tip.header.toLowerCase(),
+      tip.description ?? "",
+      tip.img ?? "",
+    ].join("\u001F");
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push(tip);
+    }
+  }
+  return result;
+}
+
+export function expandTips(tips: Tip[], keywords: Keywords): Tip[] {
+  const deduped = dedupeTips(tips);
+  const existingHeaders = new Set(
+    deduped.map((tip) => tip.header.toLowerCase()),
+  );
   let paragraphs = "";
 
-  tips.forEach((tip) => {
-    paragraphs += tip.description + " ";
+  deduped.forEach((tip) => {
+    paragraphs += (tip.description ?? "") + " ";
   });
-  const keywordTips = KeywordTips(paragraphs, keywords);
+  const keywordTips = KeywordTips(paragraphs, keywords).filter(
+    (tip) => !existingHeaders.has(tip.header.toLowerCase()),
+  );
 
-  return tips.concat(keywordTips);
+  return deduped.concat(keywordTips);
 }
 
 export function PowerTipBlock(props: {
@@ -356,12 +380,9 @@ export function PowerTipBlock(props: {
   noExpand?: boolean;
 }) {
   const keywords = useContext(LocalizationContext).keywords;
-  let allTips = [];
-  if (props.noExpand) {
-    allTips = props.tips;
-  } else {
-    allTips = expandTips(props.tips, keywords);
-  }
+  const allTips = props.noExpand
+    ? dedupeTips(props.tips)
+    : expandTips(props.tips, keywords);
 
   const tooltipBlock = (
     <div className={"flex max-h-120 flex-col flex-wrap justify-start gap-0.5"}>
@@ -400,9 +421,12 @@ export function PowerTipStrip(props: {
   character: string;
   offset?: number;
   place?: PlacesType;
+  noExpand?: boolean;
 }) {
   const keywords = useContext(LocalizationContext).keywords;
-  const allTips = expandTips(props.tips, keywords);
+  const allTips = props.noExpand
+    ? dedupeTips(props.tips)
+    : expandTips(props.tips, keywords);
   return (
     <Hitbox
       magGlass={props.magGlass}
