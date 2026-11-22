@@ -129,6 +129,96 @@ function cardImageUrl(name: string, upgraded: boolean, game?: string): string {
   return slaytabaseUrlForCard(name, upgraded);
 }
 
+export type ImageLoader = (
+  url: string,
+  onLoad: () => void,
+  onError: () => void,
+) => () => void;
+
+const defaultImageLoader: ImageLoader = (url, onLoad, onError) => {
+  const img = new Image();
+  img.onload = () => onLoad();
+  img.onerror = () => onError();
+  img.src = url;
+  return () => {
+    img.onload = null;
+    img.onerror = null;
+  };
+};
+
+const upgradedImageCache = new Map<string, boolean>();
+
+export function probeImageExists(
+  url: string,
+  cache: Map<string, boolean> = upgradedImageCache,
+  loadImage: ImageLoader = defaultImageLoader,
+): {
+  cached: boolean | undefined;
+  start: (onResult: (exists: boolean) => void) => () => void;
+} {
+  const cached = cache.get(url);
+  if (cached !== undefined) {
+    return {
+      cached,
+      start: () => () => {},
+    };
+  }
+
+  return {
+    cached: undefined,
+    start: (onResult) => {
+      let cancelled = false;
+      const cleanup = loadImage(
+        url,
+        () => {
+          cache.set(url, true);
+          if (!cancelled) {
+            onResult(true);
+          }
+        },
+        () => {
+          cache.set(url, false);
+          if (!cancelled) {
+            onResult(false);
+          }
+        },
+      );
+      return () => {
+        cancelled = true;
+        cleanup();
+      };
+    },
+  };
+}
+
+export function resolveCanUpgrade(
+  card: CardData | undefined,
+  game: string | undefined,
+  visible: boolean,
+  probeResult: { url: string; exists: boolean } | null,
+  cache: Map<string, boolean> = upgradedImageCache,
+): { canUpgrade: boolean; probeUrl: string | null } {
+  if (!card) {
+    return { canUpgrade: false, probeUrl: null };
+  }
+  const name = cardName(card);
+  if (name.includes("+")) {
+    return { canUpgrade: true, probeUrl: null };
+  }
+  if (!visible) {
+    return { canUpgrade: false, probeUrl: null };
+  }
+  const upgradedUrl = cardImageUrl(name, true, game);
+  const cached = cache.get(upgradedUrl);
+  if (cached !== undefined) {
+    return { canUpgrade: cached, probeUrl: null };
+  }
+  if (probeResult && probeResult.url === upgradedUrl) {
+    return { canUpgrade: probeResult.exists, probeUrl: null };
+  }
+  return { canUpgrade: false, probeUrl: upgradedUrl };
+}
+
 function lookupCard(name: string, cardsLoc: Cards): string {
   const normalName = name.replaceAll("+", "");
   const upgraded = name.includes("+");
@@ -337,16 +427,44 @@ export function CardView(props: {
   cardTips?: Record<string, Tip[]>;
   game?: string;
 }) {
-  if (props.cards.length < 1) {
+  const card = props.cards[props.selectedIndex];
+  const visible = props.display !== "hidden";
+  const [probeResult, setProbeResult] = useState<{
+    url: string;
+    exists: boolean;
+  } | null>(null);
+
+  const { canUpgrade, probeUrl } = resolveCanUpgrade(
+    card,
+    props.game,
+    visible,
+    probeResult,
+  );
+
+  useEffect(() => {
+    if (!probeUrl) {
+      return;
+    }
+    const probe = probeImageExists(probeUrl);
+    if (probe.cached !== undefined) {
+      setProbeResult({ url: probeUrl, exists: probe.cached });
+      return;
+    }
+    return probe.start((exists) => {
+      setProbeResult({ url: probeUrl, exists });
+    });
+  }, [probeUrl]);
+
+  if (props.cards.length < 1 || !card) {
     return <div></div>;
   }
 
-  const card = props.cards[props.selectedIndex];
   const isUpgrade = (i: number) => {
     return (
       props.upgradeChecked.get(i) ?? cardName(props.cards[i]).includes("+")
     );
   };
+  const showUpgrade = canUpgrade && isUpgrade(props.selectedIndex);
   const toggleUpgrade = (i: number) => {
     props.setUpgradeChecked((prev) => {
       const newMap = new Map(prev);
@@ -412,8 +530,8 @@ export function CardView(props: {
       >
         <Card
           data={withCardName(card, (name) => {
-            return isUpgrade(props.selectedIndex)
-              ? name + "+"
+            return showUpgrade
+              ? name.replaceAll("+", "") + "+"
               : name.replaceAll("+", "");
           })}
           bottle={bottle}
@@ -425,12 +543,23 @@ export function CardView(props: {
         />
         <button
           id={"card_view_checkbox"}
+          disabled={!canUpgrade}
+          aria-hidden={!canUpgrade}
+          tabIndex={canUpgrade ? 0 : -1}
+          style={
+            canUpgrade
+              ? undefined
+              : { visibility: "hidden", pointerEvents: "none" }
+          }
           className={
-            isUpgrade(props.selectedIndex)
+            showUpgrade
               ? "card-view-checkbox-checked"
               : "card-view-checkbox-unchecked"
           }
           onClick={(event) => {
+            if (!canUpgrade) {
+              return;
+            }
             event.stopPropagation();
             toggleUpgrade(props.selectedIndex);
           }}
