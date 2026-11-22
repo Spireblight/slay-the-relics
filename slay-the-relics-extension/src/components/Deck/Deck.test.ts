@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { ImageLoader, probeImageExists, resolveCanUpgrade } from "./Deck";
+import {
+  ImageLoader,
+  lookupCardTips,
+  probeImageExists,
+  resolveCanUpgrade,
+} from "./Deck";
+import { Tip } from "../Tip/Tip";
 
 describe("resolveCanUpgrade", () => {
   it("returns false and does not probe when card is missing or view is hidden", () => {
@@ -143,5 +149,62 @@ describe("probeImageExists", () => {
 
     expect(cleanup).toHaveBeenCalledOnce();
     expect(onResult).not.toHaveBeenCalled();
+  });
+});
+
+describe("lookupCardTips", () => {
+  const strength = new Tip("Strength", "Increases attack damage.", null);
+  const exhaust = new Tip("Exhaust", "Removed until end of combat.", null);
+  const retain = new Tip("Retain", "Not discarded at end of turn.", null);
+
+  it("finds tips for upgraded cards when no unupgraded copy exists", () => {
+    const cardTips = {
+      "dark_shackles+": [strength, exhaust],
+    };
+    expect(lookupCardTips(cardTips, "dark_shackles+")).toEqual([
+      strength,
+      exhaust,
+    ]);
+  });
+
+  it("prefers exact upgraded tips over unupgraded tips when both exist", () => {
+    const cardTips = {
+      dark_shackles: [strength],
+      "dark_shackles+": [strength, exhaust, retain],
+    };
+    expect(lookupCardTips(cardTips, "dark_shackles+")).toEqual([
+      strength,
+      exhaust,
+      retain,
+    ]);
+    expect(lookupCardTips(cardTips, "dark_shackles")).toEqual([strength]);
+  });
+
+  it("falls back to toggled upgrade key for CardView preview toggles", () => {
+    expect(
+      lookupCardTips({ dark_shackles: [strength, exhaust] }, "dark_shackles+"),
+    ).toEqual([strength, exhaust]);
+    expect(
+      lookupCardTips(
+        { "dark_shackles+": [strength, exhaust] },
+        "dark_shackles",
+      ),
+    ).toEqual([strength, exhaust]);
+  });
+
+  it("preserves variant suffix when looking up enchanted/afflicted keys", () => {
+    const enchantedKey = "dark_shackles+\u001Fsharp:2\u001F";
+    const cardTips = {
+      [enchantedKey]: [strength, exhaust],
+    };
+    expect(lookupCardTips(cardTips, enchantedKey)).toEqual([strength, exhaust]);
+    expect(
+      lookupCardTips(cardTips, "dark_shackles\u001Fsharp:2\u001F"),
+    ).toEqual([strength, exhaust]);
+  });
+
+  it("returns undefined when cardTips is absent or card is not present", () => {
+    expect(lookupCardTips(undefined, "dark_shackles+")).toBeUndefined();
+    expect(lookupCardTips({}, "dark_shackles+")).toBeUndefined();
   });
 });
