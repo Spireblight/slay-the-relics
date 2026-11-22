@@ -590,12 +590,13 @@ export function CardGrid(props: {
   cardTips?: Record<string, Tip[]>;
   game?: string;
 }) {
+  const isSts2 = props.game === "sts2";
   return (
     <div
       className={props.deckViewMode + " absolute justify-center w-screen"}
       style={{
-        top: "6.018%",
-        height: "93.982%",
+        top: isSts2 ? "7.407%" : "6.018%",
+        height: isSts2 ? "92.593%" : "93.982%",
         zIndex: 10,
         overflowY: "scroll",
         backgroundColor: "rgba(0,0,0,0.85)",
@@ -652,7 +653,9 @@ export function DeckButton(props: {
     switch (props.what) {
       case "deck":
         locationStyle.top = "0%";
-        locationStyle.right = "5.5%";
+        locationStyle.right = "5%";
+        locationStyle.width = "4.167%";
+        locationStyle.height = "7.407%";
         break;
       case "draw":
         locationStyle.top = "91%";
