@@ -188,7 +188,11 @@ export default function SpireMap(props: {
         <button
           className={"button-border"}
           id={"map_button"}
-          style={props.game === "sts2" ? { right: "9.5%" } : undefined}
+          style={
+            props.game === "sts2"
+              ? { right: "9.167%", width: "4.167%", height: "7.407%" }
+              : undefined
+          }
           onClick={() => {
             setShowMap((prev) => !prev);
           }}
