@@ -16,6 +16,7 @@ the extension using PubSub messaging.
 
 ### version 2.0.2 - under review
 
+- Performance / infrastructure: Migrated external card images and STS1 localisation JSON from `raw.githubusercontent.com` to a Cloudflare R2 CDN and switched STS2 card images to WebP for faster loading
 - Bug fix: Fixed STS2 boss/ancient map icons, double-boss map layout, and visited node highlights
 - Bug fix: Improved real-time state sync and resync handling when PubSub messages are dropped
 - Bug fix: Hid the "View Upgrade" toggle in the card inspector for un-upgradable cards
