@@ -1,4 +1,5 @@
 import { createContext } from "react";
+import { assetUrl } from "../../util/assets";
 
 export type Cards = Record<
   string,
@@ -31,7 +32,7 @@ export function localizationURL(
   game: GameKind,
   kind: LocalizationKind,
 ): string {
-  return `https://raw.githubusercontent.com/Spireblight/slay-the-relics/refs/heads/master/assets/${game}/localization/${kind}.json`;
+  return assetUrl(`assets/${game}/localization/${kind}.json`);
 }
 
 export interface LocalizationData extends Record<LocalizationKind, unknown> {

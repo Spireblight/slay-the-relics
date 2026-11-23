@@ -47,7 +47,7 @@ describe("resolveCanUpgrade", () => {
     const initial = resolveCanUpgrade("spoils_map", "sts2", true, null, cache);
     expect(initial.canUpgrade).toBe(false);
     expect(initial.probeUrl).toMatch(
-      /assets\/sts2\/card-images\/spoils_mapplusone\.png$/,
+      /assets\/sts2\/card-images\/spoils_mapplusone\.webp$/,
     );
 
     cache.set(initial.probeUrl!, false);
@@ -74,7 +74,7 @@ describe("resolveCanUpgrade", () => {
     );
     expect(res.canUpgrade).toBe(false);
     expect(res.probeUrl).toMatch(
-      /assets\/sts2\/card-images\/spoils_mapplusone\.png$/,
+      /assets\/sts2\/card-images\/spoils_mapplusone\.webp$/,
     );
   });
 

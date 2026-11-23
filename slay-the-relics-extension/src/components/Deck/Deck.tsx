@@ -12,9 +12,7 @@ import { ReturnButton } from "../Buttons/Buttons";
 import { Cards, LocalizationContext } from "../Localization/Localization";
 import ReactDOMServer from "react-dom/server";
 import { PlacesType } from "react-tooltip";
-
-const GITHUB_RAW_BASE =
-  "https://raw.githubusercontent.com/Spireblight/slay-the-relics/refs/heads/master/";
+import { assetUrl } from "../../util/assets";
 
 type DeckType = "deck" | "draw" | "discard" | "exhaust";
 type Bottle = "flame" | "lightning" | "tornado" | null;
@@ -113,13 +111,13 @@ function slaytabaseUrlForCard(card: string, upgraded: boolean): string {
     formattedCard += "plus1";
   }
 
-  return `https://raw.githubusercontent.com/Spireblight/slay-the-relics/refs/heads/master/assets/sts1/card-images/${formattedCard}.png`;
+  return assetUrl(`assets/sts1/card-images/${formattedCard}.png`);
 }
 
 function sts2UrlForCard(cardId: string, upgraded: boolean): string {
   const id = cardId.split("+")[0].toLowerCase();
   const suffix = upgraded ? "plusone" : "";
-  return `${GITHUB_RAW_BASE}assets/sts2/card-images/${id}${suffix}.png`;
+  return assetUrl(`assets/sts2/card-images/${id}${suffix}.webp`);
 }
 
 function cardImageUrl(name: string, upgraded: boolean, game?: string): string {

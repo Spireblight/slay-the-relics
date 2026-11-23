@@ -3,6 +3,7 @@ import { CSSProperties, ReactNode, useContext } from "react";
 import { PlacesType } from "react-tooltip";
 import { Keywords, LocalizationContext } from "../Localization/Localization";
 import ReactDOMServer from "react-dom/server";
+import { cardTipAssetUrl } from "../../util/assets";
 
 const COLOR_TAG_REGEX = /\[(gold|blue|red|green|purple)\](.*?)\[\/\1\]/g;
 
@@ -226,15 +227,12 @@ export function TipBody(props: {
   );
 }
 
-const GITHUB_RAW_BASE =
-  "https://raw.githubusercontent.com/Spireblight/slay-the-relics/refs/heads/master/";
-
 export function PowerTip(props: { tip: Tip; character: string }) {
   if (props.tip.type === "card" && props.tip.img) {
     return (
       <img
         className="powertip-card-img"
-        src={GITHUB_RAW_BASE + props.tip.img}
+        src={cardTipAssetUrl(props.tip.img)}
         alt={props.tip.header}
       />
     );
