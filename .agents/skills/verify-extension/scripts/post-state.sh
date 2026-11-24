@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# POSTs a JSON game-state fixture to a dev-mode backend (no auth required).
-# Usage: post-state.sh <fixture.json> [--backend URL] [--channel ID] [--index N] [--gzip]
 set -euo pipefail
 
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"

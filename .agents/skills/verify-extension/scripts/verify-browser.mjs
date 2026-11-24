@@ -143,6 +143,211 @@ async function waitForImagesLoaded(page, timeoutMs = 5000) {
     .catch(() => {});
 }
 
+async function verifyTooltip(ctx, { locator, checkName, screenshotName }) {
+  await locator.hover();
+  await ctx.page.waitForTimeout(250);
+  const tipText = (await ctx.page.locator("#root-tooltip").textContent())?.trim() || "";
+  ctx.addCheck(checkName, tipText.length > 0, tipText.slice(0, 120));
+  await ctx.screenshot(screenshotName);
+}
+
+async function dismissTooltip(page) {
+  await page.mouse.move(0, 0);
+  await page.waitForTimeout(150);
+}
+
+async function verifyInitialOverlay(ctx) {
+  const initialRelicCount = await ctx.page.locator("#relic-bar .hitbox").count();
+  ctx.addCheck(
+    "initial-snapshot-loaded",
+    initialRelicCount > 0,
+    `Rendered ${initialRelicCount} relic hitboxes`,
+  );
+  ctx.addCheck(
+    "sse-connected",
+    ctx.report.sse.connected,
+    `SSE HTTP status: ${ctx.report.sse.status}`,
+  );
+  await ctx.screenshot("01-overlay.png");
+  ctx.report.brokenImages.push(...(await collectBrokenImages(ctx.page, "overlay")));
+}
+
+async function verifyRelicAndHitboxTooltips(ctx) {
+  const firstRelic = ctx.page.locator("#relic-bar .hitbox").first();
+  if ((await firstRelic.count()) > 0) {
+    await verifyTooltip(ctx, {
+      locator: firstRelic,
+      checkName: "relic-tooltip",
+      screenshotName: "02-relic-tooltip.png",
+    });
+  }
+
+  const nonRelicHitboxes = ctx.page.locator(".App > div:not(#relic-bar) .hitbox");
+  const nonRelicCount = await nonRelicHitboxes.count();
+  if (nonRelicCount > 0) {
+    const potionHitbox = nonRelicHitboxes.first();
+    await verifyTooltip(ctx, {
+      locator: potionHitbox,
+      checkName: "potion-tooltip",
+      screenshotName: "03-potion-tooltip.png",
+    });
+  }
+
+  if (nonRelicCount > 1) {
+    const combatOrStaticHitbox = nonRelicHitboxes.last();
+    await verifyTooltip(ctx, {
+      locator: combatOrStaticHitbox,
+      checkName: "combat-or-static-tooltip",
+      screenshotName: "04-hitbox-tooltip.png",
+    });
+  }
+
+  await dismissTooltip(ctx.page);
+}
+
+async function verifyMapModal(ctx) {
+  const mapBtn = ctx.page.locator("#map_button");
+  if ((await mapBtn.count()) === 0) return;
+
+  await mapBtn.click();
+  await ctx.page.locator("#spire-map canvas").waitFor({ state: "visible", timeout: 5000 });
+  await ctx.page.waitForTimeout(500);
+  const mapPixels = await ctx.page.evaluate(() => {
+    const canvas = document.querySelector("#spire-map canvas");
+    if (!canvas) return { width: 0, height: 0, nonZeroAlpha: 0 };
+    const ctx2d = canvas.getContext("2d");
+    if (!ctx2d) return { width: canvas.width, height: canvas.height, nonZeroAlpha: 0 };
+    const data = ctx2d.getImageData(0, 0, canvas.width, canvas.height).data;
+    let nonZeroAlpha = 0;
+    for (let i = 3; i < data.length; i += 4) {
+      if (data[i] > 0) nonZeroAlpha++;
+    }
+    return { width: canvas.width, height: canvas.height, nonZeroAlpha };
+  });
+  ctx.addCheck(
+    "map-canvas-rendered",
+    mapPixels.width > 0 && mapPixels.height > 0 && mapPixels.nonZeroAlpha > 0,
+    `${mapPixels.width}x${mapPixels.height}, ${mapPixels.nonZeroAlpha} painted pixels`,
+  );
+  await ctx.screenshot("05-map.png");
+  await ctx.page.keyboard.press("Escape");
+  await ctx.page.waitForTimeout(150);
+}
+
+async function verifyDeckAndCardModals(ctx) {
+  const deckButtons = ctx.page.locator("#deck_button");
+  const deckBtnCount = await deckButtons.count();
+
+  if (deckBtnCount > 0) {
+    const masterDeckButton = deckButtons.nth(0);
+    await masterDeckButton.click();
+    await ctx.page.locator(".deck-card").first().waitFor({ state: "visible", timeout: 5000 });
+    await ctx.page.waitForTimeout(500);
+    await waitForImagesLoaded(ctx.page);
+    const cardCount = await ctx.page.locator(".deck-card:visible").count();
+    ctx.addCheck("deck-modal-opened", cardCount > 0, `${cardCount} visible cards`);
+    ctx.report.brokenImages.push(...(await collectBrokenImages(ctx.page, "deck")));
+    await ctx.screenshot("06-deck.png");
+
+    const targetIdx = cardCount > 1 ? 1 : 0;
+    await ctx.page.locator(".deck-card:visible").nth(targetIdx).click();
+    await ctx.page.locator(".card-view.flex").waitFor({ state: "visible", timeout: 5000 });
+    await ctx.page.waitForTimeout(300);
+    await waitForImagesLoaded(ctx.page);
+    ctx.addCheck("card-view-opened", true, `Opened card index ${targetIdx}`);
+    ctx.report.brokenImages.push(...(await collectBrokenImages(ctx.page, "card-view")));
+    await ctx.screenshot("07-card-view.png");
+
+    await ctx.page.keyboard.press("Escape");
+    await ctx.page.waitForTimeout(150);
+    await ctx.page.keyboard.press("Escape");
+    await ctx.page.waitForTimeout(150);
+  }
+
+  const drawPileButton = deckButtons.nth(1);
+  if (deckBtnCount > 1 && (await drawPileButton.isVisible())) {
+    await drawPileButton.click();
+    await ctx.page.locator(".deck-card:visible").first().waitFor({ state: "visible", timeout: 5000 });
+    await ctx.page.waitForTimeout(350);
+    await waitForImagesLoaded(ctx.page);
+    const drawCount = await ctx.page.locator(".deck-card:visible").count();
+    ctx.addCheck("draw-pile-opened", drawCount > 0, `${drawCount} visible draw-pile cards`);
+    await ctx.screenshot("08-draw-pile.png");
+    await ctx.page.keyboard.press("Escape");
+    await ctx.page.waitForTimeout(150);
+  }
+}
+
+async function verifyLiveSsePatch(ctx) {
+  if (!ctx.opts.patch || !ctx.opts.backendUrl) return;
+
+  const sseBefore = ctx.report.sse.events.length;
+  const relicsBefore = await ctx.page.locator("#relic-bar .hitbox").count();
+  const patchedPayload = await postStateFile(
+    ctx.opts.backendUrl,
+    ctx.opts.channel,
+    ctx.opts.patch,
+  );
+  const expectedRelics = Array.isArray(patchedPayload.relics)
+    ? patchedPayload.relics.length
+    : relicsBefore;
+
+  const deadline = Date.now() + 5000;
+  while (Date.now() < deadline) {
+    const curRelics = await ctx.page.locator("#relic-bar .hitbox").count();
+    if (ctx.report.sse.events.length > sseBefore && curRelics === expectedRelics) {
+      break;
+    }
+    await ctx.page.waitForTimeout(100);
+  }
+
+  const relicsAfter = await ctx.page.locator("#relic-bar .hitbox").count();
+  const sseDelta = ctx.report.sse.events.length - sseBefore;
+  ctx.addCheck(
+    "live-sse-patch",
+    sseDelta > 0 && relicsAfter === expectedRelics,
+    `SSE frames received: ${sseDelta}, relics: ${relicsBefore} -> ${relicsAfter} (expected ${expectedRelics})`,
+  );
+
+  await ctx.screenshot("09-after-patch.png");
+
+  if (relicsAfter > 0) {
+    await verifyTooltip(ctx, {
+      locator: ctx.page.locator("#relic-bar .hitbox").last(),
+      checkName: "patched-relic-tooltip",
+      screenshotName: "10-patched-relic-tooltip.png",
+    });
+  }
+}
+
+async function runDefaultChecks(ctx) {
+  await verifyInitialOverlay(ctx);
+  await verifyRelicAndHitboxTooltips(ctx);
+  await verifyMapModal(ctx);
+  await verifyDeckAndCardModals(ctx);
+  await verifyLiveSsePatch(ctx);
+}
+
+async function runCustomActions(ctx, cdp) {
+  if (!ctx.opts.actions) return;
+
+  const mod = await import(pathToFileURL(path.resolve(ctx.opts.actions)).href);
+  if (typeof mod.default !== "function") {
+    throw new Error(`--actions module ${ctx.opts.actions} must have a default export function`);
+  }
+  await mod.default({
+    page: ctx.page,
+    cdp,
+    backendUrl: ctx.opts.backendUrl,
+    channel: ctx.opts.channel,
+    outDir: ctx.opts.outDir,
+    postState: (filePath) => postStateFile(ctx.opts.backendUrl, ctx.opts.channel, filePath),
+    screenshot: ctx.screenshot,
+    addCheck: ctx.addCheck,
+    report: ctx.report,
+  });
+}
+
 async function main() {
   const opts = parseArgs(process.argv.slice(2));
   const viewport = parseViewport(opts.viewport);
@@ -270,188 +475,13 @@ async function main() {
     await page.waitForTimeout(400);
     await waitForImagesLoaded(page);
 
+    const ctx = { page, report, opts, screenshot, addCheck };
+
     if (!opts.skipDefaultChecks) {
-      const initialRelicCount = await page.locator("#relic-bar .hitbox").count();
-      addCheck(
-        "initial-snapshot-loaded",
-        initialRelicCount > 0,
-        `Rendered ${initialRelicCount} relic hitboxes`,
-      );
-      addCheck(
-        "sse-connected",
-        report.sse.connected,
-        `SSE HTTP status: ${report.sse.status}`,
-      );
-
-      // 1. Base overlay
-      await screenshot("01-overlay.png");
-      report.brokenImages.push(...(await collectBrokenImages(page, "overlay")));
-
-      // 2. Relic tooltip
-      const firstRelic = page.locator("#relic-bar .hitbox").first();
-      if ((await firstRelic.count()) > 0) {
-        await firstRelic.hover();
-        await page.waitForTimeout(250);
-        const tipText = (await page.locator("#root-tooltip").textContent())?.trim() || "";
-        addCheck("relic-tooltip", tipText.length > 0, tipText.slice(0, 120));
-        await screenshot("02-relic-tooltip.png");
-      }
-
-      // 3. Potion tooltip (hitboxes directly under App > div that are not inside #relic-bar)
-      const nonRelicHitboxes = page.locator(".App > div:not(#relic-bar) .hitbox");
-      const nonRelicCount = await nonRelicHitboxes.count();
-      if (nonRelicCount > 0) {
-        await nonRelicHitboxes.first().hover();
-        await page.waitForTimeout(250);
-        const tipText = (await page.locator("#root-tooltip").textContent())?.trim() || "";
-        addCheck("potion-tooltip", tipText.length > 0, tipText.slice(0, 120));
-        await screenshot("03-potion-tooltip.png");
-      }
-
-      // 4. Combat / static hitbox tooltip (last non-relic hitbox)
-      if (nonRelicCount > 1) {
-        const lastHitbox = nonRelicHitboxes.last();
-        await lastHitbox.hover();
-        await page.waitForTimeout(250);
-        const tipText = (await page.locator("#root-tooltip").textContent())?.trim() || "";
-        addCheck("combat-or-static-tooltip", tipText.length > 0, tipText.slice(0, 120));
-        await screenshot("04-hitbox-tooltip.png");
-      }
-
-      // Dismiss tooltip
-      await page.mouse.move(0, 0);
-      await page.waitForTimeout(150);
-
-      // 5. Map modal
-      const mapBtn = page.locator("#map_button");
-      if ((await mapBtn.count()) > 0) {
-        await mapBtn.click();
-        await page.locator("#spire-map canvas").waitFor({ state: "visible", timeout: 5000 });
-        await page.waitForTimeout(500);
-        const mapPixels = await page.evaluate(() => {
-          const canvas = document.querySelector("#spire-map canvas");
-          if (!canvas) return { width: 0, height: 0, nonZeroAlpha: 0 };
-          const ctx = canvas.getContext("2d");
-          if (!ctx) return { width: canvas.width, height: canvas.height, nonZeroAlpha: 0 };
-          const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-          let nonZeroAlpha = 0;
-          for (let i = 3; i < data.length; i += 4) {
-            if (data[i] > 0) nonZeroAlpha++;
-          }
-          return { width: canvas.width, height: canvas.height, nonZeroAlpha };
-        });
-        addCheck(
-          "map-canvas-rendered",
-          mapPixels.width > 0 && mapPixels.height > 0 && mapPixels.nonZeroAlpha > 0,
-          `${mapPixels.width}x${mapPixels.height}, ${mapPixels.nonZeroAlpha} painted pixels`,
-        );
-        await screenshot("05-map.png");
-        await page.keyboard.press("Escape");
-        await page.waitForTimeout(150);
-      }
-
-      // 6. Master Deck modal
-      const deckButtons = page.locator("#deck_button");
-      const deckBtnCount = await deckButtons.count();
-      if (deckBtnCount > 0) {
-        await deckButtons.nth(0).click();
-        await page.locator(".deck-card").first().waitFor({ state: "visible", timeout: 5000 });
-        await page.waitForTimeout(500);
-        await waitForImagesLoaded(page);
-        const cardCount = await page.locator(".deck-card:visible").count();
-        addCheck("deck-modal-opened", cardCount > 0, `${cardCount} visible cards`);
-        report.brokenImages.push(...(await collectBrokenImages(page, "deck")));
-        await screenshot("06-deck.png");
-
-        // 7. Card zoom view
-        const targetIdx = cardCount > 1 ? 1 : 0;
-        await page.locator(".deck-card:visible").nth(targetIdx).click();
-        await page.locator(".card-view.flex").waitFor({ state: "visible", timeout: 5000 });
-        await page.waitForTimeout(300);
-        await waitForImagesLoaded(page);
-        addCheck("card-view-opened", true, `Opened card index ${targetIdx}`);
-        report.brokenImages.push(...(await collectBrokenImages(page, "card-view")));
-        await screenshot("07-card-view.png");
-
-        await page.keyboard.press("Escape");
-        await page.waitForTimeout(150);
-        await page.keyboard.press("Escape");
-        await page.waitForTimeout(150);
-      }
-
-      // 8. Draw Pile modal (second #deck_button)
-      if (deckBtnCount > 1 && (await deckButtons.nth(1).isVisible())) {
-        await deckButtons.nth(1).click();
-        await page.locator(".deck-card:visible").first().waitFor({ state: "visible", timeout: 5000 });
-        await page.waitForTimeout(350);
-        await waitForImagesLoaded(page);
-        const drawCount = await page.locator(".deck-card:visible").count();
-        addCheck("draw-pile-opened", drawCount > 0, `${drawCount} visible draw-pile cards`);
-        await screenshot("08-draw-pile.png");
-        await page.keyboard.press("Escape");
-        await page.waitForTimeout(150);
-      }
-
-      // 9. Live SSE patch verification
-      if (opts.patch && opts.backendUrl) {
-        const sseBefore = report.sse.events.length;
-        const relicsBefore = await page.locator("#relic-bar .hitbox").count();
-        const patchedPayload = await postStateFile(
-          opts.backendUrl,
-          opts.channel,
-          opts.patch,
-        );
-        const expectedRelics = Array.isArray(patchedPayload.relics)
-          ? patchedPayload.relics.length
-          : relicsBefore;
-
-        const deadline = Date.now() + 5000;
-        while (Date.now() < deadline) {
-          const curRelics = await page.locator("#relic-bar .hitbox").count();
-          if (report.sse.events.length > sseBefore && curRelics === expectedRelics) {
-            break;
-          }
-          await page.waitForTimeout(100);
-        }
-
-        const relicsAfter = await page.locator("#relic-bar .hitbox").count();
-        const sseDelta = report.sse.events.length - sseBefore;
-        addCheck(
-          "live-sse-patch",
-          sseDelta > 0 && relicsAfter === expectedRelics,
-          `SSE frames received: ${sseDelta}, relics: ${relicsBefore} -> ${relicsAfter} (expected ${expectedRelics})`,
-        );
-
-        await screenshot("09-after-patch.png");
-
-        if (relicsAfter > 0) {
-          await page.locator("#relic-bar .hitbox").last().hover();
-          await page.waitForTimeout(250);
-          const patchedTip = (await page.locator("#root-tooltip").textContent())?.trim() || "";
-          addCheck("patched-relic-tooltip", patchedTip.length > 0, patchedTip.slice(0, 120));
-          await screenshot("10-patched-relic-tooltip.png");
-        }
-      }
+      await runDefaultChecks(ctx);
     }
 
-    // Optional custom verification hook
-    if (opts.actions) {
-      const mod = await import(pathToFileURL(path.resolve(opts.actions)).href);
-      if (typeof mod.default !== "function") {
-        throw new Error(`--actions module ${opts.actions} must have a default export function`);
-      }
-      await mod.default({
-        page,
-        cdp,
-        backendUrl: opts.backendUrl,
-        channel: opts.channel,
-        outDir: opts.outDir,
-        postState: (filePath) => postStateFile(opts.backendUrl, opts.channel, filePath),
-        screenshot,
-        addCheck,
-        report,
-      });
-    }
+    await runCustomActions(ctx, cdp);
   } catch (err) {
     report.ok = false;
     report.fatalError = err instanceof Error ? err.message : String(err);
@@ -463,7 +493,7 @@ async function main() {
         report.screenshots.push(failPath);
       }
     } catch {
-      // ignore screenshot failure
+      report.fatalErrorScreenshotFailed = true;
     }
     throw err;
   } finally {

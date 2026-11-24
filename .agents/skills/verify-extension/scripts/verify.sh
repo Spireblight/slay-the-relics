@@ -1,8 +1,4 @@
 #!/usr/bin/env bash
-# End-to-end verification harness for the Slay the Relics Twitch extension.
-# Starts an isolated dev-mode backend (DEV_MODE=true PUBSUB_MODE=sse, no auth/Redis needed)
-# and Vite frontend on ephemeral local ports, seeds a game-state fixture, drives Chromium via
-# Playwright to capture screenshots + DevTools telemetry, and cleans up on exit.
 set -euo pipefail
 
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"

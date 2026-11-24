@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
-# Resolves the default Twitch channel ID for local verification:
-#   1. Explicit --channel / CHANNEL_ID env var
-#   2. $STRE_CONFIG_DIR or $XDG_CONFIG_HOME or ~/.config /SlayTheRelicsExporter/config.dev.json
-#   3. .../SlayTheRelicsExporter/config.json
-#   4. App.tsx built-in fallback ("59817220")
 set -euo pipefail
+
+DEFAULT_CHANNEL_ID="59817220"
 
 if [[ -n "${CHANNEL_ID:-}" ]]; then
   printf '%s\n' "${CHANNEL_ID}"
@@ -39,4 +36,4 @@ for cfg in "${MOD_CONFIG_DIR}/config.dev.json" "${MOD_CONFIG_DIR}/config.json"; 
   fi
 done
 
-printf '%s\n' "59817220"
+printf '%s\n' "${DEFAULT_CHANNEL_ID}"
