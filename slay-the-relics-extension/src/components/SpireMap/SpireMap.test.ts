@@ -32,7 +32,6 @@ describe("computeSts2MapLayout", () => {
     expect(bossLoc.r).toBe(layout.bossRadius);
     expect(bossLoc.r).toBeGreaterThan(100);
 
-    // Boss circle fits inside top of canvas and above top normal row
     const topRowLoc = layout.getLocation(13, 3);
     expect(layout.bossCenter.y - bossLoc.r).toBeGreaterThan(0);
     expect(layout.bossCenter.y + bossLoc.r).toBeLessThan(topRowLoc.y);
@@ -63,13 +62,11 @@ describe("computeSts2MapLayout", () => {
     expect(boss1Loc.r).toBe(layout.bossRadius);
     expect(boss2Loc.r).toBe(layout.bossRadius);
 
-    // Second boss is above first boss with non-overlapping circles
     expect(layout.secondBossCenter!.y - boss2Loc.r).toBeGreaterThan(0);
     expect(layout.secondBossCenter!.y + boss2Loc.r).toBeLessThan(
       layout.bossCenter.y - boss1Loc.r,
     );
 
-    // First boss sits cleanly above top normal row
     const topRowLoc = layout.getLocation(13, 3);
     expect(layout.bossCenter.y + boss1Loc.r).toBeLessThan(topRowLoc.y);
   });

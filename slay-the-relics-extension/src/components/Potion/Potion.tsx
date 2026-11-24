@@ -2,8 +2,8 @@ import { PowerTipStrip, Tip } from "../Tip/Tip";
 import { LocalizationContext, Potions } from "../Localization/Localization";
 import { useContext } from "react";
 
-const POTION_HITBOX_WIDTH = 2.916; // %
-const POTION_HITBOX_WIDTH_STS2 = 3.22; // %
+const POTION_HITBOX_WIDTH_PCT = 2.916;
+const POTION_HITBOX_WIDTH_STS2_PCT = 3.22;
 
 function getPotionTips(
   potion: string,
@@ -36,7 +36,9 @@ export default function PotionBar(props: {
   const potionsLoc = useContext(LocalizationContext).potions;
   const isSts2 = props.game === "sts2";
   const potionY = isSts2 ? "1.5%" : "0%";
-  const hitboxW = isSts2 ? POTION_HITBOX_WIDTH_STS2 : POTION_HITBOX_WIDTH;
+  const hitboxW = isSts2
+    ? POTION_HITBOX_WIDTH_STS2_PCT
+    : POTION_HITBOX_WIDTH_PCT;
   const offsetPx = isSts2 ? 4 : 0;
   return (
     <div>

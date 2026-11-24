@@ -14,9 +14,7 @@ export default defineConfig({
       input: {
         VideoOverlay: resolve(__dirname, "video_overlay.html"),
       },
-      output: {
-        // Vite will output HTML to dist by default
-      },
+      output: {},
     },
     outDir: "dist",
     emptyOutDir: true,

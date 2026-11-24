@@ -29,7 +29,6 @@ export function renderColorTags(text: string): React.ReactNode[] | null {
   let match: RegExpExecArray | null;
   let found = false;
 
-  // Reset regex state
   COLOR_TAG_REGEX.lastIndex = 0;
 
   while ((match = COLOR_TAG_REGEX.exec(text)) !== null) {
@@ -55,7 +54,6 @@ export function renderColorTags(text: string): React.ReactNode[] | null {
     parts.push(text.slice(lastIndex));
   }
 
-  // Replace \n in text nodes with <br /> elements
   const withBreaks: React.ReactNode[] = [];
   parts.forEach((part, i) => {
     if (typeof part === "string" && part.includes("\n")) {
@@ -115,7 +113,6 @@ function EnergyOrbElement(props: { character: string; keyP: string }) {
       break;
   }
 
-  // the span with a space after the img is intended
   return (
     <span key={props.keyP}>
       <img
@@ -123,7 +120,6 @@ function EnergyOrbElement(props: { character: string; keyP: string }) {
         alt={"Orb"}
         className={"inline-block energy-orb-img"}
       />
-      <span> </span>
     </span>
   );
 }
@@ -197,7 +193,6 @@ export function TipBody(props: {
   raw: string;
   className?: string;
 }) {
-  // Try STS2 color tag rendering first
   const colorTagNodes = renderColorTags(props.raw);
   if (colorTagNodes) {
     return (
@@ -207,7 +202,6 @@ export function TipBody(props: {
     );
   }
 
-  // Fall back to STS1 space-delimited markup
   const parts = props.raw.split(" ");
   return (
     <div className={props.className ? props.className : ""}>

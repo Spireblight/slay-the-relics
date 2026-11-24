@@ -118,7 +118,6 @@ describe("probeImageExists", () => {
     expect(onFail).toHaveBeenCalledWith(false);
     expect(cache.get("https://example.com/missing.png")).toBe(false);
 
-    // Subsequent calls return cached result immediately without invoking loader
     const p3 = probeImageExists(
       "https://example.com/missing.png",
       cache,

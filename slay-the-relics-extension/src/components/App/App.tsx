@@ -96,8 +96,35 @@ function getDevChannel(): string {
   return "59817220";
 }
 
-/* eslint-disable @typescript-eslint/no-empty-object-type */
-interface AppProps {}
+function withDefaultOptionalRunFields(state: RunState): RunState {
+  return {
+    secondBoss: "",
+    ancient: "",
+    ...state,
+  };
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function mergePartialRunState(prev: RunState, patch: RunState): RunState {
+  const merged: Record<string, unknown> = { ...prev };
+  for (const [key, value] of Object.entries(patch)) {
+    if (value === null || value === undefined) {
+      continue;
+    }
+    const prevValue = merged[key];
+    if (isPlainRecord(value) && isPlainRecord(prevValue)) {
+      merged[key] = { ...prevValue, ...value };
+    } else {
+      merged[key] = value;
+    }
+  }
+  return merged as RunState;
+}
+
+type AppProps = Record<string, never>;
 
 export default class App extends Component<AppProps, AppState> {
   private readonly twitch: typeof Twitch.ext | null;
@@ -108,29 +135,19 @@ export default class App extends Component<AppProps, AppState> {
   constructor(props: AppProps) {
     super(props);
 
-    //if the extension is running on twitch or dev rig, set the shorthand here. otherwise, set to null.
     this.twitch = window.Twitch ? window.Twitch.ext : null;
     this.eventSource = null;
     this.initialLoadSeq = 0;
     this.sync = new GameStateSyncController<RunState>({
       fetchSnapshot: () => this.fetchSnapshot(),
       applyFullState: (state) => {
-        this.setRunState({
-          secondBoss: "",
-          ancient: "",
-          ...state,
-        });
+        this.setRunState(withDefaultOptionalRunFields(state));
       },
       applyPatch: (patch) => {
         this.setStateUpdate(patch as RunState);
       },
       onResetSnapshot: (snapshot) => {
-        // Full state snapshot: clear optional STS2 fields that may be omitted when empty
-        this.setStateUpdate({
-          secondBoss: "",
-          ancient: "",
-          ...snapshot,
-        });
+        this.setStateUpdate(withDefaultOptionalRunFields(snapshot));
       },
     });
     this.state = {
@@ -208,33 +225,10 @@ export default class App extends Component<AppProps, AppState> {
   }
 
   setStateUpdate(js: RunState) {
-    // Only include keys with non-null values
-    const filtered = Object.fromEntries(
-      Object.entries(js).filter(
-        ([_, val]) => val !== null && val !== undefined,
-      ),
-    );
-
-    this.setState((prev) => {
-      const merged = { ...prev.runState };
-      for (const [key, value] of Object.entries(filtered)) {
-        const prevValue = merged[key];
-        // Merge map fields per-key so partial updates (e.g. one changed relic) don't wipe the rest
-        if (
-          value !== null &&
-          typeof value === "object" &&
-          !Array.isArray(value) &&
-          prevValue !== null &&
-          typeof prevValue === "object" &&
-          !Array.isArray(prevValue)
-        ) {
-          merged[key] = { ...prevValue, ...value };
-        } else {
-          merged[key] = value;
-        }
-      }
-      return { ...prev, runState: merged as RunState };
-    });
+    this.setState((prev) => ({
+      ...prev,
+      runState: mergePartialRunState(prev.runState, js),
+    }));
   }
 
   handleMessage(body: string) {
@@ -298,7 +292,6 @@ export default class App extends Component<AppProps, AppState> {
     let hasOpened = false;
 
     es.addEventListener("open", () => {
-      // On reconnect (e.g. after backend hot reload), resync full state snapshot.
       if (hasOpened) {
         this.fetchState().catch((err) => {
           console.error("Failed to resync state after SSE reconnect", err);
@@ -368,7 +361,6 @@ export default class App extends Component<AppProps, AppState> {
   render() {
     const styles: CSSProperties = {
       background: import.meta.env.PROD ? "transparent" : "darkgrey",
-      //background: "transparent",
     };
     return (
       <LocalizationContext value={this.state.localization}>

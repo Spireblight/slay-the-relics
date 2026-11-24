@@ -8,15 +8,15 @@
   --card-view-card-width: 31.388rem;
   --card-view-card-height: 40.4405rem;
 
-  font-size: 2vh; /* Pixel values are based on height 1080px therefore 1rem = 21.6px for this resolution */
+  font-size: 2vh;
   font-family: "Kreon", serif;
 }
 
 .App {
-  font-size: 2vh; /* Pixel values are based on height 1080px therefore 1rem = 21.6px for this resolution */
-  -webkit-user-select: none; /* Safari */
-  -moz-user-select: none; /* Firefox */
-  -ms-user-select: none; /* IE10+/Edge */
+  font-size: 2vh;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 
   height: 100vh;
   font-family: "Kreon", serif;
@@ -42,7 +42,7 @@ div.powertip {
   text-shadow: 0.139rem 0.139rem 0px rgba(0, 0, 0, 0.3);
   line-height: 1.17;
   border: 0.324rem solid;
-  border-radius: 0.63rem; /*0.694rem;*/
+  border-radius: 0.63rem;
   -moz-border-radius: 0.63rem;
   -webkit-border-radius: 0.63rem;
   border-top-color: rgb(83, 105, 110);
@@ -93,6 +93,7 @@ img.energy-orb-img {
   vertical-align: top;
   width: 1.111rem;
   height: 1.111rem;
+  margin-right: 0.25em;
 }
 
 img.energy-orb-img-scalable {
@@ -135,7 +136,6 @@ div.powertip-header {
   z-index: 9;
   background-size: contain;
   background-position-y: -0.046rem;
-  /* border: 1px solid rgba(255,255,255,0.0); */
   box-sizing: border-box;
   background-repeat: no-repeat;
 }
@@ -198,11 +198,10 @@ div.powertip-header {
   width: 3.438%;
   height: 8%;
   top: 0%;
-  right: 8.322%; /*.053*/
+  right: 8.322%;
   z-index: 9;
   background-size: contain;
   background-position-y: -0.046rem;
-  /* border: 1px solid rgba(255,255,255,0.0); */
   box-sizing: border-box;
   background-repeat: no-repeat;
 }
@@ -348,7 +347,6 @@ div.powertip-header {
   color: rgb(53, 255, 255);
 }
 
-/* STS2 BBCode color tags */
 .sts2-gold {
   color: rgb(239, 200, 81);
 }

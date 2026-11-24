@@ -65,7 +65,7 @@ describe("GameStateSyncController", () => {
       applyFullState: (s) => fullStates.push(s),
       applyPatch: vi.fn(),
       onResetSnapshot: vi.fn(),
-      random: () => 0.4, // 400ms jitter
+      random: () => 0.4,
       maxResyncJitterMs: 1000,
     });
 
@@ -73,11 +73,9 @@ describe("GameStateSyncController", () => {
     ctrl.handleParsedMessage({ gameStateIndex: 6, floor: 6 });
     ctrl.handleParsedMessage({ gameStateIndex: 7, floor: 7 });
 
-    // Nothing fetched before jitter expires
     await vi.advanceTimersByTimeAsync(399);
     expect(fetchSnapshot).not.toHaveBeenCalled();
 
-    // Single fetch fires at 400ms
     await vi.advanceTimersByTimeAsync(1);
     expect(fetchSnapshot).toHaveBeenCalledTimes(1);
     expect(ctrl.currentIndex).toBe(7);
@@ -96,15 +94,12 @@ describe("GameStateSyncController", () => {
       onResetSnapshot: vi.fn(),
     });
 
-    // Initial fetch starts at index 0
     const fetchPromise = ctrl.fetchNow();
 
-    // Meanwhile contiguous patches advance to index 2
     ctrl.handleParsedMessage({ gameStateIndex: 1, floor: 1 });
     ctrl.handleParsedMessage({ gameStateIndex: 2, floor: 2 });
     expect(ctrl.currentIndex).toBe(2);
 
-    // Older HTTP response (index 1) resolves late and must be ignored
     deferred.resolve({ index: 1, state: { gameStateIndex: 1, floor: 1 } });
     await fetchPromise;
 
@@ -130,7 +125,6 @@ describe("GameStateSyncController", () => {
     const fetchPromise = ctrl.fetchNow();
     ctrl.handleParsedMessage({ gameStateIndex: 0, character: "Silent" });
 
-    // Stale fetch from prior run (index 42) must not overwrite new run at index 0
     deferred.resolve({
       index: 42,
       state: { gameStateIndex: 42, character: "Ironclad" },
@@ -141,7 +135,6 @@ describe("GameStateSyncController", () => {
     expect(fullStates).toHaveLength(0);
     expect(resets).toHaveLength(1);
 
-    // Pending jitter timer should also be cancelled by index === 0
     const fetchSnapshot2 =
       vi.fn<() => Promise<SnapshotResult<MockState> | null>>();
     const ctrl2 = new GameStateSyncController<MockState>({
@@ -173,7 +166,7 @@ describe("GameStateSyncController", () => {
       applyFullState: (s) => fullStates.push(s),
       applyPatch: vi.fn(),
       onResetSnapshot: vi.fn(),
-      random: () => 0.2, // 200ms jitter
+      random: () => 0.2,
       maxResyncJitterMs: 1000,
     });
 
@@ -181,10 +174,8 @@ describe("GameStateSyncController", () => {
     await vi.advanceTimersByTimeAsync(200);
     expect(fetchSnapshot).toHaveBeenCalledTimes(1);
 
-    // While first fetch is still in flight, index 8 arrives
     ctrl.handleParsedMessage({ gameStateIndex: 8 });
 
-    // First fetch resolves with index 5 (< 8), so a follow-up resync is scheduled
     first.resolve({ index: 5, state: { gameStateIndex: 5, floor: 5 } });
     await Promise.resolve();
     await vi.advanceTimersByTimeAsync(200);
@@ -234,29 +225,24 @@ describe("GameStateSyncController", () => {
       onResetSnapshot: vi.fn(),
     });
 
-    // Mount #1 starts initial fetch
     ctrl.activate();
     const mount1Fetch = ctrl.fetchNow();
     expect(fetchSnapshot).toHaveBeenCalledTimes(1);
 
-    // StrictMode simulated unmount + remount on the same instance
     ctrl.dispose();
     ctrl.activate();
     const mount2Fetch = ctrl.fetchNow();
     expect(fetchSnapshot).toHaveBeenCalledTimes(2);
 
-    // Mount #1's stale response resolves after remount -> must be ignored
     first.resolve({ index: 10, state: { gameStateIndex: 10, floor: 1 } });
     await mount1Fetch;
     expect(fullStates).toHaveLength(0);
 
-    // Mount #2's response resolves -> applied cleanly
     second.resolve({ index: 12, state: { gameStateIndex: 12, floor: 3 } });
     await mount2Fetch;
     expect(ctrl.currentIndex).toBe(12);
     expect(fullStates).toEqual([{ gameStateIndex: 12, floor: 3 }]);
 
-    // Subsequent contiguous patches apply normally
     ctrl.handleParsedMessage({ gameStateIndex: 13, floor: 4 });
     expect(ctrl.currentIndex).toBe(13);
     expect(patches).toHaveLength(1);

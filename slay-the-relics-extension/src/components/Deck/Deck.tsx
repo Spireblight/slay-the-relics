@@ -26,10 +26,14 @@ function BottleURL(bottle: Bottle): string | null {
 
 export type CardData = string | [string, number];
 
-// Card keys may contain \u001F-separated variant info: "id\u001FenchantmentId:amount\u001FafflictionId"
-// For STS1, the key is the display name. For STS2, the key is the card ID (e.g. "strike_ironclad").
-// cardKey returns the full key (for dictionary lookups), cardName returns the base name/id only.
-const KEY_SEPARATOR = "\u001F";
+const CARD_VARIANT_SEPARATOR = "\u001F";
+
+function splitCardKey(key: string): { base: string; variantSuffix: string } {
+  const sep = key.indexOf(CARD_VARIANT_SEPARATOR);
+  return sep === -1
+    ? { base: key, variantSuffix: "" }
+    : { base: key.substring(0, sep), variantSuffix: key.substring(sep) };
+}
 
 function cardKey(card: CardData): string {
   if (typeof card === "string") {
@@ -38,17 +42,15 @@ function cardKey(card: CardData): string {
   return card[0];
 }
 
-function cardName(card: CardData): string {
-  const key = cardKey(card);
-  const sep = key.indexOf(KEY_SEPARATOR);
-  return sep === -1 ? key : key.substring(0, sep);
+function cardBaseId(card: CardData): string {
+  return splitCardKey(cardKey(card)).base;
 }
 
 function cardEnchantment(
   card: CardData,
 ): { id: string; amount: number } | null {
   const key = cardKey(card);
-  const parts = key.split(KEY_SEPARATOR);
+  const parts = key.split(CARD_VARIANT_SEPARATOR);
   if (parts.length < 2 || !parts[1]) return null;
   const [id, amountStr] = parts[1].split(":");
   return { id, amount: amountStr ? parseInt(amountStr, 10) : 0 };
@@ -56,7 +58,7 @@ function cardEnchantment(
 
 function cardAffliction(card: CardData): string | null {
   const key = cardKey(card);
-  const parts = key.split(KEY_SEPARATOR);
+  const parts = key.split(CARD_VARIANT_SEPARATOR);
   if (parts.length < 3 || !parts[2]) return null;
   return parts[2];
 }
@@ -86,10 +88,8 @@ function cardValue(card: CardData): number {
 }
 
 function withCardName(card: CardData, fn: (n: string) => string): CardData {
-  const key = cardKey(card);
-  const sep = key.indexOf(KEY_SEPARATOR);
-  const suffix = sep === -1 ? "" : key.substring(sep);
-  const newName: string = fn(cardName(card)) + suffix;
+  const { base, variantSuffix } = splitCardKey(cardKey(card));
+  const newName: string = fn(base) + variantSuffix;
   if (typeof card === "string") {
     return newName;
   }
@@ -199,7 +199,7 @@ export function resolveCanUpgrade(
   if (!card) {
     return { canUpgrade: false, probeUrl: null };
   }
-  const name = cardName(card);
+  const name = cardBaseId(card);
   if (name.includes("+")) {
     return { canUpgrade: true, probeUrl: null };
   }
@@ -242,12 +242,10 @@ export function lookupCardTips(
   if (cardTips[key] !== undefined) {
     return cardTips[key];
   }
-  const sep = key.indexOf(KEY_SEPARATOR);
-  const base = sep === -1 ? key : key.substring(0, sep);
-  const suffix = sep === -1 ? "" : key.substring(sep);
+  const { base, variantSuffix } = splitCardKey(key);
   const altKey = base.includes("+")
-    ? base.replaceAll("+", "") + suffix
-    : base + "+" + suffix;
+    ? base.replaceAll("+", "") + variantSuffix
+    : base + "+" + variantSuffix;
   return cardTips[altKey];
 }
 
@@ -260,7 +258,7 @@ export function Card(props: {
   cardTips?: Record<string, Tip[]>;
   game?: string;
 }) {
-  const name = cardName(props.data);
+  const name = cardBaseId(props.data);
   const key = cardKey(props.data);
   const upgraded = name.includes("+");
   const slaytabaseName = formatForSlaytabase(name);
@@ -274,7 +272,6 @@ export function Card(props: {
     backgroundImage: `url(${imgUrl})`,
   };
 
-  // Card tips: use cardTips override if available, else fall back to localization lookup
   const tipsOverride = lookupCardTips(props.cardTips, key);
   let description: string;
   let tips: Tip[];
@@ -477,7 +474,7 @@ export function CardView(props: {
 
   const isUpgrade = (i: number) => {
     return (
-      props.upgradeChecked.get(i) ?? cardName(props.cards[i]).includes("+")
+      props.upgradeChecked.get(i) ?? cardBaseId(props.cards[i]).includes("+")
     );
   };
   const showUpgrade = canUpgrade && isUpgrade(props.selectedIndex);

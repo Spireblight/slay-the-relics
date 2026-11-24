@@ -257,7 +257,6 @@ function MapCanvas(props: {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.scale(scalingFactor, scalingFactor);
 
-        // 1. Draw connector lines
         for (let i = 0; i < nodes.length; i++) {
           for (let j = 0; j < nodes[i].length; j++) {
             const node = nodes[i][j];
@@ -283,7 +282,6 @@ function MapCanvas(props: {
               );
             }
 
-            // Connect top row to first boss
             if (i === nodes.length - 1 && node.type !== "*") {
               drawDashedConnector(
                 ctx,
@@ -296,7 +294,6 @@ function MapCanvas(props: {
           }
         }
 
-        // Connect first boss to second boss in double-boss mode
         if (hasSecondBoss && secondBossCenter) {
           drawDashedConnector(
             ctx,
@@ -307,7 +304,6 @@ function MapCanvas(props: {
           );
         }
 
-        // 2. Draw node icons (regular nodes + Ancient)
         for (let i = 0; i < nodes.length; i++) {
           for (let j = 0; j < nodes[i].length; j++) {
             const node = nodes[i][j];
@@ -341,7 +337,6 @@ function MapCanvas(props: {
           }
         }
 
-        // 3. Draw boss icon(s)
         const drawBossIcon = (
           bossId: string | undefined,
           center: { x: number; y: number } | null,
@@ -359,7 +354,6 @@ function MapCanvas(props: {
           drawBossIcon(props.secondBoss, secondBossCenter);
         }
 
-        // 4. Draw visited path highlights on top
         for (const pathNode of path) {
           const node = getLocation(pathNode[1], pathNode[0]);
           ctx.beginPath();
@@ -380,7 +374,6 @@ function MapCanvas(props: {
         ctx.restore();
       };
 
-      // Preload all unique image URLs needed for this map
       const urls = new Set<string>();
       for (const row of nodes) {
         for (const node of row) {
@@ -398,7 +391,6 @@ function MapCanvas(props: {
         urls.add(`./img/map/boss/${props.secondBoss}.png`);
       }
 
-      // Paint lines & visited path immediately while images load, then repaint once ready
       drawSts2Map(new Map());
       void Promise.all(
         Array.from(urls).map(
@@ -409,7 +401,6 @@ function MapCanvas(props: {
         drawSts2Map(new Map(entries));
       });
     } else {
-      // STS1 layout
       canvas.width = 1400 * scalingFactor;
       canvas.height = 3150 * scalingFactor;
       ctx.clearRect(0, 0, canvas.width, canvas.height);

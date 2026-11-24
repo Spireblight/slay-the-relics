@@ -92,7 +92,6 @@ export class GameStateSyncController<TState extends Record<string, unknown>> {
     }
 
     if (this.gameStateIndex >= index) {
-      // Our game state is ahead or already at this index, do nothing.
       return;
     }
 
@@ -120,11 +119,9 @@ export class GameStateSyncController<TState extends Record<string, unknown>> {
         if (!result || this.disposed) {
           return;
         }
-        // Discard response if a full reset / channel change happened while in flight.
         if (requestEpoch !== this.syncEpoch) {
           return;
         }
-        // Discard response if newer PubSub patches already advanced past it.
         if (result.index < this.gameStateIndex) {
           return;
         }
