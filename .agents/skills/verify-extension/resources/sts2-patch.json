@@ -1,0 +1,208 @@
+{
+  "gameStateIndex": 1,
+  "channel": "59817220",
+  "game": "sts2",
+  "character": "The Ironclad",
+  "boss": "ceremonial_beast_boss",
+  "secondBoss": "vantom_boss",
+  "ancient": "neow",
+  "floor": 13,
+  "relics": [
+    "Burning Blood",
+    "Vajra",
+    "Anchor",
+    "Bag of Preparation"
+  ],
+  "baseRelicStats": {},
+  "relicTips": [],
+  "relicTipMap": {
+    "Burning Blood": [
+      {
+        "header": "Burning Blood",
+        "description": "At the end of combat, heal [green]6[/green] HP."
+      }
+    ],
+    "Vajra": [
+      {
+        "header": "Vajra",
+        "description": "Start each combat with [blue]1[/blue] [gold]Strength[/gold]."
+      },
+      {
+        "header": "Strength",
+        "description": "Strength adds additional damage to Attacks."
+      }
+    ],
+    "Anchor": [
+      {
+        "header": "Anchor",
+        "description": "Start each combat with [blue]10[/blue] [gold]Block[/gold]."
+      }
+    ],
+    "Bag of Preparation": [
+      {
+        "header": "Bag of Preparation",
+        "description": "At the start of each combat, draw [blue]2[/blue] additional cards."
+      }
+    ]
+  },
+  "deck": [
+    "strike_ironclad",
+    "strike_ironclad+\u001fSHARP:3\u001f",
+    "defend_ironclad\u001fNIMBLE:2\u001fHEXED",
+    "bash+",
+    "pommel_strike",
+    "shrug_it_off",
+    "inflame+",
+    "anger",
+    "burning_pact",
+    "offering",
+    "impervious"
+  ],
+  "cardTips": {
+    "strike_ironclad+\u001fSHARP:3\u001f": [
+      {
+        "header": "Sharp",
+        "description": "Increases damage on this card by [blue]3[/blue]."
+      }
+    ],
+    "defend_ironclad\u001fNIMBLE:2\u001fHEXED": [
+      {
+        "header": "Nimble",
+        "description": "Increases [gold]Block[/gold] gained from this card by [blue]2[/blue]."
+      },
+      {
+        "header": "Hexed",
+        "description": "Add [gold]Ethereal[/gold] to this card.",
+        "type": "affliction"
+      }
+    ],
+    "bash+": [
+      {
+        "header": "Vulnerable",
+        "description": "Vulnerable creatures take [blue]50%[/blue] more damage from Attacks."
+      }
+    ],
+    "inflame+": [
+      {
+        "header": "Strength",
+        "description": "Strength adds additional damage to Attacks."
+      }
+    ],
+    "burning_pact": [
+      {
+        "header": "Exhaust",
+        "description": "Removed until end of combat."
+      }
+    ],
+    "impervious": [
+      {
+        "header": "Exhaust",
+        "description": "Removed until end of combat."
+      }
+    ]
+  },
+  "potions": [
+    "Fire Potion",
+    "Strength Potion",
+    ""
+  ],
+  "potionTips": [
+    {
+      "header": "Fire Potion",
+      "description": "Deal [blue]20[/blue] damage."
+    },
+    {
+      "header": "Strength Potion",
+      "description": "Gain [blue]2[/blue] [gold]Strength[/gold]."
+    },
+    {
+      "header": "Potion Slot",
+      "description": ""
+    }
+  ],
+  "drawPile": [
+    "strike_ironclad",
+    "defend_ironclad\u001fNIMBLE:2\u001fHEXED",
+    "pommel_strike",
+    "shrug_it_off",
+    "offering",
+    "impervious"
+  ],
+  "discardPile": [
+    "bash+",
+    "strike_ironclad+\u001fSHARP:3\u001f",
+    "anger"
+  ],
+  "exhaustPile": [
+    "burning_pact"
+  ],
+  "mapNodes": [
+    [
+      { "type": "*", "parents": [] },
+      { "type": "*", "parents": [] },
+      { "type": "A", "parents": [] },
+      { "type": "*", "parents": [] },
+      { "type": "*", "parents": [] }
+    ],
+    [
+      { "type": "*", "parents": [] },
+      { "type": "M", "parents": [2] },
+      { "type": "M", "parents": [2] },
+      { "type": "M", "parents": [2] },
+      { "type": "*", "parents": [] }
+    ],
+    [
+      { "type": "?", "parents": [1] },
+      { "type": "M", "parents": [1, 2] },
+      { "type": "$", "parents": [2] },
+      { "type": "?", "parents": [2, 3] },
+      { "type": "*", "parents": [] }
+    ],
+    [
+      { "type": "E", "parents": [0, 1] },
+      { "type": "R", "parents": [1, 2] },
+      { "type": "M", "parents": [2, 3] },
+      { "type": "E", "parents": [3] },
+      { "type": "*", "parents": [] }
+    ],
+    [
+      { "type": "T", "parents": [0] },
+      { "type": "T", "parents": [1] },
+      { "type": "T", "parents": [2] },
+      { "type": "T", "parents": [3] },
+      { "type": "*", "parents": [] }
+    ],
+    [
+      { "type": "R", "parents": [0, 1] },
+      { "type": "R", "parents": [1, 2] },
+      { "type": "R", "parents": [2, 3] },
+      { "type": "*", "parents": [] },
+      { "type": "*", "parents": [] }
+    ]
+  ],
+  "mapPath": [
+    [2, 0],
+    [2, 1],
+    [1, 2],
+    [1, 3],
+    [1, 4]
+  ],
+  "bottles": [-1, -1, -1],
+  "potionX": 28,
+  "additionalTips": [
+    {
+      "hitbox": { "x": 62.0, "y": 48.0, "w": 11.0, "h": 18.0, "z": 1 },
+      "tips": [
+        {
+          "header": "Dread Buffs",
+          "description": "[blue]+30[/blue] Max HP ([blue]292[/blue]).\n[gold]Plow[/gold] grants [blue]3[/blue] [gold]Strength[/gold] (was [blue]2[/blue]).\nGains [blue]2[/blue] [gold]Ritual[/gold] in phase [blue]2[/blue]."
+        },
+        {
+          "header": "Vulnerable",
+          "description": "Receive [blue]50%[/blue] more damage from Attacks for [blue]1[/blue] turn."
+        }
+      ]
+    }
+  ],
+  "staticTips": []
+}

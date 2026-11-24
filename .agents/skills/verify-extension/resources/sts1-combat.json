@@ -1,0 +1,84 @@
+{
+  "gameStateIndex": 0,
+  "channel": "59817220",
+  "game": "",
+  "character": "ironclad",
+  "boss": "guardian",
+  "relics": [
+    "Burning Blood",
+    "Vajra",
+    "Bag of Preparation"
+  ],
+  "baseRelicStats": {},
+  "relicTips": [],
+  "deck": [
+    "Strike_R",
+    "Defend_R",
+    "Bash+",
+    "Pommel Strike",
+    "Shrug It Off",
+    "Inflame+"
+  ],
+  "potions": [
+    "Fire Potion",
+    "Block Potion",
+    "Potion Slot"
+  ],
+  "drawPile": [
+    "Strike_R",
+    "Defend_R",
+    "Shrug It Off"
+  ],
+  "discardPile": [
+    "Bash+",
+    "Pommel Strike"
+  ],
+  "exhaustPile": [],
+  "mapNodes": [
+    [
+      { "type": "M", "parents": [] },
+      { "type": "*", "parents": [] },
+      { "type": "M", "parents": [] },
+      { "type": "*", "parents": [] },
+      { "type": "*", "parents": [] },
+      { "type": "*", "parents": [] },
+      { "type": "*", "parents": [] }
+    ],
+    [
+      { "type": "?", "parents": [0] },
+      { "type": "M", "parents": [0, 2] },
+      { "type": "$", "parents": [2] },
+      { "type": "*", "parents": [] },
+      { "type": "*", "parents": [] },
+      { "type": "*", "parents": [] },
+      { "type": "*", "parents": [] }
+    ],
+    [
+      { "type": "E", "parents": [0, 1] },
+      { "type": "R", "parents": [1, 2] },
+      { "type": "*", "parents": [] },
+      { "type": "*", "parents": [] },
+      { "type": "*", "parents": [] },
+      { "type": "*", "parents": [] },
+      { "type": "*", "parents": [] }
+    ]
+  ],
+  "mapPath": [
+    [0, 0],
+    [1, 1]
+  ],
+  "bottles": [2, -1, -1],
+  "potionX": 33,
+  "additionalTips": [
+    {
+      "hitbox": { "x": 64.0, "y": 50.0, "w": 10.0, "h": 15.0, "z": 1 },
+      "tips": [
+        {
+          "header": "Vulnerable",
+          "description": "Receive #b50% more damage from Attacks for #b2 turns."
+        }
+      ]
+    }
+  ],
+  "staticTips": []
+}

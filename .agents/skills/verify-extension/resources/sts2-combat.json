@@ -1,0 +1,210 @@
+{
+  "gameStateIndex": 0,
+  "channel": "59817220",
+  "game": "sts2",
+  "character": "The Ironclad",
+  "boss": "ceremonial_beast_boss",
+  "secondBoss": "vantom_boss",
+  "ancient": "neow",
+  "floor": 12,
+  "relics": [
+    "Burning Blood",
+    "Vajra",
+    "Anchor"
+  ],
+  "baseRelicStats": {},
+  "relicTips": [],
+  "relicTipMap": {
+    "Burning Blood": [
+      {
+        "header": "Burning Blood",
+        "description": "At the end of combat, heal [green]6[/green] HP."
+      }
+    ],
+    "Vajra": [
+      {
+        "header": "Vajra",
+        "description": "Start each combat with [blue]1[/blue] [gold]Strength[/gold]."
+      },
+      {
+        "header": "Strength",
+        "description": "Strength adds additional damage to Attacks."
+      }
+    ],
+    "Anchor": [
+      {
+        "header": "Anchor",
+        "description": "Start each combat with [blue]10[/blue] [gold]Block[/gold]."
+      }
+    ]
+  },
+  "deck": [
+    "strike_ironclad",
+    "strike_ironclad+\u001fSHARP:3\u001f",
+    "defend_ironclad\u001fNIMBLE:2\u001fHEXED",
+    "bash+",
+    "pommel_strike",
+    "shrug_it_off",
+    "inflame+",
+    "anger",
+    "burning_pact",
+    "offering"
+  ],
+  "cardTips": {
+    "strike_ironclad+\u001fSHARP:3\u001f": [
+      {
+        "header": "Sharp",
+        "description": "Increases damage on this card by [blue]3[/blue]."
+      }
+    ],
+    "defend_ironclad\u001fNIMBLE:2\u001fHEXED": [
+      {
+        "header": "Nimble",
+        "description": "Increases [gold]Block[/gold] gained from this card by [blue]2[/blue]."
+      },
+      {
+        "header": "Hexed",
+        "description": "Add [gold]Ethereal[/gold] to this card.",
+        "type": "affliction"
+      }
+    ],
+    "bash+": [
+      {
+        "header": "Vulnerable",
+        "description": "Vulnerable creatures take [blue]50%[/blue] more damage from Attacks."
+      }
+    ],
+    "inflame+": [
+      {
+        "header": "Strength",
+        "description": "Strength adds additional damage to Attacks."
+      }
+    ],
+    "burning_pact": [
+      {
+        "header": "Exhaust",
+        "description": "Removed until end of combat."
+      }
+    ]
+  },
+  "potions": [
+    "Fire Potion",
+    "Block Potion",
+    ""
+  ],
+  "potionTips": [
+    {
+      "header": "Fire Potion",
+      "description": "Deal [blue]20[/blue] damage."
+    },
+    {
+      "header": "Block Potion",
+      "description": "Gain [blue]12[/blue] [gold]Block[/gold]."
+    },
+    {
+      "header": "Potion Slot",
+      "description": ""
+    }
+  ],
+  "drawPile": [
+    "strike_ironclad",
+    "defend_ironclad\u001fNIMBLE:2\u001fHEXED",
+    "pommel_strike",
+    "shrug_it_off",
+    "offering"
+  ],
+  "discardPile": [
+    "bash+",
+    "strike_ironclad+\u001fSHARP:3\u001f",
+    "anger"
+  ],
+  "exhaustPile": [
+    "burning_pact"
+  ],
+  "mapNodes": [
+    [
+      { "type": "*", "parents": [] },
+      { "type": "*", "parents": [] },
+      { "type": "A", "parents": [] },
+      { "type": "*", "parents": [] },
+      { "type": "*", "parents": [] }
+    ],
+    [
+      { "type": "*", "parents": [] },
+      { "type": "M", "parents": [2] },
+      { "type": "M", "parents": [2] },
+      { "type": "M", "parents": [2] },
+      { "type": "*", "parents": [] }
+    ],
+    [
+      { "type": "?", "parents": [1] },
+      { "type": "M", "parents": [1, 2] },
+      { "type": "$", "parents": [2] },
+      { "type": "?", "parents": [2, 3] },
+      { "type": "*", "parents": [] }
+    ],
+    [
+      { "type": "E", "parents": [0, 1] },
+      { "type": "R", "parents": [1, 2] },
+      { "type": "M", "parents": [2, 3] },
+      { "type": "E", "parents": [3] },
+      { "type": "*", "parents": [] }
+    ],
+    [
+      { "type": "T", "parents": [0] },
+      { "type": "T", "parents": [1] },
+      { "type": "T", "parents": [2] },
+      { "type": "T", "parents": [3] },
+      { "type": "*", "parents": [] }
+    ],
+    [
+      { "type": "R", "parents": [0, 1] },
+      { "type": "R", "parents": [1, 2] },
+      { "type": "R", "parents": [2, 3] },
+      { "type": "*", "parents": [] },
+      { "type": "*", "parents": [] }
+    ]
+  ],
+  "mapPath": [
+    [2, 0],
+    [2, 1],
+    [1, 2],
+    [1, 3]
+  ],
+  "bottles": [-1, -1, -1],
+  "potionX": 28,
+  "additionalTips": [
+    {
+      "hitbox": { "x": 62.0, "y": 48.0, "w": 11.0, "h": 18.0, "z": 1 },
+      "tips": [
+        {
+          "header": "Slippery",
+          "description": "The next time this creature loses HP, it only loses [blue]1[/blue] HP instead."
+        },
+        {
+          "header": "Vulnerable",
+          "description": "Receive [blue]50%[/blue] more damage from Attacks for [blue]2[/blue] turns."
+        }
+      ]
+    }
+  ],
+  "staticTips": [
+    {
+      "hitbox": { "x": 46.5, "y": 0.8, "w": 4.0, "h": 5.5, "z": 1 },
+      "tips": [
+        {
+          "header": "Ceremonial Beast & Vantom",
+          "description": "At the end of the act, you will fight [gold]Ceremonial Beast[/gold] and [gold]Vantom[/gold]."
+        },
+        {
+          "header": "Vantom's Dominion",
+          "description": "Normal enemies gain [blue]1[/blue] [gold]Slippery[/gold]. Elites gain [blue]2[/blue] [gold]Slippery[/gold]."
+        },
+        {
+          "header": "Slippery",
+          "description": "The next time this creature loses HP, it only loses [blue]1[/blue] HP instead."
+        }
+      ]
+    }
+  ]
+}
