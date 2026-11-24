@@ -12,7 +12,6 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.*" />
   </ItemGroup>
 
-  <!-- Link source files from the main project that can be tested without game DLLs. -->
   <ItemGroup>
     <Compile Include="../SlayTheRelicsExporter/src/Config.cs" Link="Config.cs" />
     <Compile Include="../SlayTheRelicsExporter/src/DreadBossBuffs.cs" Link="DreadBossBuffs.cs" />

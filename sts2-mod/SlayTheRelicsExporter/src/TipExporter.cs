@@ -30,8 +30,6 @@ public static class TipExporter
             }
             else if (tip is CardHoverTip cht)
             {
-                // CardHoverTip is rendered as a mini card image in-game, not as text.
-                // Emit the card image path so the frontend can do the same.
                 var card = cht.Card;
                 data.Header = card.Title ?? "";
                 var idEntry = StateExporter.GetCardAssetId(card);
@@ -91,10 +89,8 @@ public static class TipExporter
     {
         try
         {
-            // Build tips list with type annotations for enchantments/afflictions
             var tips = FromHoverTips(card.HoverTips);
 
-            // Tag enchantment tips
             if (card.Enchantment != null)
             {
                 var enchantmentTips = FromHoverTips(card.Enchantment.HoverTips);
@@ -106,7 +102,6 @@ public static class TipExporter
                 }
             }
 
-            // Tag affliction tips
             if (card.Affliction != null)
             {
                 var afflictionTips = FromHoverTips(card.Affliction.HoverTips);

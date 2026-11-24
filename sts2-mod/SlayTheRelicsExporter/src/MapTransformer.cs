@@ -5,11 +5,6 @@ using SlayTheRelicsExporter.Models;
 
 namespace SlayTheRelicsExporter;
 
-/// <summary>
-/// Converts STS2 coordinate-grid map into STS1's column-indexed mapNodes/mapPath format.
-/// STS2: MapPoint with coord {col, row}, PointType enum, parents/Children sets
-/// STS1: mapNodes[row][col] = {type: "M", parents: [colIndices]}, mapPath = [[col, row], ...]
-/// </summary>
 public static class MapTransformer
 {
     private static readonly Dictionary<MapPointType, string> TypeMap = new()
@@ -47,7 +42,6 @@ public static class MapTransformer
 
         var mapNodes = MapGridBuilder.Build(specs, map.GetColumnCount());
 
-        // Build mapPath from visited coordinates
         var mapPath = visitedCoords
             .Select(c => new List<int> { c.col, c.row })
             .ToList();

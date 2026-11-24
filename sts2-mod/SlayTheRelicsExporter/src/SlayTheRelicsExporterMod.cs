@@ -32,7 +32,6 @@ public class SlayTheRelicsExporterMod
 
         try
         {
-            // Always start in live mode so game restarts never stay stuck on local dev config.
             _config = Config.Load(devMode: false);
             _client = new BackendClient(_config);
             _exporter = new StateExporter(_config);

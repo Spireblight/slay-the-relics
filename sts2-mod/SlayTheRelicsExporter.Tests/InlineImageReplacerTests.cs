@@ -36,7 +36,6 @@ public class InlineImageReplacerTests
     [Fact]
     public void Replace_EnergyWithLeadingCount_ReturnsCount()
     {
-        // ≥4 or 0 case: the formatter emits "N[img]...[/img]"
         var input = $"Gain 5{EnergyImg()} now.";
         var result = InlineImageReplacer.Replace(input);
         Assert.Equal("Gain [blue]5[/blue] [gold]Energy[/gold] now.", result);
@@ -77,7 +76,6 @@ public class InlineImageReplacerTests
     [Fact]
     public void Replace_NunchakunDescription_Works()
     {
-        // Nunchaku: "Every time you play [blue]10[/blue] Attacks, gain {energy}."
         var input = $"Every time you play [blue]10[/blue] Attacks, gain {EnergyImg()}.";
         var result = InlineImageReplacer.Replace(input);
         Assert.Equal(
@@ -88,7 +86,6 @@ public class InlineImageReplacerTests
     [Fact]
     public void Replace_MultipleEnergyGroupsInOneDescription_ReplacesAll()
     {
-        // e.g. BREAD: "lose N energy, gain M energy"
         var input = $"Lose {EnergyImg()}. Gain {EnergyImg()}{EnergyImg()}.";
         var result = InlineImageReplacer.Replace(input);
         Assert.Equal(

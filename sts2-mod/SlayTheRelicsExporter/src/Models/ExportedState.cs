@@ -3,10 +3,6 @@ using System.Text.Json.Serialization;
 
 namespace SlayTheRelicsExporter.Models;
 
-/// <summary>
-/// Wire format matching the STS1 GameState struct in the backend.
-/// The extension renders this identically to STS1 data.
-/// </summary>
 public class ExportedState
 {
     [JsonPropertyName("gameStateIndex")] public int GameStateIndex { get; set; }
@@ -14,8 +10,6 @@ public class ExportedState
     [JsonPropertyName("channel")] public string Channel { get; set; } = "";
 
     [JsonPropertyName("game")] public string Game { get; set; } = "sts2";
-
-    // --- Same fields as STS1 ---
 
     [JsonPropertyName("character")] public string Character { get; set; } = "";
 
@@ -52,8 +46,6 @@ public class ExportedState
     [JsonPropertyName("discardPile")] public List<object> DiscardPile { get; set; } = new();
 
     [JsonPropertyName("exhaustPile")] public List<object> ExhaustPile { get; set; } = new();
-
-    // --- New optional fields for STS2 ---
 
     [JsonPropertyName("cardTips")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

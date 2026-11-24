@@ -4,10 +4,6 @@ using SlayTheRelicsExporter.Models;
 
 namespace SlayTheRelicsExporter;
 
-/// <summary>
-/// Maps Dread Mode boss encounters/monsters to their Dread-specific combat buffs.
-/// Kept free of Godot/STS2 assembly types so it can be unit-tested standalone.
-/// </summary>
 public static class DreadBossBuffs
 {
     public const string TipHeader = "Dread Buffs";
@@ -70,10 +66,6 @@ public static class DreadBossBuffs
     public static bool IsDreadGameMode(string? gameModeName) =>
         string.Equals(gameModeName, "Dread", StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>
-    /// Returns the Dread Mode boss-buffs tooltip for a creature in a boss encounter,
-    /// or null if the monster/encounter has no Dread Mode changes.
-    /// </summary>
     public static TipData? GetBossCreatureTip(string? monsterEntry, string? encounterEntry)
     {
         if (string.IsNullOrEmpty(monsterEntry))

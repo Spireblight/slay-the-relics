@@ -35,10 +35,8 @@ public class AuthServer
 
         try
         {
-            // Open browser to local server
             OpenBrowser($"http://localhost:{Port}");
 
-            // Handle requests until we get the auth code
             while (code == null)
             {
                 var ctx = await listener.GetContextAsync();
@@ -50,7 +48,6 @@ public class AuthServer
             listener.Stop();
         }
 
-        // Exchange code for user + token via backend
         return await ExchangeCode(code);
     }
 
@@ -69,7 +66,6 @@ public class AuthServer
         var query = request.Url.Query;
         if (string.IsNullOrEmpty(query))
         {
-            // Serve the OAuth initiation page
             var html = GetIndexHtml(state);
             var bytes = Encoding.UTF8.GetBytes(html);
             response.ContentType = "text/html; charset=utf-8";
@@ -79,7 +75,6 @@ public class AuthServer
             return null;
         }
 
-        // Parse callback params
         var queryParams = System.Web.HttpUtility.ParseQueryString(query);
         var code = queryParams["code"];
         var returnedState = queryParams["state"];
@@ -93,7 +88,6 @@ public class AuthServer
             return null;
         }
 
-        // Serve success page
         var successHtml = GetSuccessHtml();
         var successBytes = Encoding.UTF8.GetBytes(successHtml);
         response.ContentType = "text/html; charset=utf-8";

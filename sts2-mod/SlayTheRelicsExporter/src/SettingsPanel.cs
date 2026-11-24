@@ -49,7 +49,6 @@ public class SettingsPanel
         if (ResourceLoader.Exists("res://themes/kreon_bold_shared.tres"))
             boldFont = ResourceLoader.Load<Font>("res://themes/kreon_bold_shared.tres");
 
-        // Header
         var headerLabel = new Label
         {
             Text = "Settings",
@@ -60,7 +59,6 @@ public class SettingsPanel
         if (boldFont != null) headerLabel.AddThemeFontOverride("font", boldFont);
         _root.AddChild(headerLabel);
 
-        // Poll Interval section
         var pollBox = new VBoxContainer();
         pollBox.AddThemeConstantOverride("separation", 2);
 
@@ -112,7 +110,6 @@ public class SettingsPanel
         pollBox.AddChild(pollDesc);
         _root.AddChild(pollBox);
 
-        // Stream Delay section
         var delayBox = new VBoxContainer();
         delayBox.AddThemeConstantOverride("separation", 2);
 
@@ -164,7 +161,6 @@ public class SettingsPanel
         delayBox.AddChild(delayDesc);
         _root.AddChild(delayBox);
 
-        // Twitch Connection section
         var twitchRow = new HBoxContainer();
         twitchRow.AddThemeConstantOverride("separation", 14);
 
@@ -189,7 +185,6 @@ public class SettingsPanel
         twitchRow.AddChild(_statusLabel);
         _root.AddChild(twitchRow);
 
-        // Dev Mode section (only visible when config.dev.json exists)
         _devModeBox = new VBoxContainer { Visible = false };
         _devModeBox.AddThemeConstantOverride("separation", 2);
 

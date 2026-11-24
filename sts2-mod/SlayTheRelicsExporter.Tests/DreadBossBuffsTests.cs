@@ -45,7 +45,6 @@ public class DreadBossBuffsTests
         Assert.NotNull(tip);
         Assert.Equal(DreadBossBuffs.TipHeader, tip!.Header);
         Assert.False(string.IsNullOrWhiteSpace(tip.Description));
-        // Extension TipBody only converts \n to <br /> when STS2 color tags are present.
         Assert.Matches(SupportedColorTagRegex, tip.Description);
     }
 

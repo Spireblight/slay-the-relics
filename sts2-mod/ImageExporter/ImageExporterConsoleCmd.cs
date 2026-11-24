@@ -87,7 +87,6 @@ public class ImageExporterConsoleCmd : AbstractConsoleCmd
         var filename = CardIdToFilename(card.Id.Entry);
         MainFile.Logger.Info($"Exporting {card.Id.Entry} to {globalPath}/{filename}.png");
 
-        // Use a helper node to wait for frames before capturing
         var exporter = new CardExportHelper(card, globalPath, filename, exportUpgraded: true);
         var tree = (SceneTree)Engine.GetMainLoop();
         tree.Root.AddChild(exporter);
@@ -122,11 +121,10 @@ public class ImageExporterConsoleCmd : AbstractConsoleCmd
     }
 }
 
-/// <summary>
-/// Exports a single card image, waiting for render frames between setup and capture.
-/// </summary>
 public partial class CardExportHelper : Node
 {
+    private const int RenderWarmupFrames = 3;
+
     private readonly CardModel _card;
     private readonly string _outputDir;
     private readonly string _filename;
@@ -152,13 +150,12 @@ public partial class CardExportHelper : Node
     public override void _Process(double delta)
     {
         _frameWait++;
-        if (_frameWait < 3) return; // wait 3 frames for full render
+        if (_frameWait < RenderWarmupFrames) return;
 
         CaptureAndSave();
 
         if (_exportUpgraded && !_doingUpgrade && _card.MaxUpgradeLevel > 0)
         {
-            // Now do the upgraded version
             _doingUpgrade = true;
             _frameWait = 0;
             Cleanup();
@@ -243,9 +240,6 @@ public partial class CardExportHelper : Node
     }
 }
 
-/// <summary>
-/// Exports all cards one at a time, waiting for frames between each.
-/// </summary>
 public partial class BatchCardExportHelper(List<CardModel> cards, string outputDir, bool exportUpgraded = true)
     : Node
 {
@@ -265,7 +259,6 @@ public partial class BatchCardExportHelper(List<CardModel> cards, string outputD
         if (_current != null && IsInstanceValid(_current))
             return;
 
-        // Previous card finished (or first call after _Ready started one)
         if (_current != null)
             _exported++;
 

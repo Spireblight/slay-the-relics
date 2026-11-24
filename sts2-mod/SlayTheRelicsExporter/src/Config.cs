@@ -66,7 +66,6 @@ public class Config
             }
             catch
             {
-                // Fall back to fresh defaults if file is corrupted
             }
         }
 

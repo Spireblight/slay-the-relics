@@ -87,22 +87,12 @@ public class StateExporter
                 Floor = runState.TotalFloor,
             };
 
-            // Relics (display names + fully resolved tips)
             ExportRelics(player, state);
-
-            // Deck (display names)
             ExportDeck(player, state);
-
-            // Potions (display names + tips)
             ExportPotions(player, state);
-
-            // Map
             ExportMap(runState, state);
-
-            // Dread mode: top-bar boss icon dominion tooltip (outside boss fights only)
             ExportDreadTopBarBossTip(runState, state);
 
-            // Combat state (piles, power tips)
             if (CombatManager.Instance.IsInProgress)
             {
                 ExportCombatState(runState, player, state);
@@ -138,7 +128,6 @@ public class StateExporter
     {
         try
         {
-            // Access the current act's boss encounter via ActModel.BossEncounter
             var currentActIndex = runState.CurrentActIndex;
             if (currentActIndex < 0 || currentActIndex >= runState.Acts.Count)
                 return "";
@@ -295,28 +284,30 @@ public class StateExporter
             var playerCombat = player.PlayerCombatState;
             if (playerCombat == null) return;
 
-            // Card piles
             var cardTips = state.CardTips ?? new Dictionary<string, List<TipData>>();
 
             state.DrawPile = ExportPile(playerCombat.DrawPile, cardTips);
             state.DiscardPile = ExportPile(playerCombat.DiscardPile, cardTips);
             state.ExhaustPile = ExportPile(playerCombat.ExhaustPile, cardTips);
-
-            // Populate tips for hand cards (may have combat-applied enchantments/afflictions)
-            foreach (var card in playerCombat.Hand.Cards)
-            {
-                var key = GetCardKey(card);
-                PopulateCardMeta(card, key, cardTips);
-            }
+            PopulateHandCardTips(playerCombat.Hand, cardTips);
 
             state.CardTips = cardTips.Count > 0 ? cardTips : null;
 
-            // Power tips with hitbox positions from game UI nodes
             ExportPowerTips(runState, combatState, state);
         }
         catch (Exception ex)
         {
             Log.Warn($"[SlayTheRelicsExporter] Failed to export combat state: {ex.Message}");
+        }
+    }
+
+    private static void PopulateHandCardTips(CardPile hand,
+        Dictionary<string, List<TipData>> cardTips)
+    {
+        foreach (var card in hand.Cards)
+        {
+            var key = GetCardKey(card);
+            PopulateCardMeta(card, key, cardTips);
         }
     }
 
@@ -334,10 +325,7 @@ public class StateExporter
         return result;
     }
 
-    // Unit separator used to encode card variant info into the key.
-    // Format: "DisplayName\u001FenchantmentId:amount\u001FafflictionId"
-    // Frontend splits on this to separate display name from variant identity.
-    private const char KeySeparator = '\u001F';
+    private const char CardVariantSeparator = '\u001F';
 
     internal static string GetCardAssetId(CardModel card)
     {
@@ -364,7 +352,7 @@ public class StateExporter
             var affliction = card.Affliction?.Id.Entry ?? "";
             if (enchantment == "" && affliction == "")
                 return id;
-            return $"{id}{KeySeparator}{enchantment}{KeySeparator}{affliction}";
+            return $"{id}{CardVariantSeparator}{enchantment}{CardVariantSeparator}{affliction}";
         }
         catch (Exception ex)
         {

@@ -7,10 +7,6 @@ namespace SlayTheRelicsExporter;
 
 public readonly record struct MapPointSpec(int Col, int Row, string Type, IReadOnlyList<int> ParentCols);
 
-/// <summary>
-/// Pure grid builder for converting sparse (col, row) STS2 map points into the dense
-/// row-major mapNodes[row][col] format expected by the extension.
-/// </summary>
 public static class MapGridBuilder
 {
     public static List<List<MapNodeData>> Build(

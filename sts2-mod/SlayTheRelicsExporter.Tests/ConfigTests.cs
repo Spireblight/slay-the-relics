@@ -49,7 +49,6 @@ public class ConfigTests : IDisposable
     [Fact]
     public void Load_EmptyAuthToken_ReturnsFreshDefaults()
     {
-        // Write a config with empty AuthToken
         var configDir = Path.Combine(_tempDir, "SlayTheRelicsExporter");
         Directory.CreateDirectory(configDir);
         var configPath = Path.Combine(configDir, "config.json");
@@ -58,7 +57,6 @@ public class ConfigTests : IDisposable
 
         var config = Config.Load();
 
-        // Config.Load treats empty AuthToken as invalid and returns fresh defaults
         Assert.Equal("", config.Channel);
         Assert.Equal("", config.AuthToken);
     }
@@ -70,7 +68,6 @@ public class ConfigTests : IDisposable
         config.Channel = "newuser";
         config.AuthToken = "tok_new";
 
-        // Delete the directory to ensure Save recreates it
         var configDir = Path.Combine(_tempDir, "SlayTheRelicsExporter");
         if (Directory.Exists(configDir))
             Directory.Delete(configDir, true);
@@ -165,14 +162,12 @@ public class ConfigTests : IDisposable
         dev.AuthToken = "dev_token";
         dev.Save();
 
-        // Reloading live config must preserve live credentials and backend URL
         var reloadedLive = Config.Load();
         Assert.False(reloadedLive.IsDevConfig);
         Assert.Equal(Config.DefaultLiveBackendUrl, reloadedLive.BackendUrl);
         Assert.Equal("live_user", reloadedLive.Channel);
         Assert.Equal("live_token", reloadedLive.AuthToken);
 
-        // Reloading dev config preserves dev credentials and backend URL
         var reloadedDev = Config.Load(devMode: true);
         Assert.True(reloadedDev.IsDevConfig);
         Assert.Equal(Config.DefaultDevBackendUrl, reloadedDev.BackendUrl);
