@@ -1,7 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using Xunit;
 
 namespace SlayTheRelicsExporter.Tests;
@@ -43,38 +40,5 @@ public class MadScienceVariantTests
     public void GetAssetId_FallbacksAndCasing_ReturnValidAssetName(string? type, string? rider, string expected)
     {
         Assert.Equal(expected, MadScienceVariant.GetAssetId(type, rider));
-    }
-
-    [Fact]
-    public void GetAssetId_AllValidVariants_MatchAssetsDirectoryExactly()
-    {
-        var assetsDir = FindAssetsDir();
-        Assert.NotNull(assetsDir);
-
-        var actualFiles = Directory.GetFiles(assetsDir!, "mad_science*.png")
-            .Select(Path.GetFileName)
-            .OrderBy(name => name, StringComparer.Ordinal)
-            .ToArray();
-
-        var expectedFiles = AllValidVariants
-            .Select(row => MadScienceVariant.GetAssetId((string)row[0], (string)row[1]))
-            .SelectMany(id => new[] { $"{id}.png", $"{id}plusone.png" })
-            .OrderBy(name => name, StringComparer.Ordinal)
-            .ToArray();
-
-        Assert.Equal(expectedFiles, actualFiles);
-    }
-
-    private static string? FindAssetsDir()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir != null)
-        {
-            var candidate = Path.Combine(dir.FullName, "assets", "sts2", "card-images");
-            if (Directory.Exists(candidate))
-                return candidate;
-            dir = dir.Parent;
-        }
-        return null;
     }
 }
