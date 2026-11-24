@@ -119,7 +119,6 @@ func (s *Users) AuthenticateRedis(ctx context.Context, userID, token string) (us
 		return models.User{}, err
 	}
 
-	// Attempt to check for a cached token value.
 	cachedToken, ok := s.redisUserAuthCache.Load(userID)
 	if ok {
 		if cachedToken == token {
@@ -133,7 +132,6 @@ func (s *Users) AuthenticateRedis(ctx context.Context, userID, token string) (us
 		return models.User{}, &errors2.AuthError{Err: err}
 	}
 
-	// Successful authentication, so cache this token as a valid value.
 	s.redisUserAuthCache.Store(userID, token)
 
 	span.SetAttributes(attribute.String("user_login", user.Login))

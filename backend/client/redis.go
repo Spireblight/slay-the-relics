@@ -14,7 +14,6 @@ func NewRedis(addr string) *redis.Client {
 		panic(err)
 	}
 
-	// Enable metrics instrumentation.
 	if err := redisotel.InstrumentMetrics(rdb); err != nil {
 		panic(err)
 	}

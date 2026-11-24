@@ -11,10 +11,8 @@ type Config struct {
 	ExtensionSecret string `env:"EXTENSION_SECRET"`
 	OtelEndpoint    string `env:"OTEL_EXPORTER_ENDPOINT"`
 	RedisAddr       string `env:"REDIS_ADDR" default:"localhost:6379"`
-	// disable auth and use channel from body, for easier testing without auth
-	DevMode bool `env:"DEV_MODE" default:"false"`
-	// where game-state broadcasts are published: "twitch" (default) or "sse" (local dev browser stream)
-	PubSubMode string `env:"PUBSUB_MODE" default:"twitch"`
+	DevMode         bool   `env:"DEV_MODE" default:"false"`
+	PubSubMode      string `env:"PUBSUB_MODE" default:"twitch"`
 }
 
 func Load() Config {

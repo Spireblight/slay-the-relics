@@ -89,17 +89,12 @@ type GameState struct {
 	Ancient     string           `json:"ancient,omitempty"`
 }
 
-// computeMergePatch produces a partial update between prev and update.
-// Inspired by RFC 7396 merge patch but without null-deletion semantics.
-// - Always includes gameStateIndex and channel.
-// - For map[string] fields: includes only changed/added keys (per-key diff).
-// - For all other fields: includes the whole value if changed.
-// - Omits unchanged fields entirely.
-func computeMergePatch(prev *GameState, update GameState) map[string]any {
+func computeAdditivePatch(prev *GameState, update GameState) (map[string]any, bool) {
 	patch := map[string]any{
 		"gameStateIndex": update.Index,
 		"channel":        update.Channel,
 	}
+	changed := false
 
 	prevVal := reflect.ValueOf(*prev)
 	updateVal := reflect.ValueOf(update)
@@ -111,43 +106,39 @@ func computeMergePatch(prev *GameState, update GameState) map[string]any {
 		if jsonTag == "" {
 			continue
 		}
-		// Parse json tag name (strip omitempty etc.)
 		jsonName := strings.Split(jsonTag, ",")[0]
 		if jsonName == "gameStateIndex" || jsonName == "channel" {
-			continue // already included
+			continue
 		}
 
 		prevField := prevVal.Field(i)
 		updateField := updateVal.Field(i)
 
-		// Per-key diff for map[string]* fields
 		if field.Type.Kind() == reflect.Map && field.Type.Key().Kind() == reflect.String {
-			keyDiff := diffMapKeys(prevField, updateField)
+			keyDiff := diffAdditiveMapKeys(prevField, updateField)
 			if keyDiff != nil {
 				patch[jsonName] = keyDiff
+				changed = true
 			}
 			continue
 		}
 
-		// Whole-field diff for everything else
 		if !reflect.DeepEqual(prevField.Interface(), updateField.Interface()) {
 			patch[jsonName] = updateField.Interface()
+			changed = true
 		}
 	}
 
-	return patch
+	return patch, changed
 }
 
-// diffMapKeys returns a partial map containing only changed/added keys, or nil if unchanged.
-func diffMapKeys(prev, update reflect.Value) map[string]any {
-	// Handle nil maps
+func diffAdditiveMapKeys(prev, update reflect.Value) map[string]any {
 	prevNil := !prev.IsValid() || prev.IsNil()
 	updateNil := !update.IsValid() || update.IsNil()
 	if prevNil && updateNil {
 		return nil
 	}
 	if prevNil {
-		// Entire map is new
 		result := make(map[string]any, update.Len())
 		for _, key := range update.MapKeys() {
 			result[key.String()] = update.MapIndex(key).Interface()
@@ -155,11 +146,10 @@ func diffMapKeys(prev, update reflect.Value) map[string]any {
 		return result
 	}
 	if updateNil {
-		return nil // map removed — omit from patch, frontend handles via parent arrays
+		return nil
 	}
 
 	result := map[string]any{}
-	// Check changed/added keys
 	for _, key := range update.MapKeys() {
 		updateEntry := update.MapIndex(key)
 		prevEntry := prev.MapIndex(key)
@@ -203,7 +193,6 @@ func (gs *GameStateManager) channelLock(userId string) *sync.Mutex {
 }
 
 func compressJson(data any) (_ string, err error) {
-	// marshal the data to JSON then compress it with gzip
 	js, err := json.Marshal(data)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal data to JSON: %w", err)
@@ -220,7 +209,6 @@ func compressJson(data any) (_ string, err error) {
 		return "", fmt.Errorf("failed to close gzip: %w", err)
 	}
 
-	// ascii 85 encoding
 	var b85Buf bytes.Buffer
 	b85 := ascii85.NewEncoder(&b85Buf)
 	_, err = b85.Write(buf.Bytes())
@@ -269,6 +257,43 @@ func (gs *GameStateManager) broadcastPayload(ctx context.Context,
 	return gs.send(ctx, userId, payload)
 }
 
+func (gs *GameStateManager) storeAndBroadcast(
+	ctx context.Context,
+	userId string,
+	state GameState,
+	ingestIndex int,
+	payload any,
+) error {
+	gs.GameStates.Store(userId, state)
+	gs.ingestIndexes.Store(userId, ingestIndex)
+	return gs.broadcastPayload(ctx, userId, ingestIndex, state.Index, payload)
+}
+
+func (gs *GameStateManager) applyResetUpdate(
+	ctx context.Context,
+	userId string,
+	current GameState,
+	hasCurrent bool,
+	update GameState,
+) error {
+	if hasCurrent && current.Index == 0 {
+		if _, changed := computeAdditivePatch(&current, update); !changed {
+			gs.ingestIndexes.Store(userId, 0)
+			return nil
+		}
+	}
+	update.Index = 0
+	return gs.storeAndBroadcast(ctx, userId, update, 0, update)
+}
+
+func (gs *GameStateManager) isStaleIngest(userId string, current GameState, ingestIndex int) bool {
+	lastIngestIndex, hasIngest := gs.ingestIndexes.Load(userId)
+	if !hasIngest {
+		lastIngestIndex = current.Index
+	}
+	return lastIngestIndex >= ingestIndex
+}
+
 func (gs *GameStateManager) ReceiveUpdate(ctx context.Context, userId string, update GameState) error {
 	mu := gs.channelLock(userId)
 	mu.Lock()
@@ -277,43 +302,20 @@ func (gs *GameStateManager) ReceiveUpdate(ctx context.Context, userId string, up
 	ingestIndex := update.Index
 	current, ok := gs.GameStates.Load(userId)
 
-	// New run or menu reset (index == 0): reset broadcast sequence to 0 and emit full snapshot.
 	if ingestIndex == 0 {
-		if ok && current.Index == 0 {
-			patch := computeMergePatch(&current, update)
-			if len(patch) <= 2 {
-				gs.ingestIndexes.Store(userId, 0)
-				return nil
-			}
-		}
-		update.Index = 0
-		gs.GameStates.Store(userId, update)
-		gs.ingestIndexes.Store(userId, 0)
-		return gs.broadcastPayload(ctx, userId, 0, 0, update)
+		return gs.applyResetUpdate(ctx, userId, current, ok, update)
 	}
 
-	// First update seen for this channel mid-run (e.g. after backend restart):
-	// initialize broadcastIndex to ingestIndex so connected viewers don't drop
-	// subsequent patches if this full snapshot fails PubSub size limits.
 	if !ok {
-		gs.GameStates.Store(userId, update)
-		gs.ingestIndexes.Store(userId, ingestIndex)
-		return gs.broadcastPayload(ctx, userId, ingestIndex, update.Index, update)
+		return gs.storeAndBroadcast(ctx, userId, update, ingestIndex, update)
 	}
 
-	// Reject stale or duplicate mod POSTs using the mod's ingest index.
-	lastIngestIndex, hasIngest := gs.ingestIndexes.Load(userId)
-	if !hasIngest {
-		lastIngestIndex = current.Index
-	}
-	if lastIngestIndex >= ingestIndex {
+	if gs.isStaleIngest(userId, current, ingestIndex) {
 		return nil
 	}
 
-	patch := computeMergePatch(&current, update)
-	if len(patch) <= 2 {
-		// Only gameStateIndex and channel — nothing actually changed.
-		// Track ingestIndex for ordering, but keep stored state & broadcastIndex unchanged.
+	patch, changed := computeAdditivePatch(&current, update)
+	if !changed {
 		gs.ingestIndexes.Store(userId, ingestIndex)
 		return nil
 	}
@@ -322,14 +324,7 @@ func (gs *GameStateManager) ReceiveUpdate(ctx context.Context, userId string, up
 	update.Index = nextBroadcastIndex
 	patch["gameStateIndex"] = nextBroadcastIndex
 
-	// Store before broadcasting so any viewer fetchState() triggered by this
-	// broadcast immediately reads the updated state and matching broadcastIndex.
-	// Keep the stored state and advanced broadcastIndex even if PubSub fails so
-	// the next successful broadcast naturally signals viewers to fetchState().
-	gs.GameStates.Store(userId, update)
-	gs.ingestIndexes.Store(userId, ingestIndex)
-
-	return gs.broadcastPayload(ctx, userId, ingestIndex, nextBroadcastIndex, patch)
+	return gs.storeAndBroadcast(ctx, userId, update, ingestIndex, patch)
 }
 
 func (gs *GameStateManager) GetGameState(userId string) (GameState, bool) {

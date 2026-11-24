@@ -58,12 +58,10 @@ func TestDevEventsStreamsBroadcastFrames(t *testing.T) {
 	assert.Check(t, strings.HasPrefix(resp.Header.Get("Content-Type"), "text/event-stream"))
 
 	reader := bufio.NewReader(resp.Body)
-	// First line should be the initial ": connected" comment so subscriber is registered
 	line, err := reader.ReadString('\n')
 	assert.NilError(t, err)
 	assert.Equal(t, strings.TrimSpace(line), ": connected")
 
-	// Publish a game state update through GameStateManager
 	err = gsm.ReceiveUpdate(ctx, "12345", slaytherelics.GameState{
 		Index:   0,
 		Channel: "12345",

@@ -17,7 +17,6 @@ import (
 
 const bearerPrefix = "Bearer"
 
-// readBody reads the request body, decompressing gzip if Content-Encoding indicates it.
 func readBody(c *gin.Context) ([]byte, error) {
 	reader := c.Request.Body
 	if strings.EqualFold(c.GetHeader("Content-Encoding"), "gzip") {
@@ -57,7 +56,6 @@ func (a *API) postGameStateHandler(c *gin.Context) {
 
 	var userID string
 
-	// Dev mode: skip auth, use channel from body.
 	if a.devMode {
 		var channelEnvelope struct {
 			Channel string `json:"channel"`

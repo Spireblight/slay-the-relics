@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	_ "net/http/pprof" // nolint:gosec
+	"net/http/pprof"
 	"strings"
+	"time"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -96,11 +97,20 @@ func newPublisher(
 	}
 }
 
-// setupPprofListener runs a background listener for handling pprof requests. This is done separately from any other
-// router to avoid middleware conflicts or auth confusion. This also allows us to easily expose this port locally for
-// our debugging but not to the wider web.
 func setupPprofListener(cfg config.Config) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/debug/pprof/", pprof.Index)
+	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+
+	srv := &http.Server{
+		Addr:              cfg.PprofAddr,
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
+	}
 	go func() {
-		_ = http.ListenAndServe(cfg.PprofAddr, nil) //nolint:gosec
+		_ = srv.ListenAndServe()
 	}()
 }

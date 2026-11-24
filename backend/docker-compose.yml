@@ -12,7 +12,7 @@ services:
   otel-collector:
     image: otel/opentelemetry-collector
     ports:
-      - '4317:4317' # OTLP gRPC receiver
+      - '4317:4317'
     volumes:
       - ./otel_config/otel-collector-config.yml:/etc/otelcol/config.yaml
 

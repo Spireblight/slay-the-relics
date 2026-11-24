@@ -69,7 +69,6 @@ func Init(serviceName, endpoint string) (func(context.Context), error) {
 		return nil, err
 	}
 
-	// Set up a trace exporter
 	traceExporter, err := otlptracegrpc.New(ctx,
 		otlptracegrpc.WithEndpoint(endpoint),
 		otlptracegrpc.WithInsecure(),
@@ -78,8 +77,6 @@ func Init(serviceName, endpoint string) (func(context.Context), error) {
 		return nil, err
 	}
 
-	// Register the trace exporter with a TracerProvider, using a batch
-	// span processor to aggregate spans before export.
 	bsp := sdktrace.NewBatchSpanProcessor(traceExporter)
 	tracerProvider := sdktrace.NewTracerProvider(
 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
@@ -88,7 +85,6 @@ func Init(serviceName, endpoint string) (func(context.Context), error) {
 	)
 	otel.SetTracerProvider(tracerProvider)
 
-	// Set up a metric exporter
 	metricExporter, err := otlpmetricgrpc.New(ctx,
 		otlpmetricgrpc.WithEndpoint(endpoint),
 		otlpmetricgrpc.WithInsecure(),
@@ -103,7 +99,6 @@ func Init(serviceName, endpoint string) (func(context.Context), error) {
 	)
 	otel.SetMeterProvider(meterProvider)
 
-	// Set global propagator to tracecontext (the default is no-op).
 	otel.SetTextMapPropagator(propagation.TraceContext{})
 
 	Tracer = otel.Tracer(serviceName)
@@ -117,7 +112,6 @@ func shutdownProviders(
 	meterProvider *sdkmetric.MeterProvider,
 ) func(context.Context) {
 	return func(ctx context.Context) {
-		// Shutdown will flush any remaining spans/metrics and shut down the exporters.
 		handleCtx, cancel := context.WithTimeout(ctx, time.Second*5)
 		defer cancel()
 		if err := tracerProvider.Shutdown(handleCtx); err != nil {

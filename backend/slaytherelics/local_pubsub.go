@@ -55,7 +55,6 @@ func (p *LocalPubSub) PostExtensionPubSub(_ context.Context, broadcasterID, mess
 		select {
 		case ch <- message:
 		default:
-			// Drop if subscriber buffer is full so game-state updates never stall.
 		}
 	}
 	return nil
