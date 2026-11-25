@@ -14,78 +14,9 @@ The project is structured as a monorepo consisting of:
 
 ## 2. High-Level Architecture & Data Flow
 
-```mermaid
-flowchart TD
-    subgraph StreamerGame["Streamer Machine"]
-        subgraph STS1["Slay the Spire 1 (Java / LibGDX)"]
-            MTS["ModTheSpire / BaseMod"]
-            STS1_Mod["SlayTheRelicsExporter.jar"]
-            MTS --> STS1_Mod
-        end
+![Slay the Relics — High-Level Architecture & Data Flow](./docs/architecture.svg)
 
-        subgraph STS2["Slay the Spire 2 (.NET 9 / Godot 4)"]
-            GodotEngine["Godot Engine / Core Systems"]
-            STS2_Mod["SlayTheRelicsExporter.dll"]
-            GodotEngine --> STS2_Mod
-        end
-
-        OAuthLocal["Local Auth Server (Port 49000)<br/>Streamer 1-Click Twitch Login"]
-        STS1_Mod -.-> OAuthLocal
-        STS2_Mod -.-> OAuthLocal
-    end
-
-    subgraph EBS["Extension Backend Service (Go / Gin)"]
-        API["Gin HTTP Router (:8888)"]
-        AuthModule["OAuth Handler (/api/v1/auth)"]
-        StateMgr["GameStateManager"]
-        DiffEngine["RFC 7396 Merge Patch Engine"]
-        Publisher["Publisher (Twitch PubSub / Local SSE)"]
-        Redis[(Redis Store)]
-        OTel["OpenTelemetry Tracer & Metrics"]
-
-        API --> AuthModule
-        API --> StateMgr
-        AuthModule <--> Redis
-        StateMgr --> DiffEngine
-        DiffEngine --> Publisher
-        Publisher --> OTel
-    end
-
-    subgraph TwitchInfra["Twitch Infrastructure"]
-        TwitchOAuth["Twitch OAuth / ID API"]
-        TwitchPubSub["Twitch Extension PubSub API"]
-    end
-
-    subgraph Viewers["Twitch Viewer Clients (Browser)"]
-        subgraph Extension["Twitch Video Overlay (React 19 / Vite)"]
-            PubSubListener["Twitch PubSub / Dev SSE Listener"]
-            Decompressor["pako (gzip) + base85 decoder"]
-            SyncCtrl["GameStateSyncController"]
-            StateStore["RunState React State"]
-            MapCanvas["Canvas Act Map Renderer"]
-            DeckModal["Deck / Pile Viewer"]
-            HitboxOverlay["Dynamic Screen Hitboxes"]
-
-            PubSubListener --> Decompressor --> SyncCtrl --> StateStore
-            StateStore --> MapCanvas
-            StateStore --> DeckModal
-            StateStore --> HitboxOverlay
-        end
-    end
-
-    %% Auth Flow
-    OAuthLocal <==>|"1. OAuth Code Exchange"| TwitchOAuth
-    STS1_Mod & STS2_Mod ==>|"2. Code -> Bearer Token"| AuthModule
-    AuthModule <==>|"3. Verify Token"| TwitchOAuth
-
-    %% Streaming Flow
-    STS1_Mod & STS2_Mod ==>|"4. POST /api/v2/game-state (Gzip JSON)"| API
-    Publisher ==>|"5. PubSub Broadcast (ASCII85+Gzip)"| TwitchPubSub
-    TwitchPubSub ==>|"6. Push Message"| PubSubListener
-
-    %% Snapshot Recovery Flow
-    Extension -.->|"7. Initial Load / Resync Fallback<br/>GET /api/v2/game-state/:channel-id"| API
-```
+*Diagram source: [`docs/architecture.excalidraw`](./docs/architecture.excalidraw) — re-render with `excalidraw render docs/architecture.excalidraw --out docs/architecture.svg`.*
 
 ### Data Pipeline Walkthrough
 
@@ -179,6 +110,8 @@ slaytherelics/
 │   ├── go.mod                       # Go 1.26 module definition
 │   └── main.go                      # EBS entry point, publisher wiring, and pprof server
 ├── docs/                            # Design proposals, beta testing guides, review notes
+│   ├── architecture.excalidraw      # High-level architecture & data flow diagram source (Excalidraw)
+│   ├── architecture.svg             # Rendered SVG of the architecture diagram
 │   ├── BETA.md                      # Beta testing instructions
 │   ├── README.md                    # Original redesign proposal (v1 -> v2)
 │   └── REVIEW_NOTES.md              # Notes submitted to Twitch Extension Reviewers
