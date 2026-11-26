@@ -13,6 +13,25 @@ const require = createRequire(
 );
 const { chromium } = require("playwright-core");
 
+function usage() {
+  return [
+    "Usage: verify-browser.mjs --url <url> --out-dir <dir> [options]",
+    "",
+    "Options:",
+    "  --url <url>               Overlay URL to open (required)",
+    "  --out-dir <dir>           Output directory for screenshots and report.json (required)",
+    "  --backend-url <url>       Backend URL for live SSE patch POSTs",
+    "  --channel <id>            Twitch channel ID",
+    "  --patch <path>            Incremental patch JSON fixture to POST",
+    "  --viewport <WxH>          Browser viewport (default: 1920x1080)",
+    "  --chromium <path>         Path to Chromium executable",
+    "  --actions <file.mjs>      Custom Playwright verification module",
+    "  --skip-default-checks     Run only --actions without built-in smoke checks",
+    "  --no-fail                 Exit 0 even if verification finds errors",
+    "  -h, --help                Show this help",
+  ].join("\n");
+}
+
 function parseArgs(argv) {
   const opts = {
     url: "",
@@ -27,32 +46,43 @@ function parseArgs(argv) {
     skipDefaultChecks: false,
   };
 
+  function nextValue(flag, i) {
+    if (i + 1 >= argv.length) {
+      throw new Error(`Option '${flag}' requires a value`);
+    }
+    return argv[i + 1];
+  }
+
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     switch (arg) {
+      case "-h":
+      case "--help":
+        console.log(usage());
+        process.exit(0);
       case "--url":
-        opts.url = argv[++i];
+        opts.url = nextValue(arg, i++);
         break;
       case "--backend-url":
-        opts.backendUrl = argv[++i];
+        opts.backendUrl = nextValue(arg, i++);
         break;
       case "--channel":
-        opts.channel = argv[++i];
+        opts.channel = nextValue(arg, i++);
         break;
       case "--out-dir":
-        opts.outDir = argv[++i];
+        opts.outDir = nextValue(arg, i++);
         break;
       case "--patch":
-        opts.patch = argv[++i];
+        opts.patch = nextValue(arg, i++);
         break;
       case "--viewport":
-        opts.viewport = argv[++i];
+        opts.viewport = nextValue(arg, i++);
         break;
       case "--chromium":
-        opts.chromiumBin = argv[++i];
+        opts.chromiumBin = nextValue(arg, i++);
         break;
       case "--actions":
-        opts.actions = argv[++i];
+        opts.actions = nextValue(arg, i++);
         break;
       case "--no-fail":
         opts.noFail = true;

@@ -47,17 +47,28 @@ Options:
 EOF
 }
 
+require_arg() {
+  if [[ $# -lt 2 || -z "$2" ]]; then
+    echo "Option '$1' requires a value" >&2
+    usage >&2
+    exit 1
+  fi
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --game)
+      require_arg "$@"
       GAME="$2"
       shift 2
       ;;
     --fixture)
+      require_arg "$@"
       FIXTURE="$2"
       shift 2
       ;;
     --patch)
+      require_arg "$@"
       PATCH="$2"
       shift 2
       ;;
@@ -66,18 +77,22 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --channel)
+      require_arg "$@"
       CHANNEL="$2"
       shift 2
       ;;
     --out-dir)
+      require_arg "$@"
       OUT_DIR="$2"
       shift 2
       ;;
     --viewport)
+      require_arg "$@"
       VIEWPORT="$2"
       shift 2
       ;;
     --actions)
+      require_arg "$@"
       ACTIONS="$2"
       shift 2
       ;;
@@ -94,14 +109,17 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --backend-url)
+      require_arg "$@"
       BACKEND_URL="$2"
       shift 2
       ;;
     --frontend-url)
+      require_arg "$@"
       FRONTEND_URL="$2"
       shift 2
       ;;
     --chromium)
+      require_arg "$@"
       CHROMIUM_BIN="$2"
       shift 2
       ;;
@@ -120,6 +138,21 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [[ ! "${VIEWPORT}" =~ ^[0-9]+[xX][0-9]+$ ]]; then
+  echo "Invalid --viewport '${VIEWPORT}' (expected WxH, e.g. 1920x1080)" >&2
+  exit 1
+fi
+
+if [[ "${SERVE_ONLY}" -eq 1 && ( -n "${ACTIONS}" || "${SKIP_DEFAULT_CHECKS}" -eq 1 ) ]]; then
+  echo "--serve-only cannot be combined with --actions or --skip-default-checks" >&2
+  exit 1
+fi
+
+if [[ "${SKIP_DEFAULT_CHECKS}" -eq 1 && -z "${ACTIONS}" ]]; then
+  echo "--skip-default-checks requires --actions <file.mjs>" >&2
+  exit 1
+fi
 
 if [[ -z "${CHANNEL}" ]]; then
   CHANNEL="$("${SCRIPT_DIR}/resolve-channel.sh")"
@@ -145,6 +178,19 @@ fi
 
 if [[ "${NO_PATCH}" -eq 1 ]]; then
   PATCH=""
+fi
+
+if [[ ! -f "${FIXTURE}" ]]; then
+  echo "Fixture not found: ${FIXTURE}" >&2
+  exit 1
+fi
+if [[ -n "${PATCH}" && ! -f "${PATCH}" ]]; then
+  echo "Patch fixture not found: ${PATCH}" >&2
+  exit 1
+fi
+if [[ -n "${ACTIONS}" && ! -f "${ACTIONS}" ]]; then
+  echo "Actions module not found: ${ACTIONS}" >&2
+  exit 1
 fi
 
 if [[ -z "${OUT_DIR}" ]]; then
@@ -214,8 +260,8 @@ else
   BACKEND_READY=0
   for _ in $(seq 1 200); do
     if ! kill -0 "${BACKEND_PID}" 2>/dev/null; then
-      echo "[verify] Backend exited early. Log:" >&2
-      cat "${BACKEND_LOG}" >&2
+      echo "[verify] Backend exited early. Last 40 lines of ${BACKEND_LOG}:" >&2
+      tail -n 40 "${BACKEND_LOG}" >&2
       exit 1
     fi
     if (echo > "/dev/tcp/127.0.0.1/${BACKEND_PORT}") >/dev/null 2>&1; then
@@ -226,8 +272,8 @@ else
   done
 
   if [[ "${BACKEND_READY}" -ne 1 ]]; then
-    echo "[verify] Timed out waiting for backend on ${BACKEND_URL}" >&2
-    cat "${BACKEND_LOG}" >&2
+    echo "[verify] Timed out waiting for backend on ${BACKEND_URL}. Last 40 lines of ${BACKEND_LOG}:" >&2
+    tail -n 40 "${BACKEND_LOG}" >&2
     exit 1
   fi
 
@@ -249,8 +295,8 @@ else
   FRONTEND_READY=0
   for _ in $(seq 1 150); do
     if ! kill -0 "${FRONTEND_PID}" 2>/dev/null; then
-      echo "[verify] Frontend exited early. Log:" >&2
-      cat "${FRONTEND_LOG}" >&2
+      echo "[verify] Frontend exited early. Last 40 lines of ${FRONTEND_LOG}:" >&2
+      tail -n 40 "${FRONTEND_LOG}" >&2
       exit 1
     fi
     if curl -fsS "${FRONTEND_URL}/video_overlay.html" >/dev/null 2>&1; then
@@ -261,8 +307,8 @@ else
   done
 
   if [[ "${FRONTEND_READY}" -ne 1 ]]; then
-    echo "[verify] Timed out waiting for frontend on ${FRONTEND_URL}" >&2
-    cat "${FRONTEND_LOG}" >&2
+    echo "[verify] Timed out waiting for frontend on ${FRONTEND_URL}. Last 40 lines of ${FRONTEND_LOG}:" >&2
+    tail -n 40 "${FRONTEND_LOG}" >&2
     exit 1
   fi
 fi
