@@ -421,7 +421,7 @@ yarn install
 yarn dev
 
 # Run Vitest unit tests (sync.test.ts, SpireMap.test.ts)
-yarn vitest run
+yarn test
 
 # Format, typecheck, and lint (required for frontend changes)
 yarn lint

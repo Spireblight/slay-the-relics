@@ -24,7 +24,7 @@
     "dev": "vite",
     "build": "NODE_ENV=production vite build && cd dist && zip -r ../build.zip *",
     "preview": "yarn build && vite preview",
-    "test": "echo 'Testing is not configured for Vite yet.'",
+    "test": "vitest run",
     "pretty": "prettier --write .",
     "lint": "yarn pretty && yarn tsc -b && yarn eslint"
   },

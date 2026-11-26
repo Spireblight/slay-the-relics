@@ -18,4 +18,4 @@ build-sts2-mod:
 test:
 	cd backend && go test ./...
 	dotnet test sts2-mod/SlayTheRelicsExporter.Tests/SlayTheRelicsExporter.Tests.csproj
-	cd slay-the-relics-extension && yarn tsc -b && yarn eslint
+	cd slay-the-relics-extension && yarn test && yarn tsc -b && yarn eslint
